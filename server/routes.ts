@@ -6,6 +6,7 @@ import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
 import * as XLSX from "xlsx";
+import { readFileSync } from "fs";
 
 // Extend Request interface to include multer file
 interface MulterRequest extends Request {
@@ -158,8 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (file.mimetype === "text/csv" || file.originalname.endsWith('.csv') || file.mimetype === "application/octet-stream") {
         // Parse CSV
-        const fs = require("fs");
-        const fileContent = fs.readFileSync(file.path, "utf-8");
+        const fileContent = readFileSync(file.path, "utf-8");
         
         parse(fileContent, {
           columns: true,
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Clean numeric values
         const linha = parseInt(record.Linha || record.linha || "1");
-        const qtLicencas = parseInt(record["Qt. Licenças"] || record["Qt. Licen?as"] || record.qtLicencas || record.qt_licencas || "1");
+        const qtLicencas = parseInt(record["Qt. Licen�as"] || record["Qt. Licenças"] || record["Qt. Licen?as"] || record.qtLicencas || record.qt_licencas || "1");
         
         const licenseData = {
           code: (record.Code || record.code || record.codigo || "").toString(),
@@ -244,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endApi: (record["End. API"] || record.endApi || record.end_api || "").toString(),
           listaCnpj: (record["Lista de CNPJ"] || record.listaCnpj || record.lista_cnpj || "").toString(),
           qtLicencas: isNaN(qtLicencas) ? 1 : qtLicencas,
-          versaoSap: (record["Versão SAP"] || record["Vers?o SAP"] || record.versaoSap || record.versao_sap || "").toString(),
+          versaoSap: (record["Vers�o SAP"] || record["Versão SAP"] || record["Vers?o SAP"] || record.versaoSap || record.versao_sap || "").toString(),
         };
         
         console.log(`Processing record ${importedCount + 1}:`, licenseData.code);
