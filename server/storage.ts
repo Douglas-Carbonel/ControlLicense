@@ -81,8 +81,7 @@ export class DbStorage implements IStorage {
       .select({ 
         total: sql<number>`COALESCE(SUM(${licenses.qtLicencas}), 0)` 
       })
-      .from(licenses)
-      .where(eq(licenses.ativo, true));
+      .from(licenses);
 
     return {
       total: totalResult.count,
