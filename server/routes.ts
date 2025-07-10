@@ -26,6 +26,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Statistics route - must come before parameterized routes
+  app.get("/api/licenses/stats", async (req, res) => {
+    try {
+      const stats = await storage.getLicenseStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ message: "Failed to fetch statistics" });
+    }
+  });
+
   app.get("/api/licenses/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -116,15 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Statistics route
-  app.get("/api/licenses/stats", async (req, res) => {
-    try {
-      const stats = await storage.getLicenseStats();
-      res.json(stats);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch statistics" });
-    }
-  });
+
 
   // Activity routes
   app.get("/api/activities", async (req, res) => {
@@ -158,34 +161,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fs = require("fs");
         const fileContent = fs.readFileSync(file.path, "utf-8");
         
-        return new Promise((resolve, reject) => {
-          parse(fileContent, {
-            columns: true,
-            skip_empty_lines: true,
-            delimiter: ';', // CSV uses semicolon as delimiter
-          }, async (err, records) => {
-            if (err) {
-              return res.status(400).json({ message: "Failed to parse CSV file" });
-            }
+        parse(fileContent, {
+          columns: true,
+          skip_empty_lines: true,
+          delimiter: ';', // CSV uses semicolon as delimiter
+        }, async (err, records) => {
+          if (err) {
+            console.error("CSV parse error:", err);
+            return res.status(400).json({ message: "Failed to parse CSV file", error: err.message });
+          }
+          
+          try {
+            console.log(`Starting import of ${records.length} records`);
+            const importedCount = await processImportData(records);
             
-            try {
-              const importedCount = await processImportData(records);
-              
-              // Log activity
-              await storage.createActivity({
-                userId: "current-user",
-                userName: "Current User",
-                action: "IMPORT",
-                resourceType: "license",
-                resourceId: null,
-                description: `Imported ${importedCount} licenses from CSV`,
-              });
-              
-              res.json({ message: `Successfully imported ${importedCount} licenses` });
-            } catch (error) {
-              res.status(500).json({ message: "Failed to import data" });
-            }
-          });
+            // Log activity
+            await storage.createActivity({
+              userId: "current-user",
+              userName: "Current User",
+              action: "IMPORT",
+              resourceType: "license",
+              resourceId: null,
+              description: `Imported ${importedCount} licenses from CSV`,
+            });
+            
+            res.json({ message: `Successfully imported ${importedCount} licenses` });
+          } catch (error) {
+            console.error("Import processing error:", error);
+            res.status(500).json({ message: "Failed to import data", error: error.message });
+          }
         });
       } else if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
         // Parse Excel
@@ -211,7 +215,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ message: "Unsupported file format" });
       }
     } catch (error) {
-      res.status(500).json({ message: "Failed to process import" });
+      console.error("Import error:", error);
+      res.status(500).json({ message: "Failed to process import", error: error.message });
     }
   });
 
@@ -220,29 +225,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     for (const record of records) {
       try {
+        // Clean numeric values
+        const linha = parseInt(record.Linha || record.linha || "1");
+        const qtLicencas = parseInt(record["Qt. Licenças"] || record["Qt. Licen?as"] || record.qtLicencas || record.qt_licencas || "1");
+        
         const licenseData = {
-          code: record.Code || record.code || record.codigo || "",
-          linha: parseInt(record.Linha || record.linha || "1"),
+          code: (record.Code || record.code || record.codigo || "").toString(),
+          linha: isNaN(linha) ? 1 : linha,
           ativo: (record.Ativo || record.ativo || "Y") === "Y",
-          codCliente: record["Cod. Cliente"] || record.codCliente || record.cod_cliente || "",
-          nomeCliente: record["Nome Cliente"] || record.nomeCliente || record.nome_cliente || "",
-          dadosEmpresa: record["Dados da empresa"] || record.dadosEmpresa || record.dados_empresa || "",
-          hardwareKey: record["Hardware key"] || record.hardwareKey || record.hardware_key || "",
-          installNumber: record["Install number"] || record.installNumber || record.install_number || "",
-          systemNumber: record["System number"] || record.systemNumber || record.system_number || "",
-          nomeDb: record["Nome DB"] || record.nomeDb || record.nome_db || "",
-          descDb: record["Desc. DB"] || record.descDb || record.desc_db || "",
-          endApi: record["End. API"] || record.endApi || record.end_api || "",
-          listaCnpj: record["Lista de CNPJ"] || record.listaCnpj || record.lista_cnpj || "",
-          qtLicencas: parseInt(record["Qt. Licenas"] || record["Qt. Licenças"] || record.qtLicencas || record.qt_licencas || "1"),
-          versaoSap: record["Verso SAP"] || record["Versão SAP"] || record.versaoSap || record.versao_sap || "",
+          codCliente: (record["Cod. Cliente"] || record.codCliente || record.cod_cliente || "").toString(),
+          nomeCliente: (record["Nome Cliente"] || record.nomeCliente || record.nome_cliente || "").toString(),
+          dadosEmpresa: (record["Dados da empresa"] || record.dadosEmpresa || record.dados_empresa || "").toString(),
+          hardwareKey: (record["Hardware key"] || record.hardwareKey || record.hardware_key || "").toString(),
+          installNumber: (record["Install number"] || record.installNumber || record.install_number || "").toString(),
+          systemNumber: (record["System number"] || record.systemNumber || record.system_number || "").toString(),
+          nomeDb: (record["Nome DB"] || record.nomeDb || record.nome_db || "").toString(),
+          descDb: (record["Desc. DB"] || record.descDb || record.desc_db || "").toString(),
+          endApi: (record["End. API"] || record.endApi || record.end_api || "").toString(),
+          listaCnpj: (record["Lista de CNPJ"] || record.listaCnpj || record.lista_cnpj || "").toString(),
+          qtLicencas: isNaN(qtLicencas) ? 1 : qtLicencas,
+          versaoSap: (record["Versão SAP"] || record["Vers?o SAP"] || record.versaoSap || record.versao_sap || "").toString(),
         };
+        
+        console.log(`Processing record ${importedCount + 1}:`, licenseData.code);
         
         const validatedData = insertLicenseSchema.parse(licenseData);
         await storage.createLicense(validatedData);
         importedCount++;
+        
+        if (importedCount % 50 === 0) {
+          console.log(`Imported ${importedCount} records so far...`);
+        }
       } catch (error) {
-        console.error("Failed to import record:", record, error);
+        console.error("Failed to import record:", record.Code || record.code || 'unknown', error.message);
       }
     }
     
