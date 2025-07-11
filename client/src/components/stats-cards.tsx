@@ -8,9 +8,10 @@ interface StatsCardsProps {
     inactive: number;
     expiring?: number;
   };
+  isLoading?: boolean;
 }
 
-export default function StatsCards({ stats }: StatsCardsProps) {
+export default function StatsCards({ stats, isLoading = false }: StatsCardsProps) {
   // Provide default values if stats is undefined
   const safeStats = stats || {
     total: 0,
@@ -63,7 +64,9 @@ export default function StatsCards({ stats }: StatsCardsProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-[#3a3a3c] mb-1">{card.title}</p>
-                  <p className="text-3xl font-bold text-[#3a3a3c]">{card.value}</p>
+                  <p className="text-3xl font-bold text-[#3a3a3c]">
+                    {isLoading ? "..." : card.value}
+                  </p>
                   <p className="text-xs text-[#3a3a3c]">{card.description}</p>
                 </div>
                 <div className={`p-3 rounded-full shadow-sm ${card.iconBg}`}>

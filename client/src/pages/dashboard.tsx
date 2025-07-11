@@ -8,10 +8,16 @@ import ImportModal from "@/components/modals/import-modal";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error } = useQuery({
     queryKey: ["/api/licenses/stats"],
     queryFn: async () => {
-      const response = await fetch("/api/licenses/stats");
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/licenses/stats", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch stats");
       }
@@ -35,7 +41,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <StatsCards stats={stats || { total: 0, active: 0, inactive: 0, expiring: 0 }} />
+      <StatsCards 
+        stats={stats || { total: 0, active: 0, inactive: 0, expiring: 0 }} 
+        isLoading={statsLoading} 
+      />
       <RecentLicensesTable />
       <ActivityLog />
     </div>

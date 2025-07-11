@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { LogOut, User, Bell, Search, Building2, Shield, Zap, Settings, ChevronDown } from "lucide-react";
+import { LogOut, User, Search, Building2, Shield, Zap, Settings, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -26,14 +26,6 @@ export default function Header() {
 
           {/* Área do Usuário */}
           <div className="flex items-center space-x-4">
-            {/* Notificações */}
-            <button className="relative p-2.5 text-[#3a3a3c] hover:text-[#0095da] hover:bg-[#f4f4f4] rounded-xl transition-colors group">
-              <Bell className="w-5 h-5" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#0095da] rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">3</span>
-              </div>
-            </button>
-
             {/* Perfil do Usuário */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
