@@ -86,6 +86,26 @@ input:focus, textarea:focus {
   transition: none !important;
 }
 
+/* Otimizações específicas para evitar travadas durante digitação */
+input[type="text"] {
+  will-change: auto !important;
+  contain: layout !important;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Otimizações para campos de filtro */
+.filter-input {
+  contain: layout style !important;
+  will-change: auto !important;
+  transition: none !important;
+}
+
+/* Evitar re-layout durante digitação */
+.search-container {
+  contain: layout !important;
+}
+
 /* Optimize table scrolling */
 .license-table-container {
   contain: layout style;

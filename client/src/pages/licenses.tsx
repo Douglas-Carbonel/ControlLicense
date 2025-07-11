@@ -93,7 +93,7 @@ export default function Licenses() {
   const [editingLicense, setEditingLicense] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(50);
+  const [pageSize] = useState(25); // Reduzido para 25 para melhor performance
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -108,19 +108,28 @@ export default function Licenses() {
 
   const allLicenses = allLicensesResponse?.data || [];
 
-  // Handler para busca - permite digitação livre sem indicadores de loading
+  // Handler para busca - com debounce para melhor performance
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
   }, []);
 
-  // BUSCA E FILTRO LOCAL (INSTANTÂNEO)
-  const filteredLicenses = useMemo(() => {
-    let filtered = [...allLicenses];
+  // Debounce para busca (400ms - otimizado para evitar travadas)
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  const debouncedColumnFilters = useDebounce(columnFilters, 400);
 
-    // Aplicar busca geral
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
+  // BUSCA E FILTRO LOCAL OTIMIZADO (com debounce para evitar travadas)
+  const filteredLicenses = useMemo(() => {
+    // Se não há dados ainda, retorna array vazio
+    if (!allLicenses || allLicenses.length === 0) {
+      return [];
+    }
+
+    let filtered = allLicenses;
+
+    // Aplicar busca geral (usando debounced)
+    if (debouncedSearchTerm.trim()) {
+      const searchLower = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter(license => 
         license.nomeCliente?.toLowerCase().includes(searchLower) ||
         license.codCliente?.toLowerCase().includes(searchLower) ||
@@ -131,8 +140,8 @@ export default function Licenses() {
       );
     }
 
-    // Aplicar filtros de coluna
-    Object.entries(columnFilters).forEach(([column, value]) => {
+    // Aplicar filtros de coluna (usando debounced)
+    Object.entries(debouncedColumnFilters).forEach(([column, value]) => {
       if (value.trim()) {
         const filterLower = value.toLowerCase();
         filtered = filtered.filter(license => {
@@ -147,19 +156,22 @@ export default function Licenses() {
     });
 
     return filtered;
-  }, [allLicenses, searchTerm, columnFilters]);
+  }, [allLicenses, debouncedSearchTerm, debouncedColumnFilters]);
 
-  // PAGINAÇÃO LOCAL
+  // PAGINAÇÃO LOCAL - Otimizada para performance
   const paginatedLicenses = useMemo(() => {
+    // Evita processamento desnecessário se não há dados
+    if (filteredLicenses.length === 0) return [];
+    
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     return filteredLicenses.slice(startIndex, endIndex);
   }, [filteredLicenses, currentPage, pageSize]);
 
-  // INFORMAÇÕES DE PAGINAÇÃO
+  // INFORMAÇÕES DE PAGINAÇÃO - Otimizada
   const pagination = useMemo(() => {
     const total = filteredLicenses.length;
-    const totalPages = Math.ceil(total / pageSize);
+    const totalPages = Math.ceil(total / pageSize) || 1;
     return {
       page: currentPage,
       limit: pageSize,
@@ -412,15 +424,14 @@ export default function Licenses() {
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="relative">
+              <div className="relative search-container">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Busca geral..."
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 w-48 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="pl-10 w-48 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent filter-input"
                 />
-
               </div>
               {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && (
                 <Button
@@ -489,16 +500,15 @@ export default function Licenses() {
                           <div className="space-y-2">
                             <div>{column.label}</div>
                             {column.id !== 'acoes' && (
-                              <div className="relative">
+                              <div className="relative search-container">
                                 <Input
                                   placeholder="Digite para filtrar..."
                                   value={columnFilters[column.id] || ''}
                                   onChange={(e) => updateColumnFilter(column.id, e.target.value)}
-                                  className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none"
+                                  className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary filter-input"
                                   onClick={(e) => e.stopPropagation()}
                                   autoComplete="off"
                                 />
-
                               </div>
                             )}
                           </div>
@@ -507,7 +517,7 @@ export default function Licenses() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {filteredLicenses.map((license: any) => (
+                    {licenses.map((license: any) => (
                       <tr key={license.id} className="hover:bg-gray-50 transition-none">
                         {getVisibleColumnsInOrder().map((column) => (
                           <td
