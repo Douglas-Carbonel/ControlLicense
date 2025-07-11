@@ -23,8 +23,8 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">License Management</h1>
-          <p className="text-gray-600 mt-1">Manage your team member and their account permissions here</p>
+          <h1 className="text-2xl font-bold text-gray-900">Painel de Controle</h1>
+          <p className="text-gray-600 mt-1">Visão geral das licenças e atividades do sistema</p>
         </div>
         <div className="flex space-x-3">
           <Button variant="outline" className="flex items-center space-x-2">

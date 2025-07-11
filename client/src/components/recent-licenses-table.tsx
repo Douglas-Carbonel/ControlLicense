@@ -56,10 +56,10 @@ export default function RecentLicensesTable() {
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200">
-              <TableHead className="text-gray-600 font-medium">USER NAME</TableHead>
-              <TableHead className="text-gray-600 font-medium">EMAIL</TableHead>
-              <TableHead className="text-gray-600 font-medium">ROLE</TableHead>
-              <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
+              <TableHead className="text-gray-600 font-medium">NOME DO CLIENTE</TableHead>
+              <TableHead className="text-gray-600 font-medium">HARDWARE KEY</TableHead>
+              <TableHead className="text-gray-600 font-medium">STATUS</TableHead>
+              <TableHead className="text-gray-600 font-medium">AÇÕES</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -81,11 +81,11 @@ export default function RecentLicensesTable() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="text-sm text-gray-600">{license.hardwareKey || 'license@example.com'}</div>
+                  <div className="text-sm text-gray-600 font-mono">{license.hardwareKey || 'N/A'}</div>
                 </TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(license.ativo)} className={license.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                    {license.ativo ? "Admin" : "User"}
+                    {license.ativo ? "Ativo" : "Inativo"}
                   </Badge>
                 </TableCell>
                 <TableCell>

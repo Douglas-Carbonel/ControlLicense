@@ -20,7 +20,7 @@ export default function Sidebar() {
   const navigationItems = [
     { 
       href: "/", 
-      label: "Dashboard", 
+      label: "Painel", 
       icon: Home,
       description: "Visão geral do sistema"
     },
