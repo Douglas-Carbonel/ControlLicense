@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "wouter";
 import { 
   Home, 
@@ -10,7 +9,8 @@ import {
   BarChart3,
   Shield,
   Database,
-  ChevronRight
+  ChevronRight,
+  Building2
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
@@ -55,23 +55,30 @@ export default function Sidebar() {
     });
   }
 
+  const getCurrentPageTitle = () => {
+    // You can implement logic here to determine the current page title
+    // based on the location or any other relevant information.
+    // For now, let's return a default title.
+    return "Sistema de Gestão";
+  };
+
   return (
     <aside className="w-72 bg-gradient-to-b from-[#313d5a] to-[#2a3548] border-r border-[#3a3a3c]/50 h-screen shadow-2xl flex flex-col">
       {/* Header Section */}
       <div className="p-8 border-b border-[#3a3a3c]/30">
         <div className="flex items-center space-x-4">
           <div className="relative">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] to-[#0075b0] rounded-xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
-              <Shield className="w-7 h-7 text-white drop-shadow-sm" />
+            <div className="w-14 h-14 bg-gradient-to-br from-[#0095da] via-[#007bb8] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <Building2 className="w-8 h-8 text-white drop-shadow-lg" />
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a]"></div>
+            <div className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full border-3 border-[#313d5a] shadow-lg animate-pulse"></div>
           </div>
           <div className="flex flex-col">
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
               DW IT License
             </h2>
-            <p className="text-[#a1b3d3] text-sm font-medium">
-              Sistema de Gestão
+            <p className="text-[#a1b3d3] text-sm font-medium mt-1 leading-tight">
+              {getCurrentPageTitle()}
             </p>
           </div>
         </div>
@@ -83,7 +90,7 @@ export default function Sidebar() {
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
-            
+
             return (
               <Link 
                 key={item.href} 
@@ -104,17 +111,17 @@ export default function Sidebar() {
                   </div>
                   <span className="font-medium tracking-wide">{item.label}</span>
                 </div>
-                
+
                 {/* Active indicator */}
                 {isActive && (
                   <div className="w-2 h-2 bg-white rounded-full shadow-sm animate-pulse"></div>
                 )}
-                
+
                 {/* Hover indicator */}
                 {!isActive && (
                   <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
                 )}
-                
+
                 {/* Background decoration */}
                 <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ${
                   isActive ? 'hidden' : ''
