@@ -148,309 +148,310 @@ export default function Licenses() {
           ) : (
             <div className="w-full relative">
               <div className="overflow-auto max-h-[70vh] border rounded-lg license-table-container" style={{ maxWidth: '100vw' }}>
-                <table className="license-table" style={{ minWidth: '2000px' }}>
-                  <thead>
+                <table className="w-full" style={{ minWidth: '2000px' }}>
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="license-sticky-left">
+                      <th className="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         Código Cliente
                       </th>
-                      <th className="license-header">
-                        Ativo
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        Status
                       </th>
-                      <th className="license-header" style={{ minWidth: '180px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '180px' }}>
                         Nome do Cliente
                       </th>
-                      <th className="license-header" style={{ minWidth: '150px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '150px' }}>
                         Dados Empresa
                       </th>
-                      <th className="license-header" style={{ minWidth: '160px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '160px' }}>
                         Hardware Key
                       </th>
-                      <th className="license-header" style={{ minWidth: '120px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                         Install Number
                       </th>
-                      <th className="license-header" style={{ minWidth: '120px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                         System Number
                       </th>
-                      <th className="license-header" style={{ minWidth: '120px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                         Nome DB
                       </th>
-                      <th className="license-header" style={{ minWidth: '120px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
                         Desc. DB
                       </th>
-                      <th className="license-header" style={{ minWidth: '140px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '140px' }}>
                         End. API
                       </th>
-                      <th className="license-header" style={{ minWidth: '130px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '130px' }}>
                         Lista CNPJ
                       </th>
-                      <th className="license-header" style={{ width: '80px' }}>
+                      <th className="px-3 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
                         Qt.Lic.
                       </th>
-                      <th className="license-header" style={{ minWidth: '100px' }}>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '100px' }}>
                         Versão SAP
                       </th>
-                      <th className="license-sticky-right">
+                      <th className="sticky right-0 z-20 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider border-l border-gray-200" style={{ width: '100px' }}>
                         Ações
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {filteredLicenses.map((license: any, index: number) => (
-                      <tr key={license.id} className={`hover:bg-gray-50/80 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
+                      <tr key={license.id} className="hover:bg-gray-50 transition-colors duration-150">
                         {/* Código do Cliente - Sticky */}
-                        <td className="license-sticky-left">
+                        <td className="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 hover:bg-gray-50">
                           <div className="flex items-center group">
-                            <span className="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
+                            <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">
                               {license.codCliente || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-blue-100"
                               onClick={() => copyToClipboard(license.codCliente || '', 'Código do Cliente')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-blue-600" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Status */}
-                        <td className="license-cell">
-                          <div className="flex items-center justify-center group">
-                            <Badge 
-                              variant={getStatusVariant(license.ativo)} 
-                              className={`${license.ativo ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300"} text-xs font-medium px-2 py-1`}
-                            >
+                        <td className="px-3 py-3 text-sm">
+                          <div className="flex items-center group">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              license.ativo 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
                               {license.ativo ? "Ativo" : "Inativo"}
-                            </Badge>
+                            </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.ativo ? 'Ativo' : 'Inativo', 'Status')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Nome do Cliente */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-sm font-medium text-gray-900 truncate max-w-[160px]" title={license.nomeCliente || 'N/A'}>
+                            <span className="text-gray-900 font-medium truncate max-w-[160px]" title={license.nomeCliente || 'N/A'}>
                               {license.nomeCliente || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.nomeCliente || '', 'Nome do Cliente')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Dados da Empresa */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs text-gray-600 truncate max-w-[130px]" title={license.dadosEmpresa || 'N/A'}>
+                            <span className="text-gray-600 truncate max-w-[130px]" title={license.dadosEmpresa || 'N/A'}>
                               {license.dadosEmpresa || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.dadosEmpresa || '', 'Dados da Empresa')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Hardware Key */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded border truncate max-w-[140px]" title={license.hardwareKey || 'N/A'}>
+                            <span className="font-mono text-gray-600 bg-gray-50 px-2 py-1 rounded text-xs truncate max-w-[140px]" title={license.hardwareKey || 'N/A'}>
                               {license.hardwareKey || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.hardwareKey || '', 'Hardware Key')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Install Number */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs font-mono text-gray-600">
+                            <span className="font-mono text-gray-600 text-xs">
                               {license.installNumber || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.installNumber || '', 'Install Number')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* System Number */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs font-mono text-gray-600">
+                            <span className="font-mono text-gray-600 text-xs">
                               {license.systemNumber || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.systemNumber || '', 'System Number')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Nome DB */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs text-gray-600 truncate max-w-[100px]" title={license.nomeDb || 'N/A'}>
+                            <span className="text-gray-600 truncate max-w-[100px]" title={license.nomeDb || 'N/A'}>
                               {license.nomeDb || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.nomeDb || '', 'Nome DB')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Desc. DB */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs text-gray-600 truncate max-w-[100px]" title={license.descDb || 'N/A'}>
+                            <span className="text-gray-600 truncate max-w-[100px]" title={license.descDb || 'N/A'}>
                               {license.descDb || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.descDb || '', 'Desc. DB')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* End. API */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs text-gray-600 truncate max-w-[120px]" title={license.endApi || 'N/A'}>
+                            <span className="text-gray-600 truncate max-w-[120px]" title={license.endApi || 'N/A'}>
                               {license.endApi || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.endApi || '', 'End.API')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Lista de CNPJ */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs font-mono text-gray-600 truncate max-w-[110px]" title={license.listaCnpj || 'N/A'}>
+                            <span className="font-mono text-gray-600 text-xs truncate max-w-[110px]" title={license.listaCnpj || 'N/A'}>
                               {license.listaCnpj || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.listaCnpj || '', 'Lista de CNPJ')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Quantidade de Licenças */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm text-center">
                           <div className="flex items-center justify-center group">
-                            <span className="text-sm font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full border border-blue-200">
+                            <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
                               {license.qtLicencas || '0'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.qtLicencas?.toString() || '0', 'Qt.Licenças')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Versão SAP */}
-                        <td className="license-cell">
+                        <td className="px-3 py-3 text-sm">
                           <div className="flex items-center group">
-                            <span className="text-xs text-gray-600">
+                            <span className="text-gray-600">
                               {license.versaoSap || 'N/A'}
                             </span>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
                               onClick={() => copyToClipboard(license.versaoSap || '', 'Versão SAP')}
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3 h-3 text-gray-500" />
                             </Button>
                           </div>
                         </td>
 
                         {/* Ações - Sticky */}
-                        <td className="license-sticky-right">
+                        <td className="sticky right-0 z-10 bg-white px-3 py-3 text-center border-l border-gray-200 hover:bg-gray-50">
                           <div className="flex items-center justify-center space-x-1">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1 h-8 w-8"
+                              className="p-1 h-7 w-7 hover:bg-blue-50 text-blue-600"
                               onClick={() => copyFullRow(license)}
                               title="Copiar linha completa"
                             >
-                              <Copy className="w-4 h-4" />
+                              <Copy className="w-3.5 h-3.5" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 h-8 w-8"
+                              className="p-1 h-7 w-7 hover:bg-gray-100 text-gray-500"
                               title="Editar"
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-3.5 h-3.5" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
                               onClick={() => handleDelete(license.id)}
                               disabled={deleteMutation.isPending}
-                              className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1 h-8 w-8"
+                              className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
                               title="Excluir"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
                         </td>
