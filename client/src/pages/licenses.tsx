@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useCallback, memo, lazy, Suspense, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, memo, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,58 +56,6 @@ const OptimizedInput = memo(({ value, onChange, placeholder, id, type = "text" }
       onChange={onChange}
       placeholder={placeholder}
       className="transition-none"
-      autoComplete="off"
-      spellCheck={false}
-    />
-  );
-});
-
-// Componente de filtro específico para evitar re-renders
-const FilterInput = memo(({ columnId, value, onChange }: {
-  columnId: string;
-  value: string;
-  onChange: (columnId: string, value: string) => void;
-}) => {
-  const [localValue, setLocalValue] = useState(value || '');
-  const timeoutRef = useRef<NodeJS.Timeout>();
-
-  // Sincronizar valor local com prop quando necessário
-  useEffect(() => {
-    setLocalValue(value || '');
-  }, [value]);
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-
-    // Limpar timeout anterior
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Aplicar mudança com delay
-    timeoutRef.current = setTimeout(() => {
-      onChange(columnId, newValue);
-    }, 300);
-  }, [columnId, onChange]);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <Input
-      placeholder="Filtrar..."
-      value={localValue}
-      onChange={handleChange}
-      className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none"
-      onClick={(e) => e.stopPropagation()}
-      autoComplete="off"
-      spellCheck={false}
     />
   );
 });
@@ -148,11 +96,11 @@ export default function Licenses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debounce search with optimal delay for responsiveness
-  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  // Debounce search with much shorter delay for better responsiveness
+  const debouncedSearchTerm = useDebounce(searchTerm, 100);
   
-  // Debounce column filters with longer delay to prevent excessive requests
-  const debouncedColumnFilters = useDebounce(columnFilters, 500);
+  // Debounce column filters with even shorter delay
+  const debouncedColumnFilters = useDebounce(columnFilters, 150);
 
   // Memoize combined search to prevent re-computation
   const combinedSearch = useMemo(() => {
@@ -172,14 +120,12 @@ export default function Licenses() {
 
   const { data: licensesResponse, isLoading, error, refetch } = useQuery({
     queryKey: [queryKey],
-    staleTime: 30 * 1000, // Aumentar stale time para evitar requests desnecessários
-    gcTime: 5 * 60 * 1000, // Aumentar garbage collection time
-    retry: 0, // Sem retry para resposta mais rápida
+    staleTime: 10 * 1000, // Reduzir stale time para dados mais frescos
+    gcTime: 30 * 1000, // Reduzir garbage collection time
+    retry: 1, // Menos tentativas para resposta mais rápida
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchOnReconnect: false,
-    enabled: true,
-    keepPreviousData: true, // Manter dados anteriores durante carregamento
+    enabled: true, // Sempre habilitado
   });
 
   const licenses = licensesResponse?.data || [];
@@ -289,26 +235,12 @@ export default function Licenses() {
   }, [toast]);
 
   const updateColumnFilter = useCallback((columnId: string, value: string) => {
-    // Usar requestIdleCallback para adiar atualizações não urgentes
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(() => {
-        setColumnFilters(prev => {
-          if (prev[columnId] === value) return prev; // Evitar updates desnecessários
-          return { ...prev, [columnId]: value };
-        });
-      });
-    } else {
-      // Fallback para navegadores que não suportam requestIdleCallback
-      setTimeout(() => {
-        setColumnFilters(prev => {
-          if (prev[columnId] === value) return prev;
-          return { ...prev, [columnId]: value };
-        });
-      }, 0);
-    }
-    
-    // Só resetar página se tiver valor
-    if (value.trim() !== '') {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev, [columnId]: value };
+      return newFilters;
+    });
+    // Só resetar página se não estiver vazio
+    if (value !== '') {
       setCurrentPage(1);
     }
   }, []);
@@ -522,10 +454,13 @@ export default function Licenses() {
                           <div className="space-y-2">
                             <div>{column.label}</div>
                             {column.id !== 'acoes' && (
-                              <FilterInput
-                                columnId={column.id}
+                              <Input
+                                placeholder="Filtrar..."
                                 value={columnFilters[column.id] || ''}
-                                onChange={updateColumnFilter}
+                                onChange={(e) => updateColumnFilter(column.id, e.target.value)}
+                                className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none"
+                                onClick={(e) => e.stopPropagation()}
+                                autoComplete="off"
                               />
                             )}
                           </div>
