@@ -490,10 +490,6 @@ export default function Licenses() {
           <p className="text-slate-600 mt-1">Gerencie todas as licenças e suas informações detalhadas</p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="outline" className="flex items-center space-x-2">
-            <Search className="h-4 w-4" />
-            <span>Filtrar</span>
-          </Button>
           <div className="relative">
             <Dialog>
               <DialogTrigger asChild>
