@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, Search, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +39,11 @@ const AVAILABLE_COLUMNS = [
   { id: 'versaoSap', label: 'Versão SAP', width: '100px' },
   { id: 'observacao', label: 'Observação', width: '120px' },
   { id: 'acoes', label: 'Ações', width: '100px', sticky: 'right' }
+];
+
+// Configuração de colunas visíveis (personalizável pelo usuário)
+const DEFAULT_VISIBLE_COLUMNS = [
+  'code', 'ativo', 'nomeCliente', 'dadosEmpresa', 'hardwareKey', 'qtLicencas', 'versaoSap', 'acoes'
 ];
 
 // Componente input otimizado para evitar travadas
@@ -81,15 +86,11 @@ const OptimizedTextarea = memo(({ value, onChange, placeholder, id, rows }: {
 });
 
 export default function Licenses() {
-  const [searchTerm, setSearchTerm] = useState("");
+  // Removido searchTerm - busca geral não agregava valor conforme feedback do usuário
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
-  const [visibleColumns, setVisibleColumns] = useState(
-    AVAILABLE_COLUMNS.map(col => col.id)
-  );
-  const [columnOrder, setColumnOrder] = useState(
-    AVAILABLE_COLUMNS.map(col => col.id)
-  );
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  // Estado para configuração de colunas
+  const [visibleColumns, setVisibleColumns] = useState(DEFAULT_VISIBLE_COLUMNS);
+  const [isColumnConfigOpen, setIsColumnConfigOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,14 +109,7 @@ export default function Licenses() {
 
   const allLicenses = allLicensesResponse?.data || [];
 
-  // Handler para busca - com debounce para melhor performance
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  }, []);
-
-  // Debounce para busca (400ms - otimizado para evitar travadas)
-  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  // Debounce para filtros de coluna (400ms - otimizado para evitar travadas)
   const debouncedColumnFilters = useDebounce(columnFilters, 400);
 
   // BUSCA E FILTRO LOCAL OTIMIZADO (com debounce para evitar travadas)
@@ -127,18 +121,7 @@ export default function Licenses() {
 
     let filtered = allLicenses;
 
-    // Aplicar busca geral (usando debounced)
-    if (debouncedSearchTerm.trim()) {
-      const searchLower = debouncedSearchTerm.toLowerCase();
-      filtered = filtered.filter(license => 
-        license.nomeCliente?.toLowerCase().includes(searchLower) ||
-        license.codCliente?.toLowerCase().includes(searchLower) ||
-        license.code?.toLowerCase().includes(searchLower) ||
-        license.hardwareKey?.toLowerCase().includes(searchLower) ||
-        license.dadosEmpresa?.toLowerCase().includes(searchLower) ||
-        license.listaCnpj?.toLowerCase().includes(searchLower)
-      );
-    }
+    // Busca geral removida conforme solicitado - não agregava valor
 
     // Aplicar filtros de coluna (usando debounced)
     Object.entries(debouncedColumnFilters).forEach(([column, value]) => {
@@ -156,7 +139,7 @@ export default function Licenses() {
     });
 
     return filtered;
-  }, [allLicenses, debouncedSearchTerm, debouncedColumnFilters]);
+  }, [allLicenses, debouncedColumnFilters]);
 
   // PAGINAÇÃO LOCAL - Otimizada para performance
   const paginatedLicenses = useMemo(() => {
@@ -298,7 +281,6 @@ export default function Licenses() {
   }, []);
 
   const clearAllFilters = useCallback(() => {
-    setSearchTerm("");
     setColumnFilters({});
     setCurrentPage(1);
   }, []);
@@ -331,11 +313,9 @@ export default function Licenses() {
 
 
   const getVisibleColumnsInOrder = useCallback(() => {
-    return columnOrder
-      .filter(colId => visibleColumns.includes(colId))
-      .map(colId => AVAILABLE_COLUMNS.find(col => col.id === colId))
-      .filter(Boolean);
-  }, [columnOrder, visibleColumns]);
+    return AVAILABLE_COLUMNS
+      .filter(col => visibleColumns.includes(col.id));
+  }, [visibleColumns]);
 
   const toggleColumnVisibility = useCallback((columnId: string) => {
     setVisibleColumns(prev => 
@@ -402,7 +382,7 @@ export default function Licenses() {
   }, [handleEdit, handleDelete, deleteMutation.isPending, copyToClipboard]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Gerenciamento de Licenças</h1>
@@ -416,28 +396,68 @@ export default function Licenses() {
       </div>
 
       <Card className="bg-white border border-gray-200 shadow-sm">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-lg font-semibold text-slate-800">Todas as Licenças</CardTitle>
               <p className="text-sm text-gray-500 mt-1">
                 Mostrando {licenses.length} de {pagination.total} licenças
-                {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && 
+                {(Object.values(columnFilters).some(filter => filter !== "")) && 
                   ` (página ${pagination.page} de ${pagination.totalPages})`
                 }
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="relative search-container">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Busca geral..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 w-48 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent filter-input"
-                />
-              </div>
-              {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && (
+              <Dialog open={isColumnConfigOpen} onOpenChange={setIsColumnConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                    <Columns className="h-4 w-4" />
+                    <span>Configurar Colunas</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Configurar Colunas Visíveis</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Selecione quais colunas deseja visualizar na tabela:
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+                      {AVAILABLE_COLUMNS.map(column => (
+                        <div key={column.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={column.id}
+                            checked={visibleColumns.includes(column.id)}
+                            onCheckedChange={() => toggleColumnVisibility(column.id)}
+                            disabled={column.id === 'code' || column.id === 'acoes'}
+                          />
+                          <Label htmlFor={column.id} className="text-sm font-medium">
+                            {column.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between pt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setVisibleColumns(AVAILABLE_COLUMNS.map(col => col.id))}
+                      >
+                        Selecionar Todas
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setVisibleColumns(DEFAULT_VISIBLE_COLUMNS)}
+                      >
+                        Restaurar Padrão
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              {(Object.values(columnFilters).some(filter => filter !== "")) && (
                 <Button
                   variant="outline"
                   size="sm"
