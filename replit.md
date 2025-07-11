@@ -18,6 +18,8 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Implemented contemporary color scheme with purple primary color
 ✓ Updated to professional green/blue corporate palette
 ✓ Created modern login layout matching provided design mockup
+✓ Redesigned login with diamond/geometric layout
+✓ Implemented teal/coral color scheme from new design mockup
 
 ## Configuração Simplificada do Supabase
 
@@ -37,20 +39,22 @@ This is a full-stack license management system built with React (frontend) and E
 - Só precisará repetir os passos 3, 4 e 5 acima
 - O arquivo `.env` já estará presente no projeto
 
-## Paleta de Cores Profissional
+## Paleta de Cores Atual (Design Diamante)
 
 ### Cores Principais
-- **Sage Green (Verde Sálvia)**: `hsl(162, 25%, 45%)` - Cor primária corporativa
-- **Slate Blue (Azul Ardósia)**: `hsl(220, 13%, 25%)` - Cor secundária/texto
-- **Warm Beige (Bege Quente)**: `hsl(40, 15%, 78%)` - Cor de destaque/botões
-- **Neutral Gray (Cinza Neutro)**: `hsl(210, 11%, 71%)` - Cor de inputs/bordas
+- **Teal (Verde-Azulado)**: `hsl(180, 25%, 45%)` - Cor primária do diamante
+- **Teal Escuro**: `hsl(180, 30%, 35%)` - Gradiente do diamante
+- **Coral**: `hsl(10, 85%, 60%)` - Botão de login
+- **Bege Claro**: `hsl(25, 15%, 85%)` - Fundo da página
+- **Cinza Escuro**: `hsl(180, 20%, 20%)` - Inputs
+- **Cinza Texto**: `hsl(180, 25%, 65%)` - Texto dos placeholders
 
 ### Aplicação no Design
-- **Fundo de Login**: Gradiente de verde sálvia
-- **Card de Login**: Azul ardósia escuro com sombras profissionais
-- **Inputs**: Cinza neutro com foco em verde sálvia
-- **Botões**: Gradiente de bege quente com hover effects
-- **Aba Superior**: Gradiente de bege com efeito 3D
+- **Fundo**: Bege claro suave
+- **Container Diamante**: Gradiente teal com rotação 45°
+- **Inputs**: Cinza escuro com ícones e placeholders em cinza claro
+- **Botão LOGIN**: Coral vibrante com hover effects
+- **Título**: Branco com espaçamento de letras aumentado
 
 ## User Preferences
 

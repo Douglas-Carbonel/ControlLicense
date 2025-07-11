@@ -30,20 +30,14 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center login-gradient px-4">
-      <div className="relative">
-        {/* Login Tab */}
-        <div className="login-tab mb-2">
-          <h1 className="text-slate-800 font-bold text-sm tracking-widest">
-            USER LOGIN
-          </h1>
-        </div>
-        
-        {/* Login Card */}
-        <div className="login-card p-6">
+      <div className="diamond-container">
+        <div className="diamond-content">
+          <h1 className="diamond-title">Customer Login</h1>
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username Field */}
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 login-icon">
+            <div className="diamond-input-wrapper">
+              <div className="diamond-input-icon">
                 <User size={16} />
               </div>
               <input
@@ -53,13 +47,13 @@ export default function Login() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={isLoading}
-                className="login-input w-full pl-10 pr-4 py-3 text-sm"
+                className="diamond-input"
               />
             </div>
 
             {/* Password Field */}
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 login-icon">
+            <div className="diamond-input-wrapper">
+              <div className="diamond-input-icon">
                 <Lock size={16} />
               </div>
               <input
@@ -69,46 +63,28 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                className="login-input w-full pl-10 pr-4 py-3 text-sm"
+                className="diamond-input"
               />
             </div>
 
-            {/* Remember Me & Login Button Row */}
-            <div className="flex items-center justify-between mt-5">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="login-checkbox w-4 h-4"
-                />
-                <label
-                  htmlFor="remember"
-                  className="text-sm login-text select-none cursor-pointer"
-                >
-                  Remember me
-                </label>
-              </div>
-              
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="login-button px-6 py-2 text-xs font-bold tracking-wide"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  "LOGIN"
-                )}
-              </button>
-            </div>
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="diamond-button"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "LOGIN"
+              )}
+            </button>
 
             {/* Error Message */}
             {error && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertDescription className="text-sm">{error}</AlertDescription>
-              </Alert>
+              <div className="mt-4 text-red-400 text-sm text-center">
+                {error}
+              </div>
             )}
           </form>
         </div>
