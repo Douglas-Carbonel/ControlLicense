@@ -171,12 +171,12 @@
 }
 
 .btn-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary;
+  @apply bg-primary text-primary-foreground hover:bg-primary hover:opacity-90 focus:ring-primary;
   box-shadow: 0 1px 2px var(--shadow);
 }
 
 .btn-secondary {
-  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary border border-outline;
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary hover:opacity-80 focus:ring-secondary border border-outline;
 }
 
 /* Professional Layout */
@@ -204,12 +204,12 @@
 }
 
 .sidebar-nav-item {
-  @apply flex items-center px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all duration-200;
+  @apply flex items-center px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary hover:bg-opacity-5 transition-all duration-200;
   @apply border-l-4 border-transparent hover:border-primary;
 }
 
 .sidebar-nav-item.active {
-  @apply text-primary bg-primary/10 border-primary;
+  @apply text-primary bg-primary bg-opacity-10 border-primary;
 }
 
 /* Dashboard Stats */
