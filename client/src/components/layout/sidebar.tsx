@@ -209,7 +209,7 @@ export default function Sidebar() {
                   {user?.name?.charAt(0) || 'A'}
                 </span>
               </div>
-              <div className="text-sm font-medium text-white">
+              <div className="text-base font-semibold text-white tracking-wide">
                 {user?.username || 'admin'}
               </div>
             </div>
