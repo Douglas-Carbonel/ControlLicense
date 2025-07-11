@@ -19,6 +19,7 @@ import NewLicenseModal from "@/components/modals/new-license-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useOptimizedState } from "@/hooks/use-optimized-state";
 
 // Define available columns
 const AVAILABLE_COLUMNS = [
@@ -507,10 +508,13 @@ export default function Licenses() {
                   <span>Exportar</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent 
+                className="sm:max-w-md"
+                description="Selecione o formato para exportar as licenças filtradas"
+              >
                 <DialogHeader>
                   <DialogTitle>Exportar Licenças</DialogTitle>
-                  <p className="text-sm text-gray-600 mt-2">
+                  <p id="dialog-description" className="text-sm text-gray-600 mt-2">
                     Exportando {filteredLicenses.length} de {licenses?.length || 0} licenças
                     {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && 
                       " (com filtros aplicados)"
@@ -556,9 +560,15 @@ export default function Licenses() {
                 <span>Configurar Colunas</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent 
+              className="max-w-md"
+              description="Configure as colunas que deseja exibir e organize a ordem"
+            >
               <DialogHeader>
                 <DialogTitle>Configurar Exibição de Colunas</DialogTitle>
+                <p id="dialog-description" className="text-sm text-gray-600 mt-2">
+                  Selecione as colunas que deseja exibir e organize a ordem
+                </p>
               </DialogHeader>
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 <p className="text-sm text-gray-600">
@@ -737,10 +747,13 @@ export default function Licenses() {
 
       {/* Modal de Edição com Abas */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg">
+        <DialogContent 
+          className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg"
+          description="Atualize as informações da licença"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Editar Licença</DialogTitle>
-            <p className="text-sm text-[#3a3a3c] mt-2">Atualize as informações da licença</p>
+            <p id="dialog-description" className="text-sm text-[#3a3a3c] mt-2">Atualize as informações da licença</p>
           </DialogHeader>
           
           {editingLicense && (
@@ -758,7 +771,10 @@ export default function Licenses() {
                     <Input
                       id="edit-codCliente"
                       value={editingLicense.codCliente || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, codCliente: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, codCliente: newValue}));
+                      }}
                       placeholder="C0001"
                     />
                   </div>
@@ -767,7 +783,10 @@ export default function Licenses() {
                     <Input
                       id="edit-nomeCliente"
                       value={editingLicense.nomeCliente || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, nomeCliente: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, nomeCliente: newValue}));
+                      }}
                       placeholder="Nome da empresa"
                     />
                   </div>
@@ -777,7 +796,10 @@ export default function Licenses() {
                   <Textarea
                     id="edit-dadosEmpresa"
                     value={editingLicense.dadosEmpresa || ''}
-                    onChange={(e) => setEditingLicense({...editingLicense, dadosEmpresa: e.target.value})}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setEditingLicense(prev => ({...prev, dadosEmpresa: newValue}));
+                    }}
                     placeholder="Informações da empresa..."
                     rows={3}
                   />
@@ -787,7 +809,10 @@ export default function Licenses() {
                   <Input
                     id="edit-listaCnpj"
                     value={editingLicense.listaCnpj || ''}
-                    onChange={(e) => setEditingLicense({...editingLicense, listaCnpj: e.target.value})}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setEditingLicense(prev => ({...prev, listaCnpj: newValue}));
+                    }}
                     placeholder="12.345.678/0001-90"
                   />
                 </div>
@@ -800,7 +825,10 @@ export default function Licenses() {
                     <Input
                       id="edit-hardwareKey"
                       value={editingLicense.hardwareKey || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, hardwareKey: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, hardwareKey: newValue}));
+                      }}
                       placeholder="ABC123XYZ"
                     />
                   </div>
@@ -809,7 +837,10 @@ export default function Licenses() {
                     <Input
                       id="edit-installNumber"
                       value={editingLicense.installNumber || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, installNumber: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, installNumber: newValue}));
+                      }}
                       placeholder="123456789"
                     />
                   </div>
@@ -818,7 +849,10 @@ export default function Licenses() {
                     <Input
                       id="edit-systemNumber"
                       value={editingLicense.systemNumber || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, systemNumber: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, systemNumber: newValue}));
+                      }}
                       placeholder="000000000312513489"
                     />
                   </div>
@@ -827,7 +861,10 @@ export default function Licenses() {
                     <Input
                       id="edit-nomeDb"
                       value={editingLicense.nomeDb || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, nomeDb: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, nomeDb: newValue}));
+                      }}
                       placeholder="SBO_EMPRESA"
                     />
                   </div>
@@ -837,7 +874,10 @@ export default function Licenses() {
                   <Textarea
                     id="edit-descDb"
                     value={editingLicense.descDb || ''}
-                    onChange={(e) => setEditingLicense({...editingLicense, descDb: e.target.value})}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setEditingLicense(prev => ({...prev, descDb: newValue}));
+                    }}
                     placeholder="Base de produção..."
                     rows={3}
                   />
@@ -848,7 +888,10 @@ export default function Licenses() {
                     <Input
                       id="edit-endApi"
                       value={editingLicense.endApi || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, endApi: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, endApi: newValue}));
+                      }}
                       placeholder="http://servidor:8090/SBO_DB/DWUAPI"
                     />
                   </div>
@@ -857,7 +900,10 @@ export default function Licenses() {
                     <Input
                       id="edit-versaoSap"
                       value={editingLicense.versaoSap || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, versaoSap: e.target.value})}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setEditingLicense(prev => ({...prev, versaoSap: newValue}));
+                      }}
                       placeholder="1000230"
                     />
                   </div>
@@ -869,7 +915,9 @@ export default function Licenses() {
                   <Switch
                     id="edit-ativo"
                     checked={editingLicense.ativo}
-                    onCheckedChange={(checked) => setEditingLicense({...editingLicense, ativo: checked})}
+                    onCheckedChange={(checked) => {
+                      setEditingLicense(prev => ({...prev, ativo: checked}));
+                    }}
                   />
                   <Label htmlFor="edit-ativo">Licença Ativa</Label>
                 </div>
@@ -880,7 +928,10 @@ export default function Licenses() {
                       id="edit-qtLicencas"
                       type="number"
                       value={editingLicense.qtLicencas || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, qtLicencas: parseInt(e.target.value) || 0})}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value) || 0;
+                        setEditingLicense(prev => ({...prev, qtLicencas: newValue}));
+                      }}
                       placeholder="1"
                     />
                   </div>
@@ -890,7 +941,10 @@ export default function Licenses() {
                       id="edit-qtLicencasAdicionais"
                       type="number"
                       value={editingLicense.qtLicencasAdicionais || ''}
-                      onChange={(e) => setEditingLicense({...editingLicense, qtLicencasAdicionais: parseInt(e.target.value) || 0})}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value) || 0;
+                        setEditingLicense(prev => ({...prev, qtLicencasAdicionais: newValue}));
+                      }}
                       placeholder="0"
                     />
                   </div>
@@ -900,7 +954,10 @@ export default function Licenses() {
                   <Textarea
                     id="edit-observacao"
                     value={editingLicense.observacao || ''}
-                    onChange={(e) => setEditingLicense({...editingLicense, observacao: e.target.value})}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setEditingLicense(prev => ({...prev, observacao: newValue}));
+                    }}
                     placeholder="Observações adicionais..."
                     rows={4}
                   />

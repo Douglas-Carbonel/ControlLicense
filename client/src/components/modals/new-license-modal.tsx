@@ -91,10 +91,13 @@ export default function NewLicenseModal() {
           Nova Licença
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] bg-white border border-[#e0e0e0] shadow-lg">
+      <DialogContent 
+        className="sm:max-w-[600px] bg-white border border-[#e0e0e0] shadow-lg"
+        description="Preencha os dados para criar uma nova licença"
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Nova Licença</DialogTitle>
-          <p className="text-sm text-[#3a3a3c] mt-2">Preencha os dados para criar uma nova licença</p>
+          <p id="dialog-description" className="text-sm text-[#3a3a3c] mt-2">Preencha os dados para criar uma nova licença</p>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
