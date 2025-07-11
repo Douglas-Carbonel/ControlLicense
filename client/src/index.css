@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Performance optimizations */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optimize animations and transitions */
+.transition-all {
+  transition-property: all;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimize form inputs */
+input, textarea, select {
+  will-change: transform;
+}
+
+/* Optimize modal and dialog animations */
+[data-state="open"] {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+
+[data-state="closed"] {
+  animation-duration: 150ms;
+  animation-timing-function: ease-in;
+}
+
 :root {
   /* DW IT Solutions Official Corporate Palette */
   --background: #f4f4f4;

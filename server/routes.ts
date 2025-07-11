@@ -526,10 +526,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   async function processImportData(records: any[]): Promise<number> {
     let importedCount = 0;
+    const batchSize = 50; // Processar em lotes menores para melhor performance
     
-    for (const record of records) {
-      try {
-        // Clean numeric values
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      
+      for (const record of batch) {
+        try {
+          // Clean numeric values
         const linha = parseInt(record.Linha || record.linha || "1");
         const qtLicencas = parseInt(record["Qt. Licen�as"] || record["Qt. Licenças"] || record["Qt. Licen?as"] || record.qtLicencas || record.qt_licencas || "1");
         
@@ -560,8 +564,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (importedCount % 50 === 0) {
           console.log(`Imported ${importedCount} records so far...`);
         }
-      } catch (error) {
-        console.error("Failed to import record:", record.Code || record.code || 'unknown', error.message);
+        } catch (error) {
+          console.error("Failed to import record:", record.Code || record.code || 'unknown', error.message);
+        }
       }
     }
     

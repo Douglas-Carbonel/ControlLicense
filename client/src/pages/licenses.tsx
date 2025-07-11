@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { ptBR } from "date-fns/locale";
 import NewLicenseModal from "@/components/modals/new-license-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useDebounce } from "@/hooks/use-debounce";
 
 // Define available columns
 const AVAILABLE_COLUMNS = [
@@ -53,6 +54,9 @@ export default function Licenses() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Debounce search term para melhor performance
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: licenses, isLoading } = useQuery({
     queryKey: ["/api", "licenses"],
@@ -112,46 +116,51 @@ export default function Licenses() {
     return ativo ? "Ativa" : "Inativa";
   };
 
-  const filteredLicenses = licenses?.filter((license: any) => {
-    // Global search filter
-    const globalMatch = searchTerm === "" || 
-      license.nomeCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      license.codCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      license.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      license.hardwareKey?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Memoizar filtros para melhor performance
+  const filteredLicenses = useMemo(() => {
+    if (!licenses) return [];
+    
+    return licenses.filter((license: any) => {
+      // Global search filter usando termo com debounce
+      const globalMatch = debouncedSearchTerm === "" || 
+        license.nomeCliente?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        license.codCliente?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        license.code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        license.hardwareKey?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
-    // Column-specific filters
-    const columnMatch = Object.entries(columnFilters).every(([columnId, filterValue]) => {
-      if (!filterValue) return true;
-      
-      const licenseValue = license[columnId];
-      if (licenseValue === null || licenseValue === undefined) return false;
-      
-      switch (columnId) {
-        case 'ativo':
-          const statusText = licenseValue ? 'ativo' : 'inativo';
-          return statusText.toLowerCase().includes(filterValue.toLowerCase());
-        case 'qtLicencas':
-        case 'qtLicencasAdicionais':
-          return licenseValue.toString() === filterValue;
-        default:
-          return licenseValue.toString().toLowerCase().includes(filterValue.toLowerCase());
-      }
+      // Column-specific filters
+      const columnMatch = Object.entries(columnFilters).every(([columnId, filterValue]) => {
+        if (!filterValue) return true;
+        
+        const licenseValue = license[columnId];
+        if (licenseValue === null || licenseValue === undefined) return false;
+        
+        switch (columnId) {
+          case 'ativo':
+            const statusText = licenseValue ? 'ativo' : 'inativo';
+            return statusText.toLowerCase().includes(filterValue.toLowerCase());
+          case 'qtLicencas':
+          case 'qtLicencasAdicionais':
+            return licenseValue.toString() === filterValue;
+          default:
+            return licenseValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+        }
+      });
+
+      return globalMatch && columnMatch;
     });
+  }, [licenses, debouncedSearchTerm, columnFilters]);
 
-    return globalMatch && columnMatch;
-  }) || [];
-
-  const handleDelete = (id: number) => {
+  const handleDelete = useCallback((id: number) => {
     if (confirm("Tem certeza que deseja excluir esta licença?")) {
       deleteMutation.mutate(id);
     }
-  };
+  }, [deleteMutation]);
 
-  const handleEdit = (license: any) => {
+  const handleEdit = useCallback((license: any) => {
     setEditingLicense({ ...license });
     setIsEditModalOpen(true);
-  };
+  }, []);
 
   const handleUpdateLicense = () => {
     if (editingLicense) {
@@ -162,14 +171,14 @@ export default function Licenses() {
     }
   };
 
-  const copyToClipboard = (text: string, field: string) => {
+  const copyToClipboard = useCallback((text: string, field: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({
         title: "Copiado!",
         description: `${field} copiado para a área de transferência`,
       });
     });
-  };
+  }, [toast]);
 
   const copyFullRow = (license: any) => {
     const rowData = [

@@ -49,9 +49,19 @@ export default function NewLicenseModal() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api", "licenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api", "licenses", "stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api", "activities"] });
+      // Invalidar queries de forma mais eficiente
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api", "licenses"],
+        refetchType: 'active' // Só refetch se a query estiver ativa
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api", "licenses", "stats"],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api", "activities"],
+        refetchType: 'active'
+      });
       toast({
         title: "Sucesso",
         description: "Licença criada com sucesso!",
@@ -59,7 +69,8 @@ export default function NewLicenseModal() {
       setOpen(false);
       form.reset();
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Erro ao criar licença:', error);
       toast({
         title: "Erro",
         description: "Erro ao criar licença. Tente novamente.",

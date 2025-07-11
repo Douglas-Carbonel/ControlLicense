@@ -200,18 +200,19 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: false,
-      staleTime: 10 * 60 * 1000, // 10 minutos - mais tempo para evitar requests desnecessários
-      cacheTime: 15 * 60 * 1000, // 15 minutos de cache
+      staleTime: 5 * 60 * 1000, // 5 minutos para manter dados frescos
+      gcTime: 10 * 60 * 1000, // 10 minutos de garbage collection
       retry: (failureCount, error) => {
         if (error && error.message.includes('401')) {
           return false;
         }
-        return failureCount < 1; // Reduzir tentativas
+        return failureCount < 2; // Máximo 2 tentativas
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
+      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 2000), // Delays mais rápidos
     },
     mutations: {
       retry: false,
+      networkMode: 'online', // Só executa se online
     },
   },
 });
