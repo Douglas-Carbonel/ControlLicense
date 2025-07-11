@@ -83,20 +83,11 @@ export default function Licenses() {
   // Debounce otimizado para 300ms para busca server-side
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: licensesResponse, isLoading } = useQuery({
-    queryKey: ["/api", "licenses", currentPage, pageSize, debouncedSearchTerm],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: pageSize.toString(),
-        search: debouncedSearchTerm || '',
-      });
-      return await apiRequest("GET", `/api/licenses?${params}`);
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+  const { data: licensesResponse, isLoading, error, refetch } = useQuery({
+    queryKey: [`/api/licenses?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(debouncedSearchTerm)}`],
+    staleTime: 30 * 1000,
+    gcTime: 2 * 60 * 1000,
+    retry: 2,
   });
 
   const licenses = licensesResponse?.data || [];
@@ -109,31 +100,7 @@ export default function Licenses() {
     hasPrev: false
   };
 
-  console.log('Licenses Debug:', { 
-    licensesResponse, 
-    licenses, 
-    pagination,
-    filteredLicenses: licenses.filter((license: any) => {
-      const columnMatch = Object.entries(columnFilters).every(([columnId, filterValue]) => {
-        if (!filterValue) return true;
-        
-        const licenseValue = license[columnId];
-        if (licenseValue === null || licenseValue === undefined) return false;
-        
-        switch (columnId) {
-          case 'ativo':
-            const statusText = licenseValue ? 'ativo' : 'inativo';
-            return statusText.toLowerCase().includes(filterValue.toLowerCase());
-          case 'qtLicencas':
-          case 'qtLicencasAdicionais':
-            return licenseValue.toString() === filterValue;
-          default:
-            return licenseValue.toString().toLowerCase().includes(filterValue.toLowerCase());
-        }
-      });
-      return columnMatch;
-    })
-  });
+  // Debug removido - dados carregando corretamente
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -424,6 +391,28 @@ export default function Licenses() {
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">
+              <p>Erro ao carregar licenças: {error.message}</p>
+              <Button 
+                onClick={() => refetch()} 
+                variant="outline" 
+                className="mt-2"
+              >
+                Tentar Novamente
+              </Button>
+            </div>
+          ) : !licensesResponse || Object.keys(licensesResponse).length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>Carregando dados...</p>
+              <Button 
+                onClick={() => refetch()} 
+                variant="outline" 
+                className="mt-2"
+              >
+                Recarregar
+              </Button>
             </div>
           ) : (
             <div className="w-full relative">
