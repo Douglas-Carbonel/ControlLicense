@@ -18,12 +18,12 @@ function isTokenExpiringSoon(token: string): boolean {
     const exp = payload.exp * 1000; // Converter para millisegundos
     const now = Date.now();
     const timeUntilExpiration = exp - now;
-
+    
     // Debug: Log do tempo restante apenas se próximo do vencimento
     if (timeUntilExpiration < 2 * 60 * 60 * 1000) {
       console.log('Token expira em:', Math.round(timeUntilExpiration / 1000 / 60), 'minutos');
     }
-
+    
     // Renovar se expira em menos de 2 horas (mais agressivo)
     return timeUntilExpiration < 2 * 60 * 60 * 1000;
   } catch (error) {
@@ -86,7 +86,7 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   let token = localStorage.getItem("token");
-
+  
   // Verificar se o token está próximo do vencimento e renovar preventivamente
   if (token && isTokenExpiringSoon(token)) {
     const newToken = await renewTokenIfNeeded();
@@ -94,7 +94,7 @@ export async function apiRequest(
       token = newToken;
     }
   }
-
+  
   // Primeira tentativa
   let res = await fetch(url, {
     method,
@@ -134,7 +134,7 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     let token = localStorage.getItem("token");
-
+    
     // Debug: verificar se o token existe
     if (!token) {
       console.error('Token não encontrado no localStorage');
@@ -144,7 +144,7 @@ export const getQueryFn: <T>(options: {
       window.location.reload();
       return null;
     }
-
+    
     // Verificar se o token está próximo do vencimento e renovar preventivamente
     if (token && isTokenExpiringSoon(token)) {
       const newToken = await renewTokenIfNeeded();
@@ -152,7 +152,7 @@ export const getQueryFn: <T>(options: {
         token = newToken;
       }
     }
-
+    
     // Primeira tentativa
     let res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
@@ -182,7 +182,7 @@ export const getQueryFn: <T>(options: {
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }
-
+      
       // Recarregar a página para forçar novo login
       window.location.reload();
       return null;
@@ -195,20 +195,24 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000, // 2 minutes for more responsiveness
-      gcTime: 5 * 60 * 1000, // 5 minutes
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000, // 5 minutos para manter dados frescos
+      gcTime: 10 * 60 * 1000, // 10 minutos de garbage collection
       retry: (failureCount, error) => {
-        if (error instanceof Error && error.message.includes('401')) {
+        if (error && error.message.includes('401')) {
           return false;
         }
-        return failureCount < 1; // Reduced retries
+        return failureCount < 2; // Máximo 2 tentativas
       },
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      refetchOnMount: 'always',
+      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 2000), // Delays mais rápidos
     },
     mutations: {
-      retry: 0, // No retries for mutations
+      retry: false,
+      networkMode: 'online', // Só executa se online
     },
   },
 });
