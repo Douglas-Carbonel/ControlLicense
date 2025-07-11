@@ -210,7 +210,7 @@ export default function Sidebar() {
                 </span>
               </div>
               <div className="text-sm font-medium text-white">
-                Usuário
+                {user?.username || 'admin'}
               </div>
             </div>
           )}
