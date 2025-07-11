@@ -147,53 +147,53 @@ export default function Licenses() {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-              <Table className="relative">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm" style={{maxWidth: '100vw'}}>
+              <Table className="w-full table-fixed" style={{minWidth: '1800px'}}>
                 <TableHeader>
                   <TableRow className="border-gray-200 bg-gray-50">
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[100px] sticky left-0 bg-gray-50 z-10">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[100px] sticky left-0 bg-gray-50 z-10 border-r">
                       Cód. Cliente
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-16">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[60px] text-center">
                       Linha
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-20">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[80px] text-center">
                       Status
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[180px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[180px]">
                       Nome do Cliente
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-20 text-center">
-                      Qt. Lic.
-                    </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[140px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[150px]">
                       Dados da Empresa
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[180px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[180px]">
                       Hardware Key
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[120px]">
                       Install Number
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[120px]">
                       System Number
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[120px]">
                       Nome DB
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[120px]">
                       Desc. DB
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[160px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[160px]">
                       End. API
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[140px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[140px]">
                       Lista de CNPJ
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[100px]">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[80px] text-center">
+                      Qt. Lic.
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[100px]">
                       Versão SAP
                     </TableHead>
-                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-20 sticky right-0 bg-gray-50 z-10">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-[100px] sticky right-0 bg-gray-50 z-10 border-l text-center">
                       Ações
                     </TableHead>
                   </TableRow>
