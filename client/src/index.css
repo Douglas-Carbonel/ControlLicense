@@ -181,6 +181,9 @@
   text-transform: uppercase;
   margin: 20px auto 0;
   box-shadow: 0 2px 8px rgba(93, 173, 226, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .diamond-button:hover {
