@@ -109,6 +109,32 @@ export default function Licenses() {
     hasPrev: false
   };
 
+  console.log('Licenses Debug:', { 
+    licensesResponse, 
+    licenses, 
+    pagination,
+    filteredLicenses: licenses.filter((license: any) => {
+      const columnMatch = Object.entries(columnFilters).every(([columnId, filterValue]) => {
+        if (!filterValue) return true;
+        
+        const licenseValue = license[columnId];
+        if (licenseValue === null || licenseValue === undefined) return false;
+        
+        switch (columnId) {
+          case 'ativo':
+            const statusText = licenseValue ? 'ativo' : 'inativo';
+            return statusText.toLowerCase().includes(filterValue.toLowerCase());
+          case 'qtLicencas':
+          case 'qtLicencasAdicionais':
+            return licenseValue.toString() === filterValue;
+          default:
+            return licenseValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+        }
+      });
+      return columnMatch;
+    })
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/licenses/${id}`);
