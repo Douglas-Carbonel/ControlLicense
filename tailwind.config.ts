@@ -51,6 +51,15 @@ export default {
           "4": "var(--chart-4)",
           "5": "var(--chart-5)",
         },
+        surface: {
+          DEFAULT: "var(--surface)",
+          variant: "var(--surface-variant)",
+        },
+        success: "var(--success)",
+        warning: "var(--warning)",
+        info: "var(--info)",
+        outline: "var(--outline)",
+        shadow: "var(--shadow)",
         sidebar: {
           DEFAULT: "var(--sidebar-background)",
           foreground: "var(--sidebar-foreground)",
