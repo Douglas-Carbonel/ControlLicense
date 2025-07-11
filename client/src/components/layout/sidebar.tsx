@@ -215,14 +215,25 @@ export default function Sidebar() {
             </div>
           )}
           
-          {/* Logout Button */}
-          <button
-            onClick={logout}
-            className={`group ${isCollapsed ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br from-red-500/20 to-red-600/20 hover:from-red-500/30 hover:to-red-600/30 rounded-xl flex items-center justify-center border border-red-500/30 hover:border-red-400/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transform hover:scale-105 active:scale-95`}
-            title="Sair do Sistema"
-          >
-            <LogOut className="w-4 h-4 text-red-300 group-hover:text-red-200 transition-colors duration-300" />
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2">
+            {/* Settings Button */}
+            <button
+              className={`group ${isCollapsed ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br from-[#3a3a3c]/40 to-[#3a3a3c]/20 hover:from-[#0095da]/20 hover:to-[#0075b0]/20 rounded-xl flex items-center justify-center border border-[#3a3a3c]/50 hover:border-[#0095da]/40 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#0095da]/10 transform hover:scale-105 active:scale-95`}
+              title="Configurações"
+            >
+              <Settings className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-colors duration-300" />
+            </button>
+            
+            {/* Logout Button */}
+            <button
+              onClick={logout}
+              className={`group ${isCollapsed ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br from-red-500/20 to-red-600/20 hover:from-red-500/30 hover:to-red-600/30 rounded-xl flex items-center justify-center border border-red-500/30 hover:border-red-400/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transform hover:scale-105 active:scale-95`}
+              title="Sair do Sistema"
+            >
+              <LogOut className="w-4 h-4 text-red-300 group-hover:text-red-200 transition-colors duration-300" />
+            </button>
+          </div>
         </div>
       </div>
     </aside>
