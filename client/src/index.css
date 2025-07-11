@@ -496,6 +496,62 @@
   box-shadow: 0 4px 12px rgba(93, 173, 226, 0.3);
 }
 
+/* Botões de Ação Secundária (Configurar, Exportar, Filtrar, etc.) */
+.btn-action {
+  background: #F8F9FA;
+  color: #6C757D;
+  border: 1px solid #DEE2E6;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 3px rgba(108, 117, 125, 0.15);
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.btn-action:hover {
+  background: #FFFFFF;
+  color: #495057;
+  border-color: #ADB5BD;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(108, 117, 125, 0.25);
+}
+
+.btn-action:focus {
+  ring: 2px solid rgba(108, 117, 125, 0.3);
+  ring-offset: 2px;
+}
+
+.btn-action:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(108, 117, 125, 0.2);
+}
+
+/* Variante para botões de ação com ícone */
+.btn-action-icon {
+  background: #F8F9FA;
+  color: #6C757D;
+  border: 1px solid #DEE2E6;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(108, 117, 125, 0.15);
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.btn-action-icon:hover {
+  background: #FFFFFF;
+  color: #495057;
+  border-color: #ADB5BD;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(108, 117, 125, 0.25);
+}
+
 /* Professional Layout */
 .professional-container {
   @apply max-w-7xl mx-auto px-6 py-8;
