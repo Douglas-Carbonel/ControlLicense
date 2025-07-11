@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useCallback, memo, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,19 +40,33 @@ const AVAILABLE_COLUMNS = [
   { id: 'acoes', label: 'Ações', width: '100px', sticky: 'right' }
 ];
 
-// Componente memoizado para inputs otimizados
-const OptimizedInput = memo(({ value, onChange, placeholder, id }: any) => {
+// Componente input otimizado para evitar travadas
+const OptimizedInput = memo(({ value, onChange, placeholder, id, type = "text" }: {
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  id?: string;
+  type?: string;
+}) => {
   return (
     <Input
       id={id}
+      type={type}
       value={value || ''}
       onChange={onChange}
       placeholder={placeholder}
+      className="transition-none"
     />
   );
 });
 
-const OptimizedTextarea = memo(({ value, onChange, placeholder, id, rows }: any) => {
+const OptimizedTextarea = memo(({ value, onChange, placeholder, id, rows }: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+  id?: string;
+  rows?: number;
+}) => {
   return (
     <Textarea
       id={id}
@@ -59,6 +74,7 @@ const OptimizedTextarea = memo(({ value, onChange, placeholder, id, rows }: any)
       onChange={onChange}
       placeholder={placeholder}
       rows={rows}
+      className="transition-none resize-none"
     />
   );
 });
@@ -80,10 +96,10 @@ export default function Licenses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debounce otimizado para 300ms para busca server-side
+  // Debounce search with shorter delay for better responsiveness
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Combinar filtros de coluna com busca global para nova query
+  // Memoize combined search to prevent re-computation
   const combinedSearch = useMemo(() => {
     const columnSearches = Object.entries(columnFilters)
       .filter(([_, value]) => value !== "")
@@ -93,8 +109,14 @@ export default function Licenses() {
     return [debouncedSearchTerm, columnSearches].filter(Boolean).join(" ");
   }, [debouncedSearchTerm, columnFilters]);
 
+  // Query key memoization
+  const queryKey = useMemo(() => 
+    `/api/licenses?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(combinedSearch)}`,
+    [currentPage, pageSize, combinedSearch]
+  );
+
   const { data: licensesResponse, isLoading, error, refetch } = useQuery({
-    queryKey: [`/api/licenses?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(combinedSearch)}`],
+    queryKey: [queryKey],
     staleTime: 30 * 1000,
     gcTime: 2 * 60 * 1000,
     retry: 2,
@@ -110,16 +132,14 @@ export default function Licenses() {
     hasPrev: false
   };
 
-  // Debug removido - dados carregando corretamente
-
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/licenses/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api", "licenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api", "licenses", "stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api", "activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
         title: "Sucesso",
         description: "Licença excluída com sucesso!",
@@ -139,9 +159,9 @@ export default function Licenses() {
       return await apiRequest("PUT", `/api/licenses/${data.id}`, data.license);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api", "licenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api", "licenses", "stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api", "activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
         title: "Sucesso",
         description: "Licença atualizada com sucesso!",
@@ -166,7 +186,6 @@ export default function Licenses() {
     return ativo ? "Ativa" : "Inativa";
   };
 
-  // Usar todos os dados retornados (já filtrados no backend)
   const filteredLicenses = licenses;
 
   const handleDelete = useCallback((id: number) => {
@@ -189,12 +208,15 @@ export default function Licenses() {
     }
   }, [editingLicense, updateMutation]);
 
-  // Otimizar onChange para evitar re-renders
-  const handleEditingLicenseChange = useCallback((field: string, value: any) => {
-    setEditingLicense((prev: any) => ({
-      ...prev,
-      [field]: value
-    }));
+  // Simplified field change handler to prevent re-renders
+  const handleFieldChange = useCallback((field: string, value: any) => {
+    setEditingLicense((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
   }, []);
 
   const copyToClipboard = useCallback((text: string, field: string) => {
@@ -211,7 +233,7 @@ export default function Licenses() {
       ...prev,
       [columnId]: value
     }));
-    setCurrentPage(1); // Reset para página 1 quando filtrar
+    setCurrentPage(1);
   }, []);
 
   const clearAllFilters = useCallback(() => {
@@ -220,7 +242,7 @@ export default function Licenses() {
     setCurrentPage(1);
   }, []);
 
-  // Controles de paginação
+  // Pagination handlers
   const goToPage = useCallback((page: number) => {
     setCurrentPage(page);
   }, []);
@@ -245,7 +267,6 @@ export default function Licenses() {
     }
   }, [pagination.hasPrev]);
 
-  // Reset página quando busca muda
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
@@ -266,7 +287,7 @@ export default function Licenses() {
     );
   }, []);
 
-  // Renderização otimizada das células
+  // Optimized cell content rendering
   const renderCellContent = useCallback((license: any, column: any) => {
     const value = license[column.id];
 
@@ -380,7 +401,7 @@ export default function Licenses() {
             </div>
           ) : error ? (
             <div className="text-center py-8 text-red-500">
-              <p>Erro ao carregar licenças: {error.message}</p>
+              <p>Erro ao carregar licenças: {(error as Error).message}</p>
               <Button 
                 onClick={() => refetch()} 
                 variant="outline" 
@@ -469,7 +490,7 @@ export default function Licenses() {
             </div>
           )}
           
-          {/* Componente de Paginação */}
+          {/* Paginação */}
           {!isLoading && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -547,7 +568,7 @@ export default function Licenses() {
         </CardContent>
       </Card>
 
-      {/* Modal de Edição continua igual... */}
+      {/* Modal de Edição Otimizado */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent 
           className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg"
@@ -572,8 +593,8 @@ export default function Licenses() {
                     <Label htmlFor="edit-codCliente">Código do Cliente</Label>
                     <OptimizedInput
                       id="edit-codCliente"
-                      value={editingLicense.codCliente}
-                      onChange={(e: any) => handleEditingLicenseChange('codCliente', e.target.value)}
+                      value={editingLicense.codCliente || ''}
+                      onChange={(e) => handleFieldChange('codCliente', e.target.value)}
                       placeholder="C0001"
                     />
                   </div>
@@ -581,8 +602,8 @@ export default function Licenses() {
                     <Label htmlFor="edit-nomeCliente">Nome do Cliente</Label>
                     <OptimizedInput
                       id="edit-nomeCliente"
-                      value={editingLicense.nomeCliente}
-                      onChange={(e: any) => handleEditingLicenseChange('nomeCliente', e.target.value)}
+                      value={editingLicense.nomeCliente || ''}
+                      onChange={(e) => handleFieldChange('nomeCliente', e.target.value)}
                       placeholder="Nome da empresa"
                     />
                   </div>
@@ -591,8 +612,8 @@ export default function Licenses() {
                   <Label htmlFor="edit-dadosEmpresa">Dados da Empresa</Label>
                   <OptimizedTextarea
                     id="edit-dadosEmpresa"
-                    value={editingLicense.dadosEmpresa}
-                    onChange={(e: any) => handleEditingLicenseChange('dadosEmpresa', e.target.value)}
+                    value={editingLicense.dadosEmpresa || ''}
+                    onChange={(e) => handleFieldChange('dadosEmpresa', e.target.value)}
                     placeholder="Informações da empresa..."
                     rows={3}
                   />
@@ -601,8 +622,8 @@ export default function Licenses() {
                   <Label htmlFor="edit-listaCnpj">Lista de CNPJ</Label>
                   <OptimizedInput
                     id="edit-listaCnpj"
-                    value={editingLicense.listaCnpj}
-                    onChange={(e: any) => handleEditingLicenseChange('listaCnpj', e.target.value)}
+                    value={editingLicense.listaCnpj || ''}
+                    onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
                     placeholder="12.345.678/0001-90"
                   />
                 </div>
@@ -615,7 +636,7 @@ export default function Licenses() {
                     <OptimizedInput
                       id="edit-nomeDb"
                       value={editingLicense.nomeDb || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('nomeDb', e.target.value)}
+                      onChange={(e) => handleFieldChange('nomeDb', e.target.value)}
                       placeholder="SBODemo_BR"
                     />
                   </div>
@@ -624,7 +645,7 @@ export default function Licenses() {
                     <OptimizedInput
                       id="edit-descDb"
                       value={editingLicense.descDb || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('descDb', e.target.value)}
+                      onChange={(e) => handleFieldChange('descDb', e.target.value)}
                       placeholder="Base de Teste"
                     />
                   </div>
@@ -634,7 +655,7 @@ export default function Licenses() {
                   <OptimizedInput
                     id="edit-endApi"
                     value={editingLicense.endApi || ''}
-                    onChange={(e: any) => handleEditingLicenseChange('endApi', e.target.value)}
+                    onChange={(e) => handleFieldChange('endApi', e.target.value)}
                     placeholder="http://api.exemplo.com:8099/Database/API"
                   />
                 </div>
@@ -647,7 +668,7 @@ export default function Licenses() {
                     <OptimizedInput
                       id="edit-hardwareKey"
                       value={editingLicense.hardwareKey || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('hardwareKey', e.target.value)}
+                      onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
                       placeholder="D0950733748"
                     />
                   </div>
@@ -656,7 +677,7 @@ export default function Licenses() {
                     <OptimizedInput
                       id="edit-installNumber"
                       value={editingLicense.installNumber || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('installNumber', e.target.value)}
+                      onChange={(e) => handleFieldChange('installNumber', e.target.value)}
                       placeholder="0090289858"
                     />
                   </div>
@@ -667,7 +688,7 @@ export default function Licenses() {
                     <OptimizedInput
                       id="edit-systemNumber"
                       value={editingLicense.systemNumber || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('systemNumber', e.target.value)}
+                      onChange={(e) => handleFieldChange('systemNumber', e.target.value)}
                       placeholder="000000000850521388"
                     />
                   </div>
@@ -676,7 +697,7 @@ export default function Licenses() {
                     <OptimizedInput
                       id="edit-versaoSap"
                       value={editingLicense.versaoSap || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('versaoSap', e.target.value)}
+                      onChange={(e) => handleFieldChange('versaoSap', e.target.value)}
                       placeholder="9.3"
                     />
                   </div>
@@ -688,7 +709,7 @@ export default function Licenses() {
                       id="edit-qtLicencas"
                       type="number"
                       value={editingLicense.qtLicencas || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('qtLicencas', parseInt(e.target.value) || 0)}
+                      onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
                       placeholder="1"
                     />
                   </div>
@@ -698,7 +719,7 @@ export default function Licenses() {
                       id="edit-qtLicencasAdicionais"
                       type="number"
                       value={editingLicense.qtLicencasAdicionais || ''}
-                      onChange={(e: any) => handleEditingLicenseChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
+                      onChange={(e) => handleFieldChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
                       placeholder="0"
                     />
                   </div>
@@ -708,7 +729,7 @@ export default function Licenses() {
                   <OptimizedTextarea
                     id="edit-observacao"
                     value={editingLicense.observacao || ''}
-                    onChange={(e: any) => handleEditingLicenseChange('observacao', e.target.value)}
+                    onChange={(e) => handleFieldChange('observacao', e.target.value)}
                     placeholder="Observações sobre a licença..."
                     rows={3}
                   />
@@ -718,7 +739,7 @@ export default function Licenses() {
                     type="checkbox"
                     id="edit-ativo"
                     checked={editingLicense.ativo || false}
-                    onChange={(e) => handleEditingLicenseChange('ativo', e.target.checked)}
+                    onChange={(e) => handleFieldChange('ativo', e.target.checked)}
                     className="w-4 h-4 text-[#0095da] bg-gray-100 border-gray-300 rounded focus:ring-[#0095da] focus:ring-2"
                   />
                   <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#3a3a3c]">
