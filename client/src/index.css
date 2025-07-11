@@ -4,36 +4,36 @@
 
 :root {
   /* Professional Green/Blue Corporate Palette */
-  --background: hsl(25, 15%, 85%);
-  --foreground: hsl(180, 20%, 20%);
-  --muted: hsl(210, 11%, 96%);
-  --muted-foreground: hsl(215, 8%, 47%);
+  --background: #D4C5B9;
+  --foreground: #2F4C4C;
+  --muted: #E0D6CA;
+  --muted-foreground: #4A5A5A;
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(180, 20%, 20%);
+  --popover-foreground: #2F4C4C;
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(180, 20%, 20%);
+  --card-foreground: #2F4C4C;
   --border: hsl(214.3, 31.8%, 91.4%);
   --input: hsl(214.3, 31.8%, 91.4%);
-  --primary: hsl(180, 25%, 45%);
+  --primary: #8FA9A3;
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(210, 11%, 96%);
-  --secondary-foreground: hsl(180, 20%, 20%);
-  --accent: hsl(210, 11%, 96%);
-  --accent-foreground: hsl(180, 20%, 20%);
-  --destructive: hsl(10, 85%, 60%);
+  --secondary-foreground: #2F4C4C;
+  --accent: #8FA9A3;
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: #FF6B5B;
   --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(180, 25%, 45%);
+  --ring: #8FA9A3;
   --radius: 0.5rem;
   
-  /* Diamond Login Palette - Extracted from Image */
-  --diamond-bg: hsl(25, 15%, 85%);
-  --diamond-teal: hsl(180, 25%, 45%);
-  --diamond-teal-dark: hsl(180, 30%, 35%);
-  --diamond-gray: hsl(180, 15%, 25%);
-  --diamond-coral: hsl(10, 85%, 60%);
-  --diamond-input: hsl(180, 20%, 20%);
-  --diamond-text: hsl(180, 25%, 65%);
-  --diamond-shadow: hsl(180, 30%, 35%, 0.3);
+  /* Diamond Login Palette - Cores exatas da imagem */
+  --diamond-bg: #D4C5B9;
+  --diamond-teal: #8FA9A3;
+  --diamond-teal-dark: #4D726C;
+  --diamond-gray: #2F4C4C;
+  --diamond-coral: #FF6B5B;
+  --diamond-input: #1F2D2D;
+  --diamond-text: #8FA9A3;
+  --diamond-shadow: rgba(77, 114, 108, 0.3);
 }
 
 .dark {
