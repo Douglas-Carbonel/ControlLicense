@@ -90,7 +90,7 @@ export default function Licenses() {
       license.qtLicencas || '',
       license.versaoSap || ''
     ].join('\t');
-    
+
     navigator.clipboard.writeText(rowData).then(() => {
       toast({
         title: "Linha copiada!",
