@@ -108,7 +108,9 @@
 }
 
 .license-code {
-  @apply inline-flex items-center font-mono text-sm font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20;
+  @apply inline-flex items-center font-mono text-sm font-semibold text-primary px-3 py-1.5 rounded-lg;
+  background-color: hsl(var(--primary) / 0.1);
+  border: 1px solid hsl(var(--primary) / 0.2);
   box-shadow: 0 1px 2px var(--shadow);
 }
 
