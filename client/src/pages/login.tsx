@@ -32,19 +32,19 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center login-gradient px-4">
       <div className="relative">
         {/* Login Tab */}
-        <div className="login-tab px-8 py-3 mb-4 rounded-t-lg">
-          <h1 className="text-slate-800 font-semibold text-lg tracking-wide">
+        <div className="login-tab mb-2">
+          <h1 className="text-slate-800 font-bold text-sm tracking-widest">
             USER LOGIN
           </h1>
         </div>
         
         {/* Login Card */}
-        <div className="login-card p-8 w-full max-w-md min-w-[400px]">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="login-card p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username Field */}
             <div className="relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 login-icon">
-                <User size={18} />
+                <User size={16} />
               </div>
               <input
                 type="text"
@@ -60,7 +60,7 @@ export default function Login() {
             {/* Password Field */}
             <div className="relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 login-icon">
-                <Lock size={18} />
+                <Lock size={16} />
               </div>
               <input
                 type="password"
@@ -74,13 +74,14 @@ export default function Login() {
             </div>
 
             {/* Remember Me & Login Button Row */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-5">
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id="remember"
                   checked={rememberMe}
-                  onCheckedChange={setRememberMe}
-                  className="border-neutral-gray data-[state=checked]:bg-sage-green data-[state=checked]:border-sage-green"
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="login-checkbox w-4 h-4"
                 />
                 <label
                   htmlFor="remember"
@@ -90,17 +91,17 @@ export default function Login() {
                 </label>
               </div>
               
-              <Button
+              <button
                 type="submit"
                 disabled={isLoading}
-                className="login-button px-8 py-2 text-sm font-semibold"
+                className="login-button px-6 py-2 text-xs font-bold tracking-wide"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   "LOGIN"
                 )}
-              </Button>
+              </button>
             </div>
 
             {/* Error Message */}
