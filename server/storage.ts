@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+// Carrega variáveis do arquivo .env
+dotenv.config();
+
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { licenses, activities, users, type License, type InsertLicense, type Activity, type InsertActivity, type User, type InsertUser } from "@shared/schema";

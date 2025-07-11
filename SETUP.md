@@ -1,17 +1,24 @@
 # Configuração do Sistema de Gerenciamento de Licenças
 
-## 1. Configuração do Banco de Dados
+## 1. Configuração do Banco de Dados Supabase
 
-### Opção A: Usar Supabase (Recomendado)
+### Método 1: Usando arquivo .env (Recomendado)
 1. Acesse https://supabase.com/dashboard/projects
 2. Crie um novo projeto ou use um existente
 3. Vá para a seção "Connect"
 4. Copie a URI em "Connection string" → "Transaction pooler"
 5. Substitua `[YOUR-PASSWORD]` pela senha do seu projeto
-6. Configure a variável de ambiente `SUPABASE_DATABASE_URL` no Replit
+6. **Edite o arquivo `.env`** na raiz do projeto e cole sua URL:
+   ```
+   SUPABASE_DATABASE_URL=postgresql://postgres:sua_senha@db.seu-projeto.supabase.co:5432/postgres
+   ```
+7. Salve o arquivo
 
-### Opção B: Usar PostgreSQL Local do Replit
-Se não configurar a variável SUPABASE_DATABASE_URL, o sistema usará automaticamente o PostgreSQL local do Replit.
+### Método 2: Variável de Ambiente do Replit
+Se preferir, configure a variável `SUPABASE_DATABASE_URL` diretamente no Replit.
+
+### Fallback: PostgreSQL Local
+Se nenhuma das opções acima for configurada, o sistema usará o PostgreSQL local do Replit.
 
 ## 2. Inicialização do Banco de Dados
 

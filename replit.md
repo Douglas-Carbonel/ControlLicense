@@ -17,19 +17,23 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Enhanced dashboard with modern card layouts and improved table design
 ✓ Implemented contemporary color scheme with purple primary color
 
-## Importante: Configuração do Supabase
+## Configuração Simplificada do Supabase
 
-Sempre que importar este projeto para um novo ambiente Replit, será necessário configurar a variável de ambiente `SUPABASE_DATABASE_URL` com a URL de conexão do seu projeto Supabase. Isso é necessário por questões de segurança - credenciais não são salvas no código.
+**Novidade**: Agora o sistema carrega automaticamente as configurações do arquivo `.env`!
 
-Para configurar:
+### Primeira configuração (uma vez por projeto):
 1. Acesse o dashboard do Supabase (https://supabase.com/dashboard/projects)
-2. Vá para o seu projeto
-3. Clique em "Connect"
-4. Copie a URI em "Connection string" → "Transaction pooler"
-5. Substitua `[YOUR-PASSWORD]` pela senha do seu banco
-6. Configure esta URL como variável de ambiente no Replit
+2. Copie a URI de conexão do seu projeto
+3. **Edite o arquivo `.env`** e substitua pela sua URL:
+   ```
+   SUPABASE_DATABASE_URL=postgresql://postgres:sua_senha@db.seu-projeto.supabase.co:5432/postgres
+   ```
+4. Execute `npm run db:push` para criar as tabelas
+5. Execute `npx tsx create-admin.ts` para criar os usuários
 
-O sistema funcionará automaticamente com PostgreSQL local se a variável SUPABASE_DATABASE_URL não estiver configurada.
+### Importações futuras:
+- Só precisará repetir os passos 3, 4 e 5 acima
+- O arquivo `.env` já estará presente no projeto
 
 ## User Preferences
 

@@ -1,6 +1,10 @@
 
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import dotenv from "dotenv";
+// Carrega variáveis do arquivo .env
+dotenv.config();
+
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { users } from "./shared/schema";
 import bcrypt from "bcryptjs";
 
@@ -9,8 +13,8 @@ if (!connectionString) {
   throw new Error("SUPABASE_DATABASE_URL or DATABASE_URL is not set");
 }
 
-const sql = neon(connectionString);
-const db = drizzle(sql);
+const client = postgres(connectionString);
+const db = drizzle(client);
 
 async function createAdmin() {
   try {
