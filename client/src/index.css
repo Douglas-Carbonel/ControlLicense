@@ -73,13 +73,9 @@
   --shadow: hsl(0, 0%, 0%, 0.3);
 }
 
-/* Diamond Login Design System */
+/* Diamond Login Design System - Baseado na imagem original */
 .login-gradient {
-  background: linear-gradient(135deg, 
-    hsl(30, 20%, 88%) 0%, 
-    hsl(25, 15%, 85%) 50%,
-    hsl(20, 10%, 82%) 100%
-  );
+  background: #D4C5B9;
 }
 
 .diamond-container {
@@ -87,16 +83,17 @@
   height: 400px;
   transform: rotate(45deg);
   background: linear-gradient(135deg, 
-    hsl(180, 20%, 50%) 0%, 
-    hsl(180, 25%, 45%) 25%,
-    hsl(180, 30%, 40%) 50%,
-    hsl(180, 35%, 35%) 75%,
-    hsl(180, 40%, 30%) 100%
+    #7A9B9B 0%, 
+    #6B8E8E 20%,
+    #5C8080 40%,
+    #4D7373 60%,
+    #3E6565 80%,
+    #2F5858 100%
   );
-  border-radius: 20px;
+  border-radius: 0px;
   box-shadow: 
-    0 20px 40px hsla(180, 30%, 35%, 0.3),
-    0 10px 20px hsla(180, 30%, 35%, 0.2);
+    0 20px 40px rgba(47, 88, 88, 0.4),
+    0 10px 20px rgba(47, 88, 88, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -111,19 +108,19 @@
 }
 
 .diamond-title {
-  color: white;
-  font-size: 14px;
-  font-weight: 400;
-  letter-spacing: 2px;
-  margin-bottom: 30px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 3px;
+  margin-bottom: 40px;
   text-transform: uppercase;
 }
 
 .diamond-input {
-  background: hsl(180, 20%, 20%);
+  background: #2F3D3D;
   border: none;
-  border-radius: 4px;
-  color: hsl(180, 25%, 65%);
+  border-radius: 2px;
+  color: #A0B5B5;
   font-weight: 400;
   transition: all 0.2s ease;
   height: 45px;
@@ -131,17 +128,19 @@
   padding: 0 15px 0 40px;
   margin-bottom: 15px;
   font-size: 14px;
+  border-bottom: 1px solid #4A5A5A;
 }
 
 .diamond-input::placeholder {
-  color: hsl(180, 25%, 65%);
+  color: #A0B5B5;
   font-weight: 400;
 }
 
 .diamond-input:focus {
   outline: none;
-  background: hsl(180, 20%, 18%);
+  background: #253030;
   color: white;
+  border-bottom: 1px solid #7A9B9B;
 }
 
 .diamond-input-wrapper {
@@ -154,27 +153,27 @@
   left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: hsl(180, 25%, 65%);
+  color: #7A9B9B;
   z-index: 1;
 }
 
 .diamond-button {
-  background: hsl(10, 85%, 60%);
+  background: #FF6B5B;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   transition: all 0.2s ease;
   width: 100%;
   height: 45px;
-  font-size: 14px;
+  font-size: 12px;
   text-transform: uppercase;
-  margin-top: 10px;
+  margin-top: 20px;
 }
 
 .diamond-button:hover {
-  background: hsl(10, 85%, 55%);
+  background: #FF5A49;
   transform: translateY(-1px);
 }
 
