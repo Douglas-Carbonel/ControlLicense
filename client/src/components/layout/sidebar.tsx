@@ -199,11 +199,11 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* User Profile Section - Modern Footer */}
+      {/* User Profile Section - Simple Footer with Logout */}
       <div className="p-6 border-t border-[#3a3a3c]/30 bg-gradient-to-b from-[#2a3548]/30 to-[#313d5a]/60 backdrop-blur-sm">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className={`group w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'} p-4 rounded-2xl bg-gradient-to-r from-[#3a3a3c]/40 via-[#3a3a3c]/30 to-[#3a3a3c]/40 backdrop-blur-md border border-[#3a3a3c]/60 hover:border-[#0095da]/40 hover:bg-gradient-to-r hover:from-[#0095da]/10 hover:to-[#0075b0]/10 transition-all duration-500 shadow-lg hover:shadow-xl hover:shadow-[#0095da]/10 transform hover:scale-[1.02] active:scale-[0.98]`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          {!isCollapsed && (
+            <div className="flex items-center space-x-4">
               <div className="relative">
                 <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/20 relative overflow-hidden">
                   {/* Modern background pattern */}
@@ -218,70 +218,34 @@ export default function Sidebar() {
                     {user?.name?.charAt(0) || 'A'}
                   </span>
                   {/* Animated shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-2xl"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000 rounded-2xl"></div>
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] shadow-lg flex items-center justify-center">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse shadow-inner"></div>
                 </div>
               </div>
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="text-sm font-bold text-white truncate leading-tight mb-1">
-                    {user?.name || 'Administrador'}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-xs bg-gradient-to-r from-[#0095da]/20 to-[#0075b0]/20 text-white border-[#0095da]/50 backdrop-blur-sm shadow-sm">
-                        {user?.role === 'admin' ? 'Admin' : 'Técnico'}
-                      </Badge>
-                    </div>
-                    <ChevronUp className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-all duration-300 group-hover:transform group-hover:scale-110" />
-                  </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-sm font-bold text-white truncate leading-tight mb-1">
+                  {user?.name || 'Administrador'}
                 </div>
-              )}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            side="top" 
-            align="start" 
-            className={`${isCollapsed ? 'w-64' : 'w-[280px]'} bg-gradient-to-b from-[#2a3548] to-[#313d5a] backdrop-blur-md border border-[#3a3a3c]/60 shadow-2xl shadow-black/40 mb-2 rounded-2xl text-white`}
-            sideOffset={8}
-          >
-            <DropdownMenuLabel className="text-white p-4 border-b border-[#3a3a3c]/30">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-lg border-2 border-white/20">
-                  <span className="text-white text-lg font-bold drop-shadow-lg">
-                    {user?.name?.charAt(0) || 'A'}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-bold text-base text-white">{user?.name || 'Administrador'}</div>
-                  <div className="text-sm text-[#a1b3d3] font-normal">
-                    {user?.role === 'admin' ? 'Administrador do Sistema' : 'Técnico de Suporte'}
-                  </div>
-                  <div className="text-xs text-[#a1b3d3]/70 font-medium mt-1">
-                    {user?.email || 'admin@sistema.com'}
-                  </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="text-xs bg-gradient-to-r from-[#0095da]/20 to-[#0075b0]/20 text-white border-[#0095da]/50 backdrop-blur-sm shadow-sm">
+                    {user?.role === 'admin' ? 'Admin' : 'Técnico'}
+                  </Badge>
                 </div>
               </div>
-            </DropdownMenuLabel>
-            <div className="p-2">
-              {user?.role === 'admin' && (
-                <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3 mb-1">
-                  <Settings className="mr-3 h-5 w-5" />
-                  <span className="font-medium">Configurações</span>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem 
-                onClick={logout}
-                className="text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-all duration-200 rounded-xl p-3"
-              >
-                <LogOut className="mr-3 h-5 w-5" />
-                <span className="font-medium">Sair do Sistema</span>
-              </DropdownMenuItem>
             </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+          
+          {/* Logout Button */}
+          <button
+            onClick={logout}
+            className={`group ${isCollapsed ? 'w-12 h-12' : 'w-11 h-11'} bg-gradient-to-br from-red-500/20 to-red-600/20 hover:from-red-500/30 hover:to-red-600/30 rounded-2xl flex items-center justify-center border border-red-500/30 hover:border-red-400/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transform hover:scale-105 active:scale-95`}
+            title="Sair do Sistema"
+          >
+            <LogOut className="w-5 h-5 text-red-300 group-hover:text-red-200 transition-colors duration-300" />
+          </button>
+        </div>
       </div>
     </aside>
   );
