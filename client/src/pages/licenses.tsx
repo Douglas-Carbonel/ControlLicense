@@ -147,225 +147,313 @@ export default function Licenses() {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+              <Table className="relative"">
                 <TableHeader>
-                  <TableRow className="border-gray-200">
-                    <TableHead className="text-gray-600 font-medium min-w-[120px]">Código do Cliente</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Linha</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Ativo</TableHead>
-                    <TableHead className="text-gray-600 font-medium min-w-[200px]">Nome do Cliente</TableHead>
-                    <TableHead className="text-gray-600 font-medium min-w-[150px]">Dados da Empresa</TableHead>
-                    <TableHead className="text-gray-600 font-medium min-w-[200px]">Hardware Key</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Install Number</TableHead>
-                    <TableHead className="text-gray-600 font-medium">System Number</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Nome DB</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Desc. DB</TableHead>
-                    <TableHead className="text-gray-600 font-medium min-w-[150px]">End.API</TableHead>
-                    <TableHead className="text-gray-600 font-medium min-w-[150px]">Lista de CNPJ</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Qt.Licenças</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Versão SAP</TableHead>
-                    <TableHead className="text-gray-600 font-medium">Ações</TableHead>
+                  <TableRow className="border-gray-200 bg-gray-50">
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[100px] sticky left-0 bg-gray-50 z-10">
+                      Cód. Cliente
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-16">
+                      Linha
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-20">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[180px]">
+                      Nome do Cliente
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-20 text-center">
+                      Qt. Lic.
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[140px]">
+                      Dados da Empresa
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[180px]">
+                      Hardware Key
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                      Install Number
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                      System Number
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                      Nome DB
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[120px]">
+                      Desc. DB
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[160px]">
+                      End. API
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[140px]">
+                      Lista de CNPJ
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[100px]">
+                      Versão SAP
+                    </TableHead>
+                    <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide w-20 sticky right-0 bg-gray-50 z-10">
+                      Ações
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredLicenses.map((license: any) => (
-                    <TableRow key={license.id} className="border-gray-200 hover:bg-gray-50">
-                      <TableCell>
+                    <TableRow key={license.id} className="border-gray-200 hover:bg-gray-50/50 transition-colors">
+                      {/* Código do Cliente - Sticky */}
+                      <TableCell className="sticky left-0 bg-white group-hover:bg-gray-50/50 z-10 border-r border-gray-200">
                         <div className="flex items-center justify-between group">
-                          <span className="text-sm font-mono text-gray-900">{license.codCliente || 'N/A'}</span>
+                          <span className="text-sm font-mono font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                            {license.codCliente || 'N/A'}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
                             onClick={() => copyToClipboard(license.codCliente || '', 'Código do Cliente')}
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.linha || 'N/A'}</span>
+
+                      {/* Linha */}
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center group">
+                          <span className="text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                            {license.linha || 'N/A'}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
                             onClick={() => copyToClipboard(license.linha || '', 'Linha')}
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
                       </TableCell>
+
+                      {/* Status */}
                       <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <Badge variant={getStatusVariant(license.ativo)} className={license.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        <div className="flex items-center group">
+                          <Badge 
+                            variant={getStatusVariant(license.ativo)} 
+                            className={`${license.ativo ? "bg-green-100 text-green-800 border-green-200" : "bg-red-100 text-red-800 border-red-200"} text-xs font-medium px-2 py-1`}
+                          >
                             {license.ativo ? "Ativo" : "Inativo"}
                           </Badge>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
                             onClick={() => copyToClipboard(license.ativo ? 'Ativo' : 'Inativo', 'Status')}
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
                       </TableCell>
+
+                      {/* Nome do Cliente */}
                       <TableCell>
                         <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.nomeCliente || 'N/A'}</span>
+                          <span className="text-sm text-gray-900 font-medium truncate">
+                            {license.nomeCliente || 'N/A'}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
                             onClick={() => copyToClipboard(license.nomeCliente || '', 'Nome do Cliente')}
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.dadosEmpresa || 'N/A'}</span>
+
+                      {/* Quantidade de Licenças */}
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center group">
+                          <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                            {license.qtLicencas || '0'}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.dadosEmpresa || '', 'Dados da Empresa')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm font-mono text-gray-900 truncate">{license.hardwareKey || 'N/A'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.hardwareKey || '', 'Hardware Key')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.installNumber || 'N/A'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.installNumber || '', 'Install Number')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.systemNumber || 'N/A'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.systemNumber || '', 'System Number')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.nomeDb || 'N/A'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.nomeDb || '', 'Nome DB')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.descDb || 'N/A'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.descDb || '', 'Desc. DB')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900 truncate">{license.endApi || 'N/A'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.endApi || '', 'End.API')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.listaCpnj || 'N/A'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
-                            onClick={() => copyToClipboard(license.listaCpnj || '', 'Lista de CNPJ')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm font-medium text-gray-900">{license.qtLicencas || '0'}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
                             onClick={() => copyToClipboard(license.qtLicencas?.toString() || '0', 'Qt.Licenças')}
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
                       </TableCell>
+
+                      {/* Dados da Empresa */}
                       <TableCell>
                         <div className="flex items-center justify-between group">
-                          <span className="text-sm text-gray-900">{license.versaoSap || 'N/A'}</span>
+                          <span className="text-sm text-gray-600 truncate">
+                            {license.dadosEmpresa || 'N/A'}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.dadosEmpresa || '', 'Dados da Empresa')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* Hardware Key */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded border truncate max-w-[150px]">
+                            {license.hardwareKey || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.hardwareKey || '', 'Hardware Key')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* Install Number */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-gray-600 font-mono">
+                            {license.installNumber || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.installNumber || '', 'Install Number')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* System Number */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-gray-600 font-mono">
+                            {license.systemNumber || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.systemNumber || '', 'System Number')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* Nome DB */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-gray-600">
+                            {license.nomeDb || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.nomeDb || '', 'Nome DB')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* Desc. DB */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-gray-600">
+                            {license.descDb || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.descDb || '', 'Desc. DB')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* End. API */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-gray-600 truncate max-w-[140px]">
+                            {license.endApi || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.endApi || '', 'End.API')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* Lista de CNPJ */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-gray-600 font-mono">
+                            {license.listaCnpj || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
+                            onClick={() => copyToClipboard(license.listaCnpj || '', 'Lista de CNPJ')}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      {/* Versão SAP */}
+                      <TableCell>
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-gray-600">
+                            {license.versaoSap || 'N/A'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 p-1 h-6 w-6 ml-1"
                             onClick={() => copyToClipboard(license.versaoSap || '', 'Versão SAP')}
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
+
+                      {/* Ações - Sticky */}
+                      <TableCell className="sticky right-0 bg-white group-hover:bg-gray-50/50 z-10 border-l border-gray-200">
+                        <div className="flex items-center justify-center space-x-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                             onClick={() => copyFullRow(license)}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
+                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600 hover:bg-gray-100">
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button 
@@ -373,7 +461,7 @@ export default function Licenses() {
                             size="sm"
                             onClick={() => handleDelete(license.id)}
                             disabled={deleteMutation.isPending}
-                            className="text-gray-400 hover:text-red-600"
+                            className="text-gray-400 hover:text-red-600 hover:bg-red-50"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
