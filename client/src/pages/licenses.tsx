@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,63 +147,63 @@ export default function Licenses() {
               ))}
             </div>
           ) : (
-            <div className="w-full">
-              <div className="overflow-auto max-h-[70vh] border rounded-lg" style={{ maxWidth: '100vw' }}>
-                <table className="w-full border-collapse bg-white" style={{ minWidth: '2000px' }}>
-                  <thead className="sticky top-0 z-20 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+            <div className="w-full relative">
+              <div className="overflow-auto max-h-[70vh] border rounded-lg license-table-container" style={{ maxWidth: '100vw' }}>
+                <table className="license-table" style={{ minWidth: '2000px' }}>
+                  <thead>
                     <tr>
-                      <th className="sticky left-0 z-30 bg-gray-50 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 min-w-[120px]">
+                      <th className="license-sticky-left">
                         Código Cliente
                       </th>
-                      <th className="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 w-16">
+                      <th className="license-header">
                         Linha
                       </th>
-                      <th className="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 w-20">
+                      <th className="license-header">
                         Ativo
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[180px]">
+                      <th className="license-header" style={{ minWidth: '180px' }}>
                         Nome do Cliente
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[150px]">
+                      <th className="license-header" style={{ minWidth: '150px' }}>
                         Dados Empresa
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[160px]">
+                      <th className="license-header" style={{ minWidth: '160px' }}>
                         Hardware Key
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[120px]">
+                      <th className="license-header" style={{ minWidth: '120px' }}>
                         Install Number
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[120px]">
+                      <th className="license-header" style={{ minWidth: '120px' }}>
                         System Number
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[120px]">
+                      <th className="license-header" style={{ minWidth: '120px' }}>
                         Nome DB
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[120px]">
+                      <th className="license-header" style={{ minWidth: '120px' }}>
                         Desc. DB
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[140px]">
+                      <th className="license-header" style={{ minWidth: '140px' }}>
                         End. API
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[130px]">
+                      <th className="license-header" style={{ minWidth: '130px' }}>
                         Lista CNPJ
                       </th>
-                      <th className="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 w-20">
+                      <th className="license-header" style={{ width: '80px' }}>
                         Qt.Lic.
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200 min-w-[100px]">
+                      <th className="license-header" style={{ minWidth: '100px' }}>
                         Versão SAP
                       </th>
-                      <th className="sticky right-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-l border-gray-300 w-24">
+                      <th className="license-sticky-right">
                         Ações
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody>
                     {filteredLicenses.map((license: any, index: number) => (
                       <tr key={license.id} className={`hover:bg-gray-50/80 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
                         {/* Código do Cliente - Sticky */}
-                        <td className="sticky left-0 z-20 bg-inherit px-4 py-3 border-r border-gray-300">
+                        <td className="license-sticky-left">
                           <div className="flex items-center group">
                             <span className="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
                               {license.codCliente || 'N/A'}
@@ -221,7 +220,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Linha */}
-                        <td className="px-3 py-3 text-center border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center justify-center group">
                             <span className="text-sm font-medium text-gray-800 bg-gray-100 px-2 py-1 rounded-full">
                               {license.linha || 'N/A'}
@@ -238,7 +237,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Status */}
-                        <td className="px-3 py-3 text-center border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center justify-center group">
                             <Badge 
                               variant={getStatusVariant(license.ativo)} 
@@ -258,7 +257,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Nome do Cliente */}
-                        <td className="px-4 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-sm font-medium text-gray-900 truncate max-w-[160px]" title={license.nomeCliente || 'N/A'}>
                               {license.nomeCliente || 'N/A'}
@@ -275,7 +274,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Dados da Empresa */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs text-gray-600 truncate max-w-[130px]" title={license.dadosEmpresa || 'N/A'}>
                               {license.dadosEmpresa || 'N/A'}
@@ -292,7 +291,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Hardware Key */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded border truncate max-w-[140px]" title={license.hardwareKey || 'N/A'}>
                               {license.hardwareKey || 'N/A'}
@@ -309,7 +308,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Install Number */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs font-mono text-gray-600">
                               {license.installNumber || 'N/A'}
@@ -326,7 +325,7 @@ export default function Licenses() {
                         </td>
 
                         {/* System Number */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs font-mono text-gray-600">
                               {license.systemNumber || 'N/A'}
@@ -343,7 +342,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Nome DB */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs text-gray-600 truncate max-w-[100px]" title={license.nomeDb || 'N/A'}>
                               {license.nomeDb || 'N/A'}
@@ -360,7 +359,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Desc. DB */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs text-gray-600 truncate max-w-[100px]" title={license.descDb || 'N/A'}>
                               {license.descDb || 'N/A'}
@@ -377,7 +376,7 @@ export default function Licenses() {
                         </td>
 
                         {/* End. API */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs text-gray-600 truncate max-w-[120px]" title={license.endApi || 'N/A'}>
                               {license.endApi || 'N/A'}
@@ -394,7 +393,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Lista de CNPJ */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs font-mono text-gray-600 truncate max-w-[110px]" title={license.listaCnpj || 'N/A'}>
                               {license.listaCnpj || 'N/A'}
@@ -411,7 +410,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Quantidade de Licenças */}
-                        <td className="px-3 py-3 text-center border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center justify-center group">
                             <span className="text-sm font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full border border-blue-200">
                               {license.qtLicencas || '0'}
@@ -428,7 +427,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Versão SAP */}
-                        <td className="px-3 py-3 border-r border-gray-200">
+                        <td className="license-cell">
                           <div className="flex items-center group">
                             <span className="text-xs text-gray-600">
                               {license.versaoSap || 'N/A'}
@@ -445,7 +444,7 @@ export default function Licenses() {
                         </td>
 
                         {/* Ações - Sticky */}
-                        <td className="sticky right-0 z-20 bg-inherit px-3 py-3 border-l border-gray-300">
+                        <td className="license-sticky-right">
                           <div className="flex items-center justify-center space-x-1">
                             <Button
                               variant="ghost"

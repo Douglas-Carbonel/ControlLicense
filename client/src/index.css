@@ -89,55 +89,93 @@
 
 /* Enhanced License Table Styles */
 .license-table {
-  @apply w-full border-collapse;
+  @apply w-full border-collapse bg-white;
+  border-spacing: 0;
 }
 
 .license-table thead {
   background: linear-gradient(to right, hsl(var(--primary) / 0.05), hsl(var(--primary) / 0.1));
 }
 
-.license-table thead th {
-  @apply text-xs font-semibold text-primary uppercase tracking-wider px-4 py-3 border-b border-gray-200;
+/* Header styles */
+.license-header {
+  @apply text-xs font-bold text-gray-700 uppercase tracking-wider px-3 py-3 border-b-2 border-gray-200 border-r border-gray-200;
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 15;
+  background: linear-gradient(to right, hsl(var(--primary) / 0.05), hsl(var(--primary) / 0.1));
+  text-align: left;
 }
 
-.license-table tbody tr {
-  @apply transition-all duration-200 hover:shadow-sm border-b border-gray-100;
+.license-sticky-left {
+  @apply text-xs font-bold text-gray-700 uppercase tracking-wider px-4 py-3 border-b-2 border-gray-200 border-r border-gray-300;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 25;
+  background: hsl(var(--primary) / 0.08);
+  min-width: 120px;
+  text-align: left;
 }
 
-.license-table tbody tr:hover {
-  background-color: hsl(var(--primary) / 0.03);
+.license-sticky-right {
+  @apply text-xs font-bold text-gray-700 uppercase tracking-wider px-3 py-3 border-b-2 border-gray-200 border-l border-gray-300;
+  position: sticky;
+  top: 0;
+  right: 0;
+  z-index: 25;
+  background: hsl(var(--primary) / 0.08);
+  width: 100px;
+  text-align: center;
 }
 
-.license-table tbody td {
-  @apply px-3 py-3 text-sm text-foreground align-middle;
+/* Row styles */
+.license-row {
+  @apply transition-all duration-150 border-b border-gray-100;
+  background-color: white;
+}
+
+.license-row:nth-child(even) {
+  background-color: hsl(var(--primary) / 0.02);
+}
+
+.license-row:hover {
+  background-color: hsl(var(--primary) / 0.05) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Cell styles */
+.license-cell {
+  @apply px-3 py-3 text-sm text-foreground align-middle border-r border-gray-200;
   min-height: 48px;
+  background: inherit;
 }
 
-/* Sticky columns */
-.license-table tbody td:first-child,
-.license-table thead th:first-child {
+.license-cell-sticky-left {
+  @apply px-4 py-3 text-sm text-foreground align-middle border-r border-gray-300;
   position: sticky;
   left: 0;
-  z-index: 10;
-  background: white;
-  border-right: 1px solid hsl(var(--border));
+  z-index: 20;
+  background: inherit;
+  min-width: 120px;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
-.license-table tbody td:last-child,
-.license-table thead th:last-child {
+.license-cell-sticky-right {
+  @apply px-3 py-3 text-sm text-foreground align-middle border-l border-gray-300;
   position: sticky;
   right: 0;
-  z-index: 10;
-  background: white;
-  border-left: 1px solid hsl(var(--border));
+  z-index: 20;
+  background: inherit;
+  width: 100px;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
-.license-table tbody tr:hover td:first-child,
-.license-table tbody tr:hover td:last-child {
-  background-color: hsl(var(--primary) / 0.03);
+/* Ensure sticky cells inherit hover background */
+.license-row:hover .license-cell-sticky-left,
+.license-row:hover .license-cell-sticky-right {
+  background-color: hsl(var(--primary) / 0.05) !important;
 }
 
 /* Custom scrollbar for table */
