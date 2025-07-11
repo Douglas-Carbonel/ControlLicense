@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, CheckCircle, XCircle, Clock } from "lucide-react";
+import { memo } from "react";
 
 interface StatsCardsProps {
   stats: {
@@ -12,7 +13,7 @@ interface StatsCardsProps {
   isLoading?: boolean;
 }
 
-export default function StatsCards({ stats, isLoading = false }: StatsCardsProps) {
+function StatsCards({ stats, isLoading = false }: StatsCardsProps) {
   // Provide default values if stats is undefined
   const safeStats = stats || {
     total: 0,
@@ -82,3 +83,5 @@ export default function StatsCards({ stats, isLoading = false }: StatsCardsProps
     </div>
   );
 }
+
+export default memo(StatsCards);

@@ -19,58 +19,69 @@ import {
   User
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { useState } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-export default function Sidebar() {
+function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const navigationItems = [];
+  const navigationItems = useMemo(() => {
+    const items = [];
 
   // Usuários técnicos só podem ver licenças
-  if (user?.role === 'support') {
-    navigationItems.push({ 
-      href: "/licenses", 
-      label: "Licenças", 
-      icon: FileText,
-      description: "Gerenciar licenças"
-    });
-  } else {
-    // Administradores podem ver tudo
-    navigationItems.push(
-      { 
-        href: "/", 
-        label: "Painel", 
-        icon: Home,
-        description: "Visão geral do sistema"
-      },
-      { 
+    if (user?.role === 'support') {
+      items.push({ 
         href: "/licenses", 
         label: "Licenças", 
         icon: FileText,
         description: "Gerenciar licenças"
-      },
-      { 
-        href: "/activities", 
-        label: "Atividades", 
-        icon: Activity,
-        description: "Histórico de ações"
-      }
-    );
-
-    // Adicionar item de usuários apenas para administradores
-    if (user?.role === 'admin') {
-      navigationItems.push({
-        href: "/users",
-        label: "Usuários",
-        icon: Users,
-        description: "Gerenciar usuários"
       });
+    } else {
+      // Administradores podem ver tudo
+      items.push(
+        { 
+          href: "/", 
+          label: "Painel", 
+          icon: Home,
+          description: "Visão geral do sistema"
+        },
+        { 
+          href: "/licenses", 
+          label: "Licenças", 
+          icon: FileText,
+          description: "Gerenciar licenças"
+        },
+        { 
+          href: "/activities", 
+          label: "Atividades", 
+          icon: Activity,
+          description: "Histórico de ações"
+        }
+      );
+
+      // Adicionar item de usuários apenas para administradores
+      if (user?.role === 'admin') {
+        items.push({
+          href: "/users",
+          label: "Usuários",
+          icon: Users,
+          description: "Gerenciar usuários"
+        });
+      }
     }
-  }
+    return items;
+  }, [user?.role]);
+
+  const handleToggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    logout();
+  }, [logout]);
 
   const getCurrentPageTitle = () => {
     // You can implement logic here to determine the current page title
@@ -85,7 +96,7 @@ export default function Sidebar() {
       <div className={`${isCollapsed ? 'p-4' : 'p-8'} border-b border-[#3a3a3c]/30 relative transition-all duration-300`}>
         {/* Collapse Toggle Button */}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={handleToggleCollapse}
           className={`absolute ${isCollapsed ? 'top-20 left-1/2 transform -translate-x-1/2' : 'top-4 right-4'} w-8 h-8 bg-[#3a3a3c]/50 hover:bg-[#3a3a3c]/80 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105 z-10`}
         >
           {isCollapsed ? (
@@ -256,7 +267,7 @@ export default function Sidebar() {
 
             {/* Logout Button */}
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className={`group ${isCollapsed ? 'w-10 h-10' : 'w-10 h-10'} bg-gradient-to-br from-red-500/20 to-red-600/20 hover:from-red-500/30 hover:to-red-600/30 rounded-xl flex items-center justify-center border border-red-500/30 hover:border-red-400/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transform hover:scale-105 active:scale-95`}
               title="Sair do Sistema"
             >
@@ -268,3 +279,5 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+export default memo(Sidebar);

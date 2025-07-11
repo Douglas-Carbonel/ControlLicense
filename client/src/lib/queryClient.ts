@@ -196,16 +196,19 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false, // Remover refetch automático que pode causar problemas
+      refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutos
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      staleTime: 10 * 60 * 1000, // 10 minutos - mais tempo para evitar requests desnecessários
+      cacheTime: 15 * 60 * 1000, // 15 minutos de cache
       retry: (failureCount, error) => {
-        // Não fazer retry em erros de autenticação
         if (error && error.message.includes('401')) {
           return false;
         }
-        return failureCount < 2;
+        return failureCount < 1; // Reduzir tentativas
       },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
     },
     mutations: {
       retry: false,

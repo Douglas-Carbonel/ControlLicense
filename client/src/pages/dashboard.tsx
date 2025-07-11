@@ -9,7 +9,9 @@ import { useQuery } from "@tanstack/react-query";
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading, error } = useQuery({
     queryKey: ["/api", "licenses", "stats"],
-    // Usar o queryFn padrão que já tem renovação automática de token
+    staleTime: 2 * 60 * 1000, // 2 minutos para stats
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   return (
