@@ -55,71 +55,46 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-72 sidebar-professional">
+    <aside className="w-64 bg-white border-r border-gray-200 h-screen">
       <div className="p-6">
         <div className="flex items-center space-x-3 mb-8">
-          <div className="w-10 h-10 professional-gradient rounded-lg flex items-center justify-center">
-            <Shield className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-foreground">LicenseManager</h2>
-            <p className="text-xs text-muted-foreground">Sistema Profissional</p>
+            <h2 className="text-lg font-semibold text-gray-900">LicenseManager</h2>
           </div>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
             
             return (
-              <Link key={item.href} href={item.href} className={`sidebar-nav-item group ${isActive ? 'active' : ''}`}>
-                <div className="flex items-center space-x-3 flex-1">
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{item.label}</div>
-                    <div className="text-xs text-muted-foreground group-hover:text-muted-foreground/80">
-                      {item.description}
-                    </div>
-                  </div>
-                </div>
-                {isActive && (
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                )}
+              <Link key={item.href} href={item.href} className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                isActive 
+                  ? 'bg-primary text-white' 
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              }`}>
+                <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-8 pt-6 border-t border-outline">
-          <div className="professional-card bg-primary/5 border-primary/20">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-4 h-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground">Status do Sistema</div>
-                <div className="text-xs text-muted-foreground">Funcionando perfeitamente</div>
-              </div>
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <div className="mt-auto pt-6 border-t border-gray-200">
+          <div className="flex items-center px-3 py-2">
+            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+              <Database className="w-4 h-4 text-gray-600" />
             </div>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <div className="professional-card bg-muted/50">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                <Database className="w-4 h-4 text-muted-foreground" />
+            <div className="ml-3">
+              <div className="text-sm font-medium text-gray-900">
+                {user?.name || 'Administrador'}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground">Usuário</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {user?.name || 'Administrador'}
-                </div>
-                <div className="text-xs text-primary font-medium">
-                  {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
-                </div>
+              <div className="text-xs text-gray-500">
+                {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
               </div>
             </div>
           </div>

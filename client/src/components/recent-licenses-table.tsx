@@ -40,74 +40,61 @@ export default function RecentLicensesTable() {
   };
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
+    <Card className="bg-white border border-gray-200 shadow-sm">
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
-          <CardTitle>Licenças Recentes</CardTitle>
-          <Button variant="ghost" size="sm">
-            Ver todas
+          <div>
+            <CardTitle className="text-lg font-semibold text-gray-900">Recent Licenses</CardTitle>
+            <p className="text-sm text-gray-500 mt-1">Latest license registrations</p>
+          </div>
+          <Button variant="outline" size="sm">
+            Filter
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Hardware Key</TableHead>
-              <TableHead>Database</TableHead>
-              <TableHead>Qt. Licenças</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
+            <TableRow className="border-gray-200">
+              <TableHead className="text-gray-600 font-medium">USER NAME</TableHead>
+              <TableHead className="text-gray-600 font-medium">EMAIL</TableHead>
+              <TableHead className="text-gray-600 font-medium">ROLE</TableHead>
+              <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {recentLicenses.map((license: any) => (
-              <TableRow key={license.id}>
+              <TableRow key={license.id} className="border-gray-200">
                 <TableCell>
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-sm">
-                      <span className="text-white text-sm font-semibold">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-gray-600 text-sm font-medium">
                         {license.nomeCliente?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || license.codCliente?.slice(0, 2) || "??"}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-gray-900 mb-1">{license.nomeCliente || 'Nome não informado'}</div>
-                      <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md inline-block font-mono">
-                        {license.codCliente || 'Código não informado'}
+                      <div className="text-sm font-medium text-gray-900">{license.nomeCliente || 'Nome não informado'}</div>
+                      <div className="text-xs text-gray-500">
+                        ID: {license.codCliente || 'Código não informado'}
                       </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border">
-                    {license.hardwareKey || 'Não informado'}
-                  </div>
+                  <div className="text-sm text-gray-600">{license.hardwareKey || 'license@example.com'}</div>
                 </TableCell>
                 <TableCell>
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-900">{license.nomeDb || 'N/A'}</div>
-                    <div className="text-xs text-gray-500">{license.descDb || 'Descrição não informada'}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-gray-900">{license.qtLicencas || 0}</div>
-                    <div className="text-xs text-gray-500">licenças</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusVariant(license.ativo)} className="font-medium">
-                    {getStatusText(license.ativo)}
+                  <Badge variant={getStatusVariant(license.ativo)} className={license.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                    {license.ativo ? "Admin" : "User"}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
+                  <div className="flex items-center space-x-1">
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
+                      <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" className="text-gray-400 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </TableCell>

@@ -7,51 +7,43 @@ export default function Header() {
   const { logout, user } = useAuth();
 
   return (
-    <header className="bg-surface border-b border-outline professional-shadow-lg sticky top-0 z-50">
+    <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center space-x-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Buscar licenças, clientes..."
-                  className="form-input pl-10 w-80 bg-muted/50 border-outline/50"
-                />
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search"
+                className="pl-10 pr-4 py-2 w-80 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
-            </Button>
+            <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+              <Bell className="w-5 h-5" />
+            </button>
 
-            <div className="flex items-center space-x-3 px-3 py-2 bg-muted/50 rounded-lg">
-              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-primary" />
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-semibold">
+                  {user?.name?.charAt(0) || 'A'}
+                </span>
               </div>
-              <div className="hidden md:block">
-                <div className="text-sm font-medium text-foreground">
-                  {user?.name || 'Administrador'}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
-                </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-gray-900">{user?.name || 'Admin'}</span>
+                <span className="text-xs text-gray-500">{user?.role === 'admin' ? 'Administrador' : 'Técnico'}</span>
               </div>
             </div>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <button
               onClick={logout}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden md:inline ml-2">Sair</span>
-            </Button>
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>

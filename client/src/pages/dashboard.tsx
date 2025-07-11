@@ -20,21 +20,18 @@ export default function Dashboard() {
   });
 
   return (
-    <div>
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-            <p className="text-gray-600 mt-1">Visão geral do sistema de licenças</p>
-          </div>
-          <div className="flex space-x-3">
-            <ImportModal />
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
-            <NewLicenseModal />
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">License Management</h1>
+          <p className="text-gray-600 mt-1">Manage your team member and their account permissions here</p>
+        </div>
+        <div className="flex space-x-3">
+          <Button variant="outline" className="flex items-center space-x-2">
+            <Download className="h-4 w-4" />
+            <span>Export</span>
+          </Button>
+          <NewLicenseModal />
         </div>
       </div>
 
