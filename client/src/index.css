@@ -75,7 +75,7 @@
 
 /* Diamond Login Design System */
 .login-gradient {
-  background: hsl(var(--diamond-bg));
+  background: hsl(25, 15%, 85%);
 }
 
 .diamond-container {
@@ -83,13 +83,13 @@
   height: 400px;
   transform: rotate(45deg);
   background: linear-gradient(135deg, 
-    hsl(var(--diamond-teal)) 0%, 
-    hsl(var(--diamond-teal-dark)) 100%
+    hsl(180, 25%, 45%) 0%, 
+    hsl(180, 30%, 35%) 100%
   );
   border-radius: 20px;
   box-shadow: 
-    0 20px 40px hsla(var(--diamond-shadow)),
-    0 10px 20px hsla(var(--diamond-shadow));
+    0 20px 40px hsla(180, 30%, 35%, 0.3),
+    0 10px 20px hsla(180, 30%, 35%, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -113,10 +113,10 @@
 }
 
 .diamond-input {
-  background: hsl(var(--diamond-input));
+  background: hsl(180, 20%, 20%);
   border: none;
   border-radius: 4px;
-  color: hsl(var(--diamond-text));
+  color: hsl(180, 25%, 65%);
   font-weight: 400;
   transition: all 0.2s ease;
   height: 45px;
@@ -127,7 +127,7 @@
 }
 
 .diamond-input::placeholder {
-  color: hsl(var(--diamond-text));
+  color: hsl(180, 25%, 65%);
   font-weight: 400;
 }
 
@@ -147,12 +147,12 @@
   left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: hsl(var(--diamond-text));
+  color: hsl(180, 25%, 65%);
   z-index: 1;
 }
 
 .diamond-button {
-  background: hsl(var(--diamond-coral));
+  background: hsl(10, 85%, 60%);
   color: white;
   border: none;
   border-radius: 4px;

@@ -1,9 +1,5 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, User, Lock } from "lucide-react";
 
 export default function Login() {
