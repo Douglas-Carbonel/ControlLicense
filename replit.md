@@ -16,6 +16,8 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Improved header with search functionality and user profile display
 ✓ Enhanced dashboard with modern card layouts and improved table design
 ✓ Implemented contemporary color scheme with purple primary color
+✓ Updated to professional green/blue corporate palette
+✓ Created modern login layout matching provided design mockup
 
 ## Configuração Simplificada do Supabase
 
@@ -34,6 +36,21 @@ This is a full-stack license management system built with React (frontend) and E
 ### Importações futuras:
 - Só precisará repetir os passos 3, 4 e 5 acima
 - O arquivo `.env` já estará presente no projeto
+
+## Paleta de Cores Profissional
+
+### Cores Principais
+- **Sage Green (Verde Sálvia)**: `hsl(162, 25%, 45%)` - Cor primária corporativa
+- **Slate Blue (Azul Ardósia)**: `hsl(220, 13%, 25%)` - Cor secundária/texto
+- **Warm Beige (Bege Quente)**: `hsl(40, 15%, 78%)` - Cor de destaque/botões
+- **Neutral Gray (Cinza Neutro)**: `hsl(210, 11%, 71%)` - Cor de inputs/bordas
+
+### Aplicação no Design
+- **Fundo de Login**: Gradiente de verde sálvia
+- **Card de Login**: Azul ardósia escuro com sombras profissionais
+- **Inputs**: Cinza neutro com foco em verde sálvia
+- **Botões**: Gradiente de bege quente com hover effects
+- **Aba Superior**: Gradiente de bege com efeito 3D
 
 ## User Preferences
 
