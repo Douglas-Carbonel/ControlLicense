@@ -113,42 +113,28 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateLicense(id: number, data: Partial<InsertLicense>): Promise<License> {
-    const updated = await this.db
-      .update(licenses)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(licenses.id, id))
-      .returning();
-
-    if (!updated[0]) {
-      throw new Error("License not found");
-    }
-
-    return updated[0];
-  }
-
   // Métodos para usuários
   async getUsers(): Promise<User[]> {
-    return this.db.select().from(users).orderBy(users.createdAt);
+    return await db.select().from(users).orderBy(users.createdAt);
   }
 
-  async getUser(id: number): Promise<User | null> {
-    const result = await this.db.select().from(users).where(eq(users.id, id));
-    return result[0] || null;
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | null> {
-    const result = await this.db.select().from(users).where(eq(users.username, username));
-    return result[0] || null;
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
   }
 
-  async getUserByEmail(email: string): Promise<User | null> {
-    const result = await this.db.select().from(users).where(eq(users.email, email));
-    return result[0] || null;
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email));
+    return result[0];
   }
 
   async createUser(data: InsertUser): Promise<User> {
-    const created = await this.db
+    const created = await db
       .insert(users)
       .values({
         ...data,
@@ -161,7 +147,7 @@ export class DbStorage implements IStorage {
   }
 
   async updateUser(id: number, data: Partial<InsertUser>): Promise<User> {
-    const updated = await this.db
+    const updated = await db
       .update(users)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(users.id, id))
@@ -175,7 +161,7 @@ export class DbStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<void> {
-    await this.db.delete(users).where(eq(users.id, id));
+    await db.delete(users).where(eq(users.id, id));
   }
 }
 
