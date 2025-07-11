@@ -240,7 +240,7 @@ export default function UsersPage() {
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" style={{ backgroundColor: '#FF6B5B', color: 'white' }}>
               <Plus className="h-4 w-4" />
               Novo Usuário
             </Button>
@@ -312,7 +312,12 @@ export default function UsersPage() {
                 <Label htmlFor="active">Usuário Ativo</Label>
               </div>
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleCreateUser} disabled={createUserMutation.isPending}>
+                <Button 
+                  onClick={handleCreateUser} 
+                  disabled={createUserMutation.isPending}
+                  style={{ backgroundColor: '#FF6B5B', color: 'white' }}
+                  className="hover:opacity-90"
+                >
                   {createUserMutation.isPending ? "Criando..." : "Criar Usuário"}
                 </Button>
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>

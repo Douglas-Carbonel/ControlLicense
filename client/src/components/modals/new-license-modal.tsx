@@ -75,7 +75,7 @@ export default function NewLicenseModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button style={{ backgroundColor: '#FF6B5B', color: 'white' }} className="hover:opacity-90">
           <Plus className="h-4 w-4 mr-2" />
           Nova Licença
         </Button>
@@ -278,7 +278,12 @@ export default function NewLicenseModal() {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
+              <Button 
+                type="submit" 
+                disabled={createMutation.isPending}
+                style={{ backgroundColor: '#FF6B5B', color: 'white' }}
+                className="hover:opacity-90"
+              >
                 {createMutation.isPending ? "Criando..." : "Criar Licença"}
               </Button>
             </div>

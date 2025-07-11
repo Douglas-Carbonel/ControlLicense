@@ -105,6 +105,8 @@ export default function ImportModal() {
             <Button 
               onClick={handleImport} 
               disabled={!file || importMutation.isPending}
+              style={{ backgroundColor: '#FF6B5B', color: 'white' }}
+              className="hover:opacity-90"
             >
               {importMutation.isPending ? "Importando..." : "Importar"}
             </Button>
