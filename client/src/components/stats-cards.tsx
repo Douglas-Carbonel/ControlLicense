@@ -7,6 +7,7 @@ interface StatsCardsProps {
     active: number;
     inactive: number;
     expiring?: number;
+    uniqueClients?: number;
   };
   isLoading?: boolean;
 }
@@ -17,7 +18,8 @@ export default function StatsCards({ stats, isLoading = false }: StatsCardsProps
     total: 0,
     active: 0,
     inactive: 0,
-    expiring: 0
+    expiring: 0,
+    uniqueClients: 0
   };
   const cards = [
     {
@@ -45,12 +47,12 @@ export default function StatsCards({ stats, isLoading = false }: StatsCardsProps
       description: "Requerem atenção"
     },
     {
-      title: "Próximas ao Vencimento",
-      value: safeStats.expiring || 0,
+      title: "Clientes Cadastrados",
+      value: safeStats.uniqueClients || 0,
       icon: Clock,
       color: "bg-gradient-to-br from-gray-50 to-gray-100 text-[#3a3a3c]",
       iconBg: "bg-[#3a3a3c] text-white",
-      description: "Nos próximos 30 dias"
+      description: "Códigos únicos"
     },
   ];
 

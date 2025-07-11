@@ -28,7 +28,7 @@ export interface IStorage {
     total: number;
     active: number;
     inactive: number;
-    totalLicenseCount: number;
+    uniqueClients: number;
   }>;
 
   // Activity operations
@@ -77,7 +77,7 @@ export class DbStorage implements IStorage {
     total: number;
     active: number;
     inactive: number;
-    totalLicenseCount: number;
+    uniqueClients: number;
   }> {
     const [totalResult] = await db.select({ count: count() }).from(licenses);
     const [activeResult] = await db
@@ -89,18 +89,16 @@ export class DbStorage implements IStorage {
       .from(licenses)
       .where(eq(licenses.ativo, false));
 
-    // Sum all license quantities
-    const [licenseCountResult] = await db
-      .select({ 
-        total: sql<number>`COALESCE(SUM(${licenses.qtLicencas}), 0)` 
-      })
-      .from(licenses);
+    // Count unique client codes
+    const uniqueClientCodes = await db.selectDistinct({
+      code: licenses.code
+    }).from(licenses);
 
     return {
       total: totalResult.count,
       active: activeResult.count,
       inactive: inactiveResult.count,
-      totalLicenseCount: licenseCountResult.total,
+      uniqueClients: uniqueClientCodes.length,
     };
   }
 

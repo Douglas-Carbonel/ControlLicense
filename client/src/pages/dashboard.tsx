@@ -42,7 +42,7 @@ export default function Dashboard() {
       </div>
 
       <StatsCards 
-        stats={stats || { total: 0, active: 0, inactive: 0, expiring: 0 }} 
+        stats={stats || { total: 0, active: 0, inactive: 0, uniqueClients: 0 }} 
         isLoading={statsLoading} 
       />
       <RecentLicensesTable />
