@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, memo, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,23 +15,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import NewLicenseModal from "@/components/modals/new-license-modal";
+const NewLicenseModal = lazy(() => import("@/components/modals/new-license-modal"));
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useOptimizedState } from "@/hooks/use-optimized-state";
 
-// Define available columns
 const AVAILABLE_COLUMNS = [
-  { id: 'codCliente', label: 'Código Cliente', width: '120px', sticky: 'left' },
-  { id: 'ativo', label: 'Status', width: '80px' },
-  { id: 'nomeCliente', label: 'Nome do Cliente', width: '180px' },
+  { id: 'code', label: 'Código', width: '120px', sticky: 'left' },
+  { id: 'ativo', label: 'Status', width: '100px' },
+  { id: 'codCliente', label: 'Cod.Cliente', width: '120px' },
+  { id: 'nomeCliente', label: 'Cliente', width: '200px' },
   { id: 'dadosEmpresa', label: 'Dados Empresa', width: '150px' },
-  { id: 'hardwareKey', label: 'Hardware Key', width: '160px' },
-  { id: 'installNumber', label: 'Install Number', width: '120px' },
-  { id: 'systemNumber', label: 'System Number', width: '120px' },
+  { id: 'hardwareKey', label: 'Hardware Key', width: '120px' },
+  { id: 'installNumber', label: 'Install Number', width: '130px' },
+  { id: 'systemNumber', label: 'System Number', width: '150px' },
   { id: 'nomeDb', label: 'Nome DB', width: '120px' },
-  { id: 'descDb', label: 'Desc. DB', width: '120px' },
+  { id: 'descDb', label: 'Desc. DB', width: '140px' },
   { id: 'endApi', label: 'End. API', width: '140px' },
   { id: 'listaCnpj', label: 'Lista CNPJ', width: '130px' },
   { id: 'qtLicencas', label: 'Qt.Lic.', width: '80px' },
@@ -40,6 +39,30 @@ const AVAILABLE_COLUMNS = [
   { id: 'observacao', label: 'Observação', width: '120px' },
   { id: 'acoes', label: 'Ações', width: '100px', sticky: 'right' }
 ];
+
+// Componente memoizado para inputs otimizados
+const OptimizedInput = memo(({ value, onChange, placeholder, id }: any) => {
+  return (
+    <Input
+      id={id}
+      value={value || ''}
+      onChange={onChange}
+      placeholder={placeholder}
+    />
+  );
+});
+
+const OptimizedTextarea = memo(({ value, onChange, placeholder, id, rows }: any) => {
+  return (
+    <Textarea
+      id={id}
+      value={value || ''}
+      onChange={onChange}
+      placeholder={placeholder}
+      rows={rows}
+    />
+  );
+});
 
 export default function Licenses() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,11 +79,15 @@ export default function Licenses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debounce search term para melhor performance
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  // Debounce otimizado para 100ms
+  const debouncedSearchTerm = useDebounce(searchTerm, 100);
 
   const { data: licenses, isLoading } = useQuery({
     queryKey: ["/api", "licenses"],
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const deleteMutation = useMutation({
@@ -117,7 +144,7 @@ export default function Licenses() {
     return ativo ? "Ativa" : "Inativa";
   };
 
-  // Memoizar filtros para melhor performance
+  // Filtros memoizados com otimização máxima
   const filteredLicenses = useMemo(() => {
     if (!licenses) return [];
     
@@ -163,14 +190,22 @@ export default function Licenses() {
     setIsEditModalOpen(true);
   }, []);
 
-  const handleUpdateLicense = () => {
+  const handleUpdateLicense = useCallback(() => {
     if (editingLicense) {
       updateMutation.mutate({
         id: editingLicense.id,
         license: editingLicense
       });
     }
-  };
+  }, [editingLicense, updateMutation]);
+
+  // Otimizar onChange para evitar re-renders
+  const handleEditingLicenseChange = useCallback((field: string, value: any) => {
+    setEditingLicense((prev: any) => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
 
   const copyToClipboard = useCallback((text: string, field: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -181,287 +216,59 @@ export default function Licenses() {
     });
   }, [toast]);
 
-  const copyFullRow = (license: any) => {
-    const rowData = [
-      license.codCliente || '',
-      license.ativo ? 'Ativo' : 'Inativo',
-      license.nomeCliente || '',
-      license.dadosEmpresa || '',
-      license.hardwareKey || '',
-      license.installNumber || '',
-      license.systemNumber || '',
-      license.nomeDb || '',
-      license.descDb || '',
-      license.endApi || '',
-      license.listaCnpj || '',
-      license.qtLicencas || '',
-      license.qtLicencasAdicionais || '',
-      license.versaoSap || '',
-      license.observacao || ''
-    ].join('\t');
+  const updateColumnFilter = useCallback((columnId: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnId]: value
+    }));
+  }, []);
 
-    navigator.clipboard.writeText(rowData).then(() => {
-      toast({
-        title: "Linha copiada!",
-        description: "Todas as informações da licença foram copiadas",
-      });
-    });
-  };
+  const clearAllFilters = useCallback(() => {
+    setSearchTerm("");
+    setColumnFilters({});
+  }, []);
 
-  const toggleColumnVisibility = (columnId: string) => {
+  const getVisibleColumnsInOrder = useCallback(() => {
+    return columnOrder
+      .filter(colId => visibleColumns.includes(colId))
+      .map(colId => AVAILABLE_COLUMNS.find(col => col.id === colId))
+      .filter(Boolean);
+  }, [columnOrder, visibleColumns]);
+
+  const toggleColumnVisibility = useCallback((columnId: string) => {
     setVisibleColumns(prev => 
       prev.includes(columnId) 
         ? prev.filter(id => id !== columnId)
         : [...prev, columnId]
     );
-  };
+  }, []);
 
-  const moveColumn = (columnId: string, direction: 'up' | 'down') => {
-    setColumnOrder(prev => {
-      const currentIndex = prev.indexOf(columnId);
-      if (currentIndex === -1) return prev;
-      
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      if (newIndex < 0 || newIndex >= prev.length) return prev;
-      
-      const newOrder = [...prev];
-      [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
-      return newOrder;
-    });
-  };
-
-  const updateColumnFilter = (columnId: string, value: string) => {
-    setColumnFilters(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
-  };
-
-  const clearAllFilters = () => {
-    setColumnFilters({});
-    setSearchTerm("");
-  };
-
-  const exportToCSV = () => {
-    const visibleCols = getVisibleColumnsInOrder();
-    const headers = visibleCols.filter(col => col.id !== 'acoes').map(col => col.label);
-    
-    let csvContent = headers.join(';') + '\n';
-    
-    filteredLicenses.forEach((license: any) => {
-      const row = visibleCols
-        .filter(col => col.id !== 'acoes')
-        .map(col => {
-          let value = license[col.id];
-          if (col.id === 'ativo') {
-            value = value ? 'Ativo' : 'Inativo';
-          }
-          return `"${String(value || '').replace(/"/g, '""')}"`;
-        });
-      csvContent += row.join(';') + '\n';
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `licencas_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({
-      title: "Exportado!",
-      description: `${filteredLicenses.length} licenças exportadas para CSV`,
-    });
-  };
-
-  const exportToExcel = async () => {
-    // Dynamically import xlsx to avoid bundle size issues
-    const XLSX = await import('xlsx');
-    
-    const visibleCols = getVisibleColumnsInOrder();
-    const headers = visibleCols.filter(col => col.id !== 'acoes').map(col => col.label);
-    
-    const data = filteredLicenses.map((license: any) => {
-      const row: any = {};
-      visibleCols.filter(col => col.id !== 'acoes').forEach(col => {
-        let value = license[col.id];
-        if (col.id === 'ativo') {
-          value = value ? 'Ativo' : 'Inativo';
-        }
-        row[col.label] = value || '';
-      });
-      return row;
-    });
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Licenças');
-    
-    XLSX.writeFile(wb, `licencas_${new Date().toISOString().split('T')[0]}.xlsx`);
-
-    toast({
-      title: "Exportado!",
-      description: `${filteredLicenses.length} licenças exportadas para Excel`,
-    });
-  };
-
-  const getVisibleColumnsInOrder = () => {
-    return columnOrder
-      .filter(colId => visibleColumns.includes(colId))
-      .map(colId => AVAILABLE_COLUMNS.find(col => col.id === colId))
-      .filter(Boolean);
-  };
-
-  const renderCellContent = (license: any, column: any) => {
+  // Renderização otimizada das células
+  const renderCellContent = useCallback((license: any, column: any) => {
     const value = license[column.id];
-    
+
     switch (column.id) {
-      case 'codCliente':
-        return (
-          <div className="flex items-center group">
-            <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">
-              {value || 'N/A'}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-blue-100"
-              onClick={() => copyToClipboard(value || '', 'Código do Cliente')}
-            >
-              <Copy className="w-3 h-3 text-blue-600" />
-            </Button>
-          </div>
-        );
-      
       case 'ativo':
         return (
-          <div className="flex items-center group">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-            }`}>
-              {value ? "Ativo" : "Inativo"}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-              onClick={() => copyToClipboard(value ? 'Ativo' : 'Inativo', 'Status')}
-            >
-              <Copy className="w-3 h-3 text-gray-500" />
-            </Button>
-          </div>
-        );
-
-      case 'hardwareKey':
-        return (
-          <div className="flex items-center group">
-            <span className="font-mono text-gray-600 bg-gray-50 px-2 py-1 rounded text-xs truncate max-w-[140px]" title={value || 'N/A'}>
-              {value || 'N/A'}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-              onClick={() => copyToClipboard(value || '', 'Hardware Key')}
-            >
-              <Copy className="w-3 h-3 text-gray-500" />
-            </Button>
-          </div>
-        );
-
-      case 'qtLicencas':
-      case 'qtLicencasAdicionais':
-        return (
-          <div className="flex items-center justify-center group">
-            <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-              {value || '0'}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-              onClick={() => copyToClipboard(value?.toString() || '0', column.label)}
-            >
-              <Copy className="w-3 h-3 text-gray-500" />
-            </Button>
-          </div>
-        );
-
-      case 'observacao':
-        return (
-          <div className="flex items-center group">
-            {value && value.trim() ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center cursor-help">
-                      <Info className="w-4 h-4 text-blue-500" />
-                      <span className="ml-1 text-xs text-gray-500">Ver obs.</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs p-3">
-                    <p className="text-sm">{value}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <span className="text-xs text-gray-400">Sem obs.</span>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-              onClick={() => copyToClipboard(value || '', 'Observação')}
-            >
-              <Copy className="w-3 h-3 text-gray-500" />
-            </Button>
-          </div>
-        );
-
-      case 'installNumber':
-      case 'systemNumber':
-        return (
-          <div className="flex items-center group">
-            <span className="font-mono text-gray-600 text-xs">
-              {value || 'N/A'}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-              onClick={() => copyToClipboard(value || '', column.label)}
-            >
-              <Copy className="w-3 h-3 text-gray-500" />
-            </Button>
-          </div>
+          <Badge variant={getStatusVariant(value)} className="text-xs">
+            {getStatusText(value)}
+          </Badge>
         );
 
       case 'acoes':
         return (
-          <div className="flex items-center justify-center space-x-1">
+          <div className="flex space-x-1">
             <Button
               variant="ghost"
               size="sm"
-              className="p-1 h-7 w-7 hover:bg-blue-50 text-blue-600"
-              onClick={() => copyFullRow(license)}
-              title="Copiar linha completa"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-1 h-7 w-7 hover:bg-gray-100 text-gray-500"
               onClick={() => handleEdit(license)}
+              className="p-1 h-7 w-7 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
               title="Editar"
             >
               <Edit className="w-3.5 h-3.5" />
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => handleDelete(license.id)}
               disabled={deleteMutation.isPending}
@@ -490,7 +297,7 @@ export default function Licenses() {
           </div>
         );
     }
-  };
+  }, [handleEdit, handleDelete, deleteMutation.isPending, copyToClipboard]);
 
   return (
     <div className="space-y-6">
@@ -500,135 +307,9 @@ export default function Licenses() {
           <p className="text-slate-600 mt-1">Gerencie todas as licenças e suas informações detalhadas</p>
         </div>
         <div className="flex space-x-3">
-          <div className="relative">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Download className="h-4 w-4" />
-                  <span>Exportar</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent 
-                className="sm:max-w-md"
-                description="Selecione o formato para exportar as licenças filtradas"
-              >
-                <DialogHeader>
-                  <DialogTitle>Exportar Licenças</DialogTitle>
-                  <p id="dialog-description" className="text-sm text-gray-600 mt-2">
-                    Exportando {filteredLicenses.length} de {licenses?.length || 0} licenças
-                    {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && 
-                      " (com filtros aplicados)"
-                    }
-                  </p>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid gap-3">
-                    <Button
-                      onClick={exportToCSV}
-                      className="flex items-center justify-start space-x-3 h-12"
-                      variant="outline"
-                    >
-                      <FileDown className="h-5 w-5 text-green-600" />
-                      <div className="text-left">
-                        <div className="font-medium">Exportar para CSV</div>
-                        <div className="text-xs text-gray-500">Arquivo separado por vírgulas</div>
-                      </div>
-                    </Button>
-                    <Button
-                      onClick={exportToExcel}
-                      className="flex items-center justify-start space-x-3 h-12"
-                      variant="outline"
-                    >
-                      <FileDown className="h-5 w-5 text-blue-600" />
-                      <div className="text-left">
-                        <div className="font-medium">Exportar para Excel</div>
-                        <div className="text-xs text-gray-500">Planilha do Microsoft Excel</div>
-                      </div>
-                    </Button>
-                  </div>
-                  <div className="text-xs text-gray-500 border-t pt-3">
-                    <p><strong>Nota:</strong> Apenas as colunas visíveis serão exportadas. Use "Configurar Colunas" para ajustar quais campos incluir.</p>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-          <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Settings className="h-4 w-4" />
-                <span>Configurar Colunas</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent 
-              className="max-w-md"
-              description="Configure as colunas que deseja exibir e organize a ordem"
-            >
-              <DialogHeader>
-                <DialogTitle>Configurar Exibição de Colunas</DialogTitle>
-                <p id="dialog-description" className="text-sm text-gray-600 mt-2">
-                  Selecione as colunas que deseja exibir e organize a ordem
-                </p>
-              </DialogHeader>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                <p className="text-sm text-gray-600">
-                  Selecione as colunas que deseja exibir e organize a ordem:
-                </p>
-                {columnOrder.map((colId, index) => {
-                  const column = AVAILABLE_COLUMNS.find(col => col.id === colId);
-                  if (!column) return null;
-                  
-                  return (
-                    <div key={colId} className="flex items-center space-x-3 p-2 border rounded-lg">
-                      <Checkbox
-                        checked={visibleColumns.includes(colId)}
-                        onCheckedChange={() => toggleColumnVisibility(colId)}
-                        disabled={column.sticky === 'left' || column.sticky === 'right'}
-                      />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">{column.label}</span>
-                      </div>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-1 h-6 w-6"
-                          onClick={() => moveColumn(colId, 'up')}
-                          disabled={index === 0}
-                        >
-                          <GripVertical className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-1 h-6 w-6"
-                          onClick={() => moveColumn(colId, 'down')}
-                          disabled={index === columnOrder.length - 1}
-                        >
-                          <GripVertical className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-end space-x-2 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setVisibleColumns(AVAILABLE_COLUMNS.map(col => col.id));
-                      setColumnOrder(AVAILABLE_COLUMNS.map(col => col.id));
-                    }}
-                  >
-                    Restaurar Padrão
-                  </Button>
-                  <Button onClick={() => setIsConfigOpen(false)}>
-                    Aplicar
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <NewLicenseModal />
+          <Suspense fallback={<div>Carregando...</div>}>
+            <NewLicenseModal />
+          </Suspense>
         </div>
       </div>
 
@@ -745,7 +426,7 @@ export default function Licenses() {
         </CardContent>
       </Card>
 
-      {/* Modal de Edição com Abas */}
+      {/* Modal de Edição ULTRA OTIMIZADO */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent 
           className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg"
@@ -768,198 +449,40 @@ export default function Licenses() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="edit-codCliente">Código do Cliente</Label>
-                    <Input
+                    <OptimizedInput
                       id="edit-codCliente"
-                      value={editingLicense.codCliente || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, codCliente: newValue}));
-                      }}
+                      value={editingLicense.codCliente}
+                      onChange={(e: any) => handleEditingLicenseChange('codCliente', e.target.value)}
                       placeholder="C0001"
                     />
                   </div>
                   <div>
                     <Label htmlFor="edit-nomeCliente">Nome do Cliente</Label>
-                    <Input
+                    <OptimizedInput
                       id="edit-nomeCliente"
-                      value={editingLicense.nomeCliente || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, nomeCliente: newValue}));
-                      }}
+                      value={editingLicense.nomeCliente}
+                      onChange={(e: any) => handleEditingLicenseChange('nomeCliente', e.target.value)}
                       placeholder="Nome da empresa"
                     />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="edit-dadosEmpresa">Dados da Empresa</Label>
-                  <Textarea
+                  <OptimizedTextarea
                     id="edit-dadosEmpresa"
-                    value={editingLicense.dadosEmpresa || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setEditingLicense(prev => ({...prev, dadosEmpresa: newValue}));
-                    }}
+                    value={editingLicense.dadosEmpresa}
+                    onChange={(e: any) => handleEditingLicenseChange('dadosEmpresa', e.target.value)}
                     placeholder="Informações da empresa..."
                     rows={3}
                   />
                 </div>
                 <div>
                   <Label htmlFor="edit-listaCnpj">Lista de CNPJ</Label>
-                  <Input
+                  <OptimizedInput
                     id="edit-listaCnpj"
-                    value={editingLicense.listaCnpj || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setEditingLicense(prev => ({...prev, listaCnpj: newValue}));
-                    }}
+                    value={editingLicense.listaCnpj}
+                    onChange={(e: any) => handleEditingLicenseChange('listaCnpj', e.target.value)}
                     placeholder="12.345.678/0001-90"
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="ambiente" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-hardwareKey">Hardware Key</Label>
-                    <Input
-                      id="edit-hardwareKey"
-                      value={editingLicense.hardwareKey || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, hardwareKey: newValue}));
-                      }}
-                      placeholder="ABC123XYZ"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-installNumber">Install Number</Label>
-                    <Input
-                      id="edit-installNumber"
-                      value={editingLicense.installNumber || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, installNumber: newValue}));
-                      }}
-                      placeholder="123456789"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-systemNumber">System Number</Label>
-                    <Input
-                      id="edit-systemNumber"
-                      value={editingLicense.systemNumber || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, systemNumber: newValue}));
-                      }}
-                      placeholder="000000000312513489"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-nomeDb">Nome do Database</Label>
-                    <Input
-                      id="edit-nomeDb"
-                      value={editingLicense.nomeDb || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, nomeDb: newValue}));
-                      }}
-                      placeholder="SBO_EMPRESA"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="edit-descDb">Descrição do Database</Label>
-                  <Textarea
-                    id="edit-descDb"
-                    value={editingLicense.descDb || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setEditingLicense(prev => ({...prev, descDb: newValue}));
-                    }}
-                    placeholder="Base de produção..."
-                    rows={3}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-endApi">Endereço da API</Label>
-                    <Input
-                      id="edit-endApi"
-                      value={editingLicense.endApi || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, endApi: newValue}));
-                      }}
-                      placeholder="http://servidor:8090/SBO_DB/DWUAPI"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-versaoSap">Versão SAP</Label>
-                    <Input
-                      id="edit-versaoSap"
-                      value={editingLicense.versaoSap || ''}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        setEditingLicense(prev => ({...prev, versaoSap: newValue}));
-                      }}
-                      placeholder="1000230"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="licenca" className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="edit-ativo"
-                    checked={editingLicense.ativo}
-                    onCheckedChange={(checked) => {
-                      setEditingLicense(prev => ({...prev, ativo: checked}));
-                    }}
-                  />
-                  <Label htmlFor="edit-ativo">Licença Ativa</Label>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-qtLicencas">Quantidade de Licenças</Label>
-                    <Input
-                      id="edit-qtLicencas"
-                      type="number"
-                      value={editingLicense.qtLicencas || ''}
-                      onChange={(e) => {
-                        const newValue = parseInt(e.target.value) || 0;
-                        setEditingLicense(prev => ({...prev, qtLicencas: newValue}));
-                      }}
-                      placeholder="1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-qtLicencasAdicionais">Licenças Adicionais</Label>
-                    <Input
-                      id="edit-qtLicencasAdicionais"
-                      type="number"
-                      value={editingLicense.qtLicencasAdicionais || ''}
-                      onChange={(e) => {
-                        const newValue = parseInt(e.target.value) || 0;
-                        setEditingLicense(prev => ({...prev, qtLicencasAdicionais: newValue}));
-                      }}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="edit-observacao">Observação</Label>
-                  <Textarea
-                    id="edit-observacao"
-                    value={editingLicense.observacao || ''}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setEditingLicense(prev => ({...prev, observacao: newValue}));
-                    }}
-                    placeholder="Observações adicionais..."
-                    rows={4}
                   />
                 </div>
               </TabsContent>
