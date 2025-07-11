@@ -41,23 +41,23 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Added professional dropdown menu for user profile with role badges
 ✓ Included notification bell with counter badge for system alerts
 
-## Configuração Simplificada do Supabase
+## Configuração Padrão do Supabase
 
-**Novidade**: Agora o sistema carrega automaticamente as configurações do arquivo `.env`!
+**Configuração Automática**: O sistema usa automaticamente a conexão Supabase pré-configurada!
 
-### Primeira configuração (uma vez por projeto):
-1. Acesse o dashboard do Supabase (https://supabase.com/dashboard/projects)
-2. Copie a URI de conexão do seu projeto
-3. **Edite o arquivo `.env`** e substitua pela sua URL:
-   ```
-   SUPABASE_DATABASE_URL=postgresql://postgres:sua_senha@db.seu-projeto.supabase.co:5432/postgres
-   ```
-4. Execute `npm run db:push` para criar as tabelas
-5. Execute `npx tsx create-admin.ts` para criar os usuários
+### Conexão Padrão (Jan 2025):
+```
+postgresql://postgres.omhogvuxqdodxwfvnzms:IE3Vbr2dO1lp8rO9@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
+```
 
-### Importações futuras:
-- Só precisará repetir os passos 3, 4 e 5 acima
-- O arquivo `.env` já estará presente no projeto
+### Para futuras importações:
+1. A conexão Supabase já está configurada no `.env`
+2. Execute `npm run db:push` para criar as tabelas
+3. Execute `npx tsx create-admin.ts` para criar os usuários admin
+
+### Usuários padrão criados:
+- **admin**: admin123 (administrador)
+- **tecnico**: tech123 (suporte)
 
 ## Paleta de Cores Atual (Design Diamante)
 
