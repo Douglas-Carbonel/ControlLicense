@@ -96,7 +96,11 @@
 }
 
 .license-table tbody tr {
-  @apply transition-all duration-200 hover:bg-primary/5 hover:shadow-sm;
+  @apply transition-all duration-200 hover:shadow-sm;
+}
+
+.license-table tbody tr:hover {
+  background-color: hsl(var(--primary) / 0.05);
 }
 
 .license-table tbody td {
