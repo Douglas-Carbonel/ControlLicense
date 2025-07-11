@@ -243,41 +243,43 @@ export default function Sidebar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             side="top" 
-            align="center" 
-            className="w-72 bg-white/95 backdrop-blur-lg border border-[#e0e0e0]/80 shadow-2xl shadow-[#0095da]/20 mb-2 rounded-2xl"
+            align="start" 
+            className={`${isCollapsed ? 'w-64' : 'w-[280px]'} bg-gradient-to-b from-[#2a3548] to-[#313d5a] backdrop-blur-md border border-[#3a3a3c]/60 shadow-2xl shadow-black/40 mb-2 rounded-2xl text-white`}
+            sideOffset={8}
           >
-            <DropdownMenuLabel className="text-[#3a3a3c] p-4">
+            <DropdownMenuLabel className="text-white p-4 border-b border-[#3a3a3c]/30">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] to-[#313d5a] rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-white text-lg font-bold">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-lg border-2 border-white/20">
+                  <span className="text-white text-lg font-bold drop-shadow-lg">
                     {user?.name?.charAt(0) || 'A'}
                   </span>
                 </div>
                 <div>
-                  <div className="font-bold text-base">{user?.name || 'Administrador'}</div>
-                  <div className="text-sm text-gray-500 font-normal">
+                  <div className="font-bold text-base text-white">{user?.name || 'Administrador'}</div>
+                  <div className="text-sm text-[#a1b3d3] font-normal">
                     {user?.role === 'admin' ? 'Administrador do Sistema' : 'Técnico de Suporte'}
                   </div>
-                  <div className="text-xs text-gray-400 font-medium mt-1">
+                  <div className="text-xs text-[#a1b3d3]/70 font-medium mt-1">
                     {user?.email || 'admin@sistema.com'}
                   </div>
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-[#e0e0e0] my-2" />
-            {user?.role === 'admin' && (
-              <DropdownMenuItem className="text-[#3a3a3c] hover:bg-gradient-to-r hover:from-[#0095da]/10 hover:to-[#0075b0]/10 hover:text-[#0095da] transition-all duration-200 mx-2 rounded-xl">
-                <Settings className="mr-3 h-5 w-5" />
-                <span className="font-medium">Configurações</span>
+            <div className="p-2">
+              {user?.role === 'admin' && (
+                <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3 mb-1">
+                  <Settings className="mr-3 h-5 w-5" />
+                  <span className="font-medium">Configurações</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem 
+                onClick={logout}
+                className="text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-all duration-200 rounded-xl p-3"
+              >
+                <LogOut className="mr-3 h-5 w-5" />
+                <span className="font-medium">Sair do Sistema</span>
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem 
-              onClick={logout}
-              className="text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 mx-2 rounded-xl"
-            >
-              <LogOut className="mr-3 h-5 w-5" />
-              <span className="font-medium">Sair do Sistema</span>
-            </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
