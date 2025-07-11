@@ -18,7 +18,9 @@ export const licenses = pgTable("licenses", {
   endApi: text("end_api"), // End. API
   listaCnpj: text("lista_cnpj"), // Lista de CNPJ
   qtLicencas: integer("qt_licencas"), // Qt. Licenças
+  qtLicencasAdicionais: integer("qt_licencas_adicionais").default(0), // Qt. Lic. Adicionais
   versaoSap: text("versao_sap"), // Versão SAP
+  observacao: text("observacao").default(""), // Observação
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
