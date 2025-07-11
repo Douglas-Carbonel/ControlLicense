@@ -65,29 +65,40 @@ export default function Licenses() {
   };
 
   return (
-    <div>
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Licenças</h2>
-            <p className="text-gray-600 mt-1">Gerencie todas as licenças do sistema</p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">License Management</h1>
+          <p className="text-gray-600 mt-1">Manage your team member and their account permissions here</p>
+        </div>
+        <div className="flex space-x-3">
+          <Button variant="outline" className="flex items-center space-x-2">
+            <Search className="h-4 w-4" />
+            <span>Filter</span>
+          </Button>
+          <Button variant="outline" className="flex items-center space-x-2">
+            <Plus className="h-4 w-4" />
+            <span>Export</span>
+          </Button>
           <NewLicenseModal />
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
-            <CardTitle>Todas as Licenças</CardTitle>
+            <div>
+              <CardTitle className="text-lg font-semibold text-gray-900">All Licenses</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">Showing {filteredLicenses.length} of {licenses?.length || 0} licenses</p>
+            </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Buscar licenças..."
+                  placeholder="Search users"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-64 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
             </div>
@@ -103,86 +114,56 @@ export default function Licenses() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">Cliente</TableHead>
-                  <TableHead className="font-semibold">Código da Licença</TableHead>
-                  <TableHead className="font-semibold">Hardware Key / Install</TableHead>
-                  <TableHead className="font-semibold">Database / API</TableHead>
-                  <TableHead className="font-semibold text-center">Quantidade</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Ações</TableHead>
+                <TableRow className="border-gray-200">
+                  <TableHead className="text-gray-600 font-medium">CLIENT NAME</TableHead>
+                  <TableHead className="text-gray-600 font-medium">LICENSE CODE</TableHead>
+                  <TableHead className="text-gray-600 font-medium">HARDWARE KEY</TableHead>
+                  <TableHead className="text-gray-600 font-medium">STATUS</TableHead>
+                  <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLicenses.map((license: any) => (
-                  <TableRow key={license.id}>
+                  <TableRow key={license.id} className="border-gray-200 hover:bg-gray-50">
                     <TableCell>
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-sm">
-                          <span className="text-white text-sm font-semibold">
+                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-gray-600 text-sm font-medium">
                             {license.nomeCliente?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || license.codCliente?.slice(0, 2) || "??"}
                           </span>
                         </div>
                         <div className="flex-1">
-                          <div className="text-sm font-semibold text-gray-900 mb-1">{license.nomeCliente || 'Nome não informado'}</div>
-                          <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md inline-block font-mono">
-                            {license.codCliente || 'Código não informado'}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-mono text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-md">
-                        {license.code || 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border">
-                          {license.hardwareKey || 'Não informado'}
-                        </div>
-                        {license.installNumber && (
+                          <div className="text-sm font-medium text-gray-900">{license.nomeCliente || 'Nome não informado'}</div>
                           <div className="text-xs text-gray-500">
-                            Install: <span className="font-mono">{license.installNumber}</span>
+                            ID: {license.codCliente || 'Código não informado'}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <div className="text-sm font-medium text-gray-900">{license.nomeDb || 'N/A'}</div>
-                        <div className="text-xs text-gray-500">{license.descDb || 'Descrição não informada'}</div>
-                        {license.endApi && (
-                          <div className="text-xs text-blue-600 font-mono truncate max-w-32" title={license.endApi}>
-                            {license.endApi}
-                          </div>
-                        )}
-                      </div>
+                      <div className="text-sm text-gray-600">{license.code || 'N/A'}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-gray-900">{license.qtLicencas || 0}</div>
-                        <div className="text-xs text-gray-500">licenças</div>
-                      </div>
+                      <div className="text-sm text-gray-600 font-mono">{license.hardwareKey || 'Não informado'}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(license.ativo)} className="font-medium">
-                        {getStatusText(license.ativo)}
+                      <Badge variant={getStatusVariant(license.ativo)} className={license.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        {license.ativo ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm" className="hover:bg-blue-50 hover:text-blue-600">
-                          <Edit className="h-4 w-4" />
+                      <div className="flex items-center space-x-1">
+                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
+                          <Edit className="w-4 h-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
                           onClick={() => handleDelete(license.id)}
                           disabled={deleteMutation.isPending}
-                          className="hover:bg-red-50 hover:text-red-600"
+                          className="text-gray-400 hover:text-red-600"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
