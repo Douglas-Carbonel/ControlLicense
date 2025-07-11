@@ -14,16 +14,16 @@
   --card-foreground: #2C3E50;
   --border: #D5DBDB;
   --input: #FFFFFF;
-  --primary: #3498DB;
+  --primary: #5DADE2;
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: #ECF0F1;
-  --secondary-foreground: #2C3E50;
-  --accent: #3498DB;
+  --secondary-foreground: #5DADE2;
+  --accent: #5DADE2;
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: #E74C3C;
   --destructive-foreground: hsl(0, 0%, 100%);
-  --ring: #3498DB;
-  --radius: 0.5rem;
+  --ring: #5DADE2;
+  --radius: 0.75rem;
   
   /* DWU Login Palette - Cores harmoniosas baseadas na identidade */
   --diamond-bg: #34495E;
@@ -267,9 +267,10 @@
 }
 
 .license-row:hover {
-  background-color: hsl(var(--primary) / 0.05) !important;
+  background-color: rgba(93, 173, 226, 0.08) !important;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(93, 173, 226, 0.2);
+  transition: all 0.3s ease;
 }
 
 /* Cell styles */
@@ -388,15 +389,24 @@
 }
 
 .status-active {
-  @apply bg-green-100 text-green-800 border-green-200;
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
 }
 
 .status-inactive {
-  @apply bg-red-100 text-red-800 border-red-200;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
 }
 
 .status-warning {
-  @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.1);
 }
 
 /* Copy button enhancements */
@@ -417,8 +427,16 @@
 
 /* Professional Cards */
 .professional-card {
-  @apply rounded-xl border border-outline p-6 transition-all duration-200 hover:shadow-lg;
+  @apply rounded-xl border p-6 transition-all duration-300;
   background-color: var(--surface);
+  border-color: rgba(93, 173, 226, 0.2);
+  box-shadow: 0 2px 4px rgba(93, 173, 226, 0.1);
+}
+
+.professional-card:hover {
+  border-color: rgba(93, 173, 226, 0.4);
+  box-shadow: 0 8px 24px rgba(93, 173, 226, 0.15);
+  transform: translateY(-2px);
 }
 
 .professional-card-header {
@@ -435,17 +453,47 @@
 
 /* Professional Buttons */
 .btn-professional {
-  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200;
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300;
   @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
 }
 
 .btn-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary hover:opacity-90 focus:ring-primary;
-  box-shadow: 0 1px 2px var(--shadow);
+  background: #5DADE2;
+  color: #FFFFFF;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(93, 173, 226, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: #3498DB;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(93, 173, 226, 0.4);
+  color: #FFFFFF;
+}
+
+.btn-primary:focus {
+  ring: 2px solid #5DADE2;
+  ring-offset: 2px;
 }
 
 .btn-secondary {
-  @apply bg-secondary text-secondary-foreground hover:bg-secondary hover:opacity-80 focus:ring-secondary border border-outline;
+  background: rgba(93, 173, 226, 0.1);
+  color: #5DADE2;
+  border: 1px solid rgba(93, 173, 226, 0.3);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(93, 173, 226, 0.2);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(93, 173, 226, 0.2);
+  border-color: #5DADE2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(93, 173, 226, 0.3);
 }
 
 /* Professional Layout */
@@ -473,12 +521,22 @@
 }
 
 .sidebar-nav-item {
-  @apply flex items-center px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary hover:bg-opacity-5 transition-all duration-200;
-  @apply border-l-4 border-transparent hover:border-primary;
+  @apply flex items-center px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-300;
+  @apply border-l-4 border-transparent;
+}
+
+.sidebar-nav-item:hover {
+  color: #5DADE2;
+  background: rgba(93, 173, 226, 0.08);
+  border-color: #5DADE2;
+  transform: translateX(4px);
 }
 
 .sidebar-nav-item.active {
-  @apply text-primary bg-primary bg-opacity-10 border-primary;
+  color: #5DADE2;
+  background: rgba(93, 173, 226, 0.15);
+  border-color: #5DADE2;
+  font-weight: 600;
 }
 
 /* Dashboard Stats */
@@ -516,9 +574,16 @@
 }
 
 .form-input {
-  @apply w-full px-3 py-2 border border-outline rounded-lg text-foreground placeholder-muted-foreground;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  @apply w-full px-3 py-2 border rounded-lg text-foreground placeholder-muted-foreground;
+  @apply focus:outline-none transition-all duration-300;
   background-color: var(--surface);
+  border-color: rgba(93, 173, 226, 0.3);
+}
+
+.form-input:focus {
+  border-color: #5DADE2;
+  box-shadow: 0 0 0 3px rgba(93, 173, 226, 0.2);
+  background-color: rgba(93, 173, 226, 0.02);
 }
 
 /* Animations */
