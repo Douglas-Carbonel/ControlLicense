@@ -200,15 +200,15 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: false,
-      staleTime: 15 * 1000, // 15 segundos para resposta mais rápida
-      gcTime: 2 * 60 * 1000, // 2 minutos de garbage collection
+      staleTime: 60 * 1000, // 1 minuto para evitar requests desnecessários
+      gcTime: 5 * 60 * 1000, // 5 minutos de garbage collection
       retry: (failureCount, error) => {
         if (error && error.message.includes('401')) {
           return false;
         }
-        return failureCount < 1; // Máximo 1 tentativa para resposta mais rápida
+        return failureCount < 1;
       },
-      retryDelay: 200, // Delay fixo e rápido
+      retryDelay: 500, // Delay maior para evitar spam
       networkMode: 'online',
     },
     mutations: {
