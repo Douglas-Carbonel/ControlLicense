@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { LogOut, User, Search, Building2, Shield, Zap, Settings, ChevronDown } from "lucide-react";
@@ -49,15 +48,12 @@ export default function Header() {
               <DropdownMenuContent align="end" className="w-64 bg-white border border-[#e0e0e0] shadow-xl">
                 <DropdownMenuLabel className="text-[#3a3a3c]">Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-[#e0e0e0]" />
-                <DropdownMenuItem className="text-[#3a3a3c] hover:bg-[#f4f4f4] hover:text-[#0095da]">
-                  <User className="mr-2 h-4 w-4" />
-                  Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-[#3a3a3c] hover:bg-[#f4f4f4] hover:text-[#0095da]">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configurações
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-[#e0e0e0]" />
+                {user?.role === 'admin' && (
+                  <DropdownMenuItem className="text-[#3a3a3c] hover:bg-[#f4f4f4] hover:text-[#0095da]">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurações
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem 
                   onClick={logout}
                   className="text-red-600 hover:bg-red-50 hover:text-red-700"

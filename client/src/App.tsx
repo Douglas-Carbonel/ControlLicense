@@ -30,6 +30,19 @@ function Router() {
     return <Login />;
   }
 
+  // Usuários técnicos só podem acessar licenças
+  if (user.role === 'support') {
+    return (
+      <AppLayout>
+        <Switch>
+          <Route path="/licenses" component={Licenses} />
+          <Route path="/" component={() => <Licenses />} />
+          <Route component={() => <Licenses />} />
+        </Switch>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <Switch>

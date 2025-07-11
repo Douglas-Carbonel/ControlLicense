@@ -22,41 +22,54 @@ export default function Sidebar() {
   const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const navigationItems = [
-    { 
-      href: "/", 
-      label: "Painel", 
-      icon: Home,
-      description: "Visão geral do sistema"
-    },
-    { 
+  const navigationItems = [];
+
+  // Usuários técnicos só podem ver licenças
+  if (user?.role === 'support') {
+    navigationItems.push({ 
       href: "/licenses", 
       label: "Licenças", 
       icon: FileText,
       description: "Gerenciar licenças"
-    },
-    { 
-      href: "/import", 
-      label: "Importar Dados", 
-      icon: Upload,
-      description: "Importar planilhas"
-    },
-    { 
-      href: "/activities", 
-      label: "Atividades", 
-      icon: Activity,
-      description: "Histórico de ações"
-    },
-  ];
-
-  // Adicionar item de usuários apenas para administradores
-  if (user?.role === 'admin') {
-    navigationItems.push({
-      href: "/users",
-      label: "Usuários",
-      icon: Users,
-      description: "Gerenciar usuários"
     });
+  } else {
+    // Administradores podem ver tudo
+    navigationItems.push(
+      { 
+        href: "/", 
+        label: "Painel", 
+        icon: Home,
+        description: "Visão geral do sistema"
+      },
+      { 
+        href: "/licenses", 
+        label: "Licenças", 
+        icon: FileText,
+        description: "Gerenciar licenças"
+      },
+      { 
+        href: "/import", 
+        label: "Importar Dados", 
+        icon: Upload,
+        description: "Importar planilhas"
+      },
+      { 
+        href: "/activities", 
+        label: "Atividades", 
+        icon: Activity,
+        description: "Histórico de ações"
+      }
+    );
+
+    // Adicionar item de usuários apenas para administradores
+    if (user?.role === 'admin') {
+      navigationItems.push({
+        href: "/users",
+        label: "Usuários",
+        icon: Users,
+        description: "Gerenciar usuários"
+      });
+    }
   }
 
   const getCurrentPageTitle = () => {

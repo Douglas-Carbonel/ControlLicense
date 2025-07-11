@@ -53,6 +53,14 @@ function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   next();
 }
 
+// Middleware para bloquear técnicos de certas rotas
+function blockSupportUsers(req: AuthRequest, res: Response, next: NextFunction) {
+  if (req.user?.role === 'support') {
+    return res.status(403).json({ message: 'Acesso negado. Usuários técnicos não têm permissão.' });
+  }
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas de autenticação
   app.post("/api/auth/login", async (req, res) => {
@@ -288,8 +296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Statistics route - must come before parameterized routes
-  app.get("/api/licenses/stats", authenticateToken, async (req: AuthRequest, res) => {
+  // Statistics route - must come before parameterized routes (only for admins)
+  app.get("/api/licenses/stats", authenticateToken, blockSupportUsers, async (req: AuthRequest, res) => {
     try {
       const stats = await storage.getLicenseStats();
       res.json(stats);
@@ -391,8 +399,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Activity routes
-  app.get("/api/activities", authenticateToken, async (req: AuthRequest, res) => {
+  // Activity routes (only for admins)
+  app.get("/api/activities", authenticateToken, blockSupportUsers, async (req: AuthRequest, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const activities = await storage.getActivities(limit);
