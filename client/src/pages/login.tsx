@@ -28,7 +28,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center login-gradient px-4">
       <div className="diamond-container">
         <div className="diamond-content">
-          <h1 className="diamond-title">CUSTOMER LOGIN</h1>
+          <h1 className="diamond-title">DWU IT Solutions</h1>
           
           <form onSubmit={handleSubmit} className="space-y-4 w-full">
             {/* Username Field */}
