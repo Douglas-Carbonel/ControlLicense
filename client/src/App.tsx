@@ -48,7 +48,6 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/licenses" component={Licenses} />
-        <Route path="/import" component={ImportData} />
         <Route path="/activities" component={ActivityHistory} />
         <Route path="/users" component={UsersPage} />
       </Switch>

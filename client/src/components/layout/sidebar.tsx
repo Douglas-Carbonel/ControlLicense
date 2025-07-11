@@ -54,12 +54,6 @@ export default function Sidebar() {
         description: "Gerenciar licenças"
       },
       { 
-        href: "/import", 
-        label: "Importar Dados", 
-        icon: Upload,
-        description: "Importar planilhas"
-      },
-      { 
         href: "/activities", 
         label: "Atividades", 
         icon: Activity,
@@ -108,7 +102,7 @@ export default function Sidebar() {
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 rounded-3xl"></div>
               <div className="absolute top-1 left-1 w-3 h-3 bg-white/20 rounded-full blur-sm"></div>
               <div className="absolute bottom-2 right-2 w-2 h-2 bg-white/30 rounded-full blur-sm"></div>
-              
+
               {/* Modern DWU text */}
               <div className="relative z-10 flex items-center justify-center">
                 <span className={`text-white font-black ${isCollapsed ? 'text-sm' : 'text-lg'} tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300`} 
@@ -120,11 +114,11 @@ export default function Sidebar() {
                   DWU
                 </span>
               </div>
-              
+
               {/* Animated shine effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-3xl"></div>
             </div>
-            
+
             {/* Status indicator with modern design */}
             <div className={`absolute -top-2 -right-2 ${isCollapsed ? 'w-4 h-4' : 'w-6 h-6'} bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] shadow-lg flex items-center justify-center transition-all duration-300`}>
               <div className={`${isCollapsed ? 'w-2 h-2' : 'w-3 h-3'} bg-white rounded-full animate-pulse shadow-inner`}></div>
@@ -214,7 +208,7 @@ export default function Sidebar() {
               </div>
             </div>
           )}
-          
+
           {/* Action Buttons */}
           <div className={`flex items-center ${isCollapsed ? 'flex-col space-y-2' : 'space-x-2'}`}>
             {/* Settings Button with Dropdown */}
@@ -259,7 +253,7 @@ export default function Sidebar() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             {/* Logout Button */}
             <button
               onClick={logout}

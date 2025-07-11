@@ -4,7 +4,6 @@ import StatsCards from "@/components/stats-cards";
 import RecentLicensesTable from "@/components/recent-licenses-table";
 import ActivityLog from "@/components/activity-log";
 import NewLicenseModal from "@/components/modals/new-license-modal";
-import ImportModal from "@/components/modals/import-modal";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
