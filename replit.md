@@ -7,8 +7,8 @@ This is a full-stack license management system built with React (frontend) and E
 ## Recent Changes (Jan 2025)
 
 ✓ Migrated from Replit Agent to Replit environment
-✓ Configured Supabase database integration
-✓ Created admin users for system access (admin/password, tecnico/password)
+✓ Configured Supabase database integration support
+✓ Created admin users for system access (admin/admin123, tecnico/tech123)
 ✓ Fixed CSS styling issues for Replit compatibility
 ✓ Established database schema with tables: licenses, users, activities
 ✓ Modernized UI layout based on user-provided templates
@@ -16,6 +16,20 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Improved header with search functionality and user profile display
 ✓ Enhanced dashboard with modern card layouts and improved table design
 ✓ Implemented contemporary color scheme with purple primary color
+
+## Importante: Configuração do Supabase
+
+Sempre que importar este projeto para um novo ambiente Replit, será necessário configurar a variável de ambiente `SUPABASE_DATABASE_URL` com a URL de conexão do seu projeto Supabase. Isso é necessário por questões de segurança - credenciais não são salvas no código.
+
+Para configurar:
+1. Acesse o dashboard do Supabase (https://supabase.com/dashboard/projects)
+2. Vá para o seu projeto
+3. Clique em "Connect"
+4. Copie a URI em "Connection string" → "Transaction pooler"
+5. Substitua `[YOUR-PASSWORD]` pela senha do seu banco
+6. Configure esta URL como variável de ambiente no Replit
+
+O sistema funcionará automaticamente com PostgreSQL local se a variável SUPABASE_DATABASE_URL não estiver configurada.
 
 ## User Preferences
 
