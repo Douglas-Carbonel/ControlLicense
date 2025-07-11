@@ -163,7 +163,7 @@
 }
 
 .diamond-button {
-  background: #4A9EDD;
+  background: #3A4A5A;
   color: white;
   border: none;
   border-radius: 0px;
@@ -178,7 +178,7 @@
 }
 
 .diamond-button:hover {
-  background: #3498DB;
+  background: #2C3E50;
   transform: translateY(-1px);
 }
 
