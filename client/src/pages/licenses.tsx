@@ -76,7 +76,6 @@ export default function Licenses() {
   const copyFullRow = (license: any) => {
     const rowData = [
       license.codCliente || '',
-      license.linha || '',
       license.ativo ? 'Ativo' : 'Inativo',
       license.nomeCliente || '',
       license.dadosEmpresa || '',
@@ -156,9 +155,6 @@ export default function Licenses() {
                         Código Cliente
                       </th>
                       <th className="license-header">
-                        Linha
-                      </th>
-                      <th className="license-header">
                         Ativo
                       </th>
                       <th className="license-header" style={{ minWidth: '180px' }}>
@@ -205,7 +201,7 @@ export default function Licenses() {
                         {/* Código do Cliente - Sticky */}
                         <td className="license-sticky-left">
                           <div className="flex items-center group">
-                            <span className="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                            <span className="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
                               {license.codCliente || 'N/A'}
                             </span>
                             <Button
@@ -213,23 +209,6 @@ export default function Licenses() {
                               size="sm"
                               className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6"
                               onClick={() => copyToClipboard(license.codCliente || '', 'Código do Cliente')}
-                            >
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Linha */}
-                        <td className="license-cell">
-                          <div className="flex items-center justify-center group">
-                            <span className="text-sm font-medium text-gray-800 bg-gray-100 px-2 py-1 rounded-full">
-                              {license.linha || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-1 p-1 h-6 w-6"
-                              onClick={() => copyToClipboard(license.linha || '', 'Linha')}
                             >
                               <Copy className="w-3 h-3" />
                             </Button>

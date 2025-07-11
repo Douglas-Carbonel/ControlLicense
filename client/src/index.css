@@ -108,7 +108,7 @@
 }
 
 .license-sticky-left {
-  @apply text-xs font-bold text-gray-700 uppercase tracking-wider px-4 py-3 border-b-2 border-gray-200 border-r border-gray-300;
+  @apply text-xs font-bold text-gray-700 uppercase tracking-wider px-4 py-3 border-b-2 border-gray-200 border-r border-gray-200;
   position: sticky;
   top: 0;
   left: 0;
@@ -153,7 +153,7 @@
 }
 
 .license-cell-sticky-left {
-  @apply px-4 py-3 text-sm text-foreground align-middle border-r border-gray-300;
+  @apply px-4 py-3 text-sm text-foreground align-middle border-r border-gray-200;
   position: sticky;
   left: 0;
   z-index: 20;
