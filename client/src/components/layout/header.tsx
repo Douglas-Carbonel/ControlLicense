@@ -12,26 +12,8 @@ export default function Header() {
     <header className="bg-white border-b border-[#e0e0e0] shadow-sm">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo da Empresa e Branding */}
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#0095da] to-[#313d5a] rounded-xl flex items-center justify-center shadow-lg">
-                  <Building2 className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#0095da] rounded-full flex items-center justify-center">
-                  <Shield className="w-2.5 h-2.5 text-white" />
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <h1 className="text-lg font-bold text-[#313d5a] tracking-wide">DW IT Solutions</h1>
-                <p className="text-xs text-[#3a3a3c] font-medium">Sistema de Licenças</p>
-              </div>
-            </div>
-            
-            <div className="h-8 w-px bg-[#e0e0e0]"></div>
-            
-            {/* Barra de Pesquisa Modernizada */}
+          {/* Barra de Pesquisa */}
+          <div className="flex items-center">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#3a3a3c] w-4 h-4" />
               <input
