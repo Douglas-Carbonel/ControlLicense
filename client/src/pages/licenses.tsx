@@ -97,60 +97,94 @@ export default function Licenses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // ABORDAGEM PROFISSIONAL: Carregar todos os dados uma vez
+  const { data: allLicensesResponse, isLoading: isLoadingAll, error } = useQuery({
+    queryKey: ["/api/licenses/all"],
+    queryFn: async () => {
+      const response = await fetch("/api/licenses?limit=1000"); // Buscar todos os dados
+      if (!response.ok) throw new Error("Erro ao carregar licenças");
+      return response.json();
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutos de cache
+    gcTime: 20 * 60 * 1000, // 20 minutos para garbage collection
+    retry: 2,
+    refetchOnWindowFocus: false,
+  });
+
+  const allLicenses = allLicensesResponse?.data || [];
+
   // Handler para busca - permite digitação livre sem indicadores de loading
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
   }, []);
 
-  // Debounce search with longer delay for better UX - silent search (800ms para evitar requisições excessivas)
-  const debouncedSearchTerm = useDebounce(searchTerm, 800);
-  
-  // Debounce column filters with longer delay for better user experience (800ms)
-  const debouncedColumnFilters = useDebounce(columnFilters, 800);
+  // BUSCA E FILTRO LOCAL (INSTANTÂNEO)
+  const filteredLicenses = useMemo(() => {
+    let filtered = [...allLicenses];
 
-  // Memoize combined search to prevent re-computation
-  const combinedSearch = useMemo(() => {
-    const columnSearches = Object.entries(debouncedColumnFilters)
-      .filter(([_, value]) => value !== "")
-      .map(([column, value]) => `${column}:${value}`)
-      .join(" ");
-    
-    return [debouncedSearchTerm, columnSearches].filter(Boolean).join(" ");
-  }, [debouncedSearchTerm, debouncedColumnFilters]);
+    // Aplicar busca geral
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(license => 
+        license.nomeCliente?.toLowerCase().includes(searchLower) ||
+        license.codCliente?.toLowerCase().includes(searchLower) ||
+        license.code?.toLowerCase().includes(searchLower) ||
+        license.hardwareKey?.toLowerCase().includes(searchLower) ||
+        license.dadosEmpresa?.toLowerCase().includes(searchLower) ||
+        license.listaCnpj?.toLowerCase().includes(searchLower)
+      );
+    }
 
-  // Query key memoization
-  const queryKey = useMemo(() => 
-    `/api/licenses?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(combinedSearch)}`,
-    [currentPage, pageSize, combinedSearch]
-  );
+    // Aplicar filtros de coluna
+    Object.entries(columnFilters).forEach(([column, value]) => {
+      if (value.trim()) {
+        const filterLower = value.toLowerCase();
+        filtered = filtered.filter(license => {
+          const fieldValue = license[column];
+          if (column === 'ativo') {
+            const isActive = filterLower === 'ativo' || filterLower === 'true';
+            return license.ativo === isActive;
+          }
+          return fieldValue?.toString().toLowerCase().includes(filterLower);
+        });
+      }
+    });
 
-  const { data: licensesResponse, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: [queryKey],
-    staleTime: 5 * 60 * 1000, // 5 minutos para melhor cache
-    gcTime: 10 * 60 * 1000, // 10 minutos para garbage collection
-    retry: 2, // Mais tentativas para melhor confiabilidade
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    enabled: true, // Sempre habilitado
-  });
+    return filtered;
+  }, [allLicenses, searchTerm, columnFilters]);
 
-  const licenses = licensesResponse?.data || [];
-  const pagination = licensesResponse?.pagination || {
-    page: 1,
-    limit: 50,
-    total: 0,
-    totalPages: 0,
-    hasNext: false,
-    hasPrev: false
-  };
+  // PAGINAÇÃO LOCAL
+  const paginatedLicenses = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredLicenses.slice(startIndex, endIndex);
+  }, [filteredLicenses, currentPage, pageSize]);
+
+  // INFORMAÇÕES DE PAGINAÇÃO
+  const pagination = useMemo(() => {
+    const total = filteredLicenses.length;
+    const totalPages = Math.ceil(total / pageSize);
+    return {
+      page: currentPage,
+      limit: pageSize,
+      total,
+      totalPages,
+      hasNext: currentPage < totalPages,
+      hasPrev: currentPage > 1
+    };
+  }, [filteredLicenses.length, currentPage, pageSize]);
+
+  const licenses = paginatedLicenses;
+
+
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/licenses/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
@@ -172,7 +206,7 @@ export default function Licenses() {
       return await apiRequest("PUT", `/api/licenses/${data.id}`, data.license);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
@@ -199,7 +233,7 @@ export default function Licenses() {
     return ativo ? "Ativa" : "Inativa";
   };
 
-  const filteredLicenses = licenses;
+
 
   const handleDelete = useCallback((id: number) => {
     if (confirm("Tem certeza que deseja excluir esta licença?")) {
@@ -376,7 +410,7 @@ export default function Licenses() {
             <div>
               <CardTitle className="text-lg font-semibold text-slate-800">Todas as Licenças</CardTitle>
               <p className="text-sm text-gray-500 mt-1">
-                Mostrando {filteredLicenses.length} de {pagination.total} licenças
+                Mostrando {licenses.length} de {pagination.total} licenças
                 {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && 
                   ` (página ${pagination.page} de ${pagination.totalPages})`
                 }
@@ -391,12 +425,7 @@ export default function Licenses() {
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-48 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
-                {/* Indicador sutil de busca em andamento */}
-                {isFetching && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
-                  </div>
-                )}
+
               </div>
               {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && (
                 <Button
@@ -412,8 +441,8 @@ export default function Licenses() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {/* Loading apenas no primeiro carregamento, não durante filtros */}
-          {isLoading && !licensesResponse ? (
+          {/* Loading apenas no primeiro carregamento */}
+          {isLoadingAll ? (
             <div className="space-y-4 p-6">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
@@ -423,18 +452,18 @@ export default function Licenses() {
             <div className="text-center py-8 text-red-500">
               <p>Erro ao carregar licenças: {(error as Error).message}</p>
               <Button 
-                onClick={() => refetch()} 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] })} 
                 variant="outline" 
                 className="mt-2"
               >
                 Tentar Novamente
               </Button>
             </div>
-          ) : !licensesResponse || Object.keys(licensesResponse).length === 0 ? (
+          ) : !allLicensesResponse || allLicenses.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>Carregando dados...</p>
               <Button 
-                onClick={() => refetch()} 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] })} 
                 variant="outline" 
                 className="mt-2"
               >
@@ -470,16 +499,11 @@ export default function Licenses() {
                                   placeholder="Digite para filtrar..."
                                   value={columnFilters[column.id] || ''}
                                   onChange={(e) => updateColumnFilter(column.id, e.target.value)}
-                                  className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none pr-8"
+                                  className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none"
                                   onClick={(e) => e.stopPropagation()}
                                   autoComplete="off"
                                 />
-                                {/* Indicador sutil quando há filtro ativo */}
-                                {isFetching && columnFilters[column.id] && (
-                                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                                    <div className="w-3 h-3 border border-gray-300 border-t-primary rounded-full animate-spin"></div>
-                                  </div>
-                                )}
+
                               </div>
                             )}
                           </div>
@@ -511,7 +535,7 @@ export default function Licenses() {
                   </tbody>
                 </table>
               </div>
-              {filteredLicenses.length === 0 && (
+              {licenses.length === 0 && !isLoadingAll && (
                 <div className="text-center py-8 text-gray-500">
                   <p>Nenhuma licença encontrada.</p>
                 </div>
