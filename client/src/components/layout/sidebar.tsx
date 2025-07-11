@@ -199,31 +199,43 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* User Profile Section with Dropdown */}
-      <div className="p-6 border-t border-[#3a3a3c]/30 bg-gradient-to-r from-[#2a3548]/50 to-[#313d5a]/50">
+      {/* User Profile Section - Modern Footer */}
+      <div className="p-6 border-t border-[#3a3a3c]/30 bg-gradient-to-b from-[#2a3548]/30 to-[#313d5a]/60 backdrop-blur-sm">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className={`group w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'} p-4 rounded-xl bg-[#3a3a3c]/30 backdrop-blur-sm border border-[#3a3a3c]/50 hover:bg-[#3a3a3c]/50 transition-all duration-300`}>
+            <button className={`group w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'} p-4 rounded-2xl bg-gradient-to-r from-[#3a3a3c]/40 via-[#3a3a3c]/30 to-[#3a3a3c]/40 backdrop-blur-md border border-[#3a3a3c]/60 hover:border-[#0095da]/40 hover:bg-gradient-to-r hover:from-[#0095da]/10 hover:to-[#0075b0]/10 transition-all duration-500 shadow-lg hover:shadow-xl hover:shadow-[#0095da]/10 transform hover:scale-[1.02] active:scale-[0.98]`}>
               <div className="relative">
-                <div className="w-11 h-11 bg-gradient-to-br from-[#0095da] to-[#0075b0] rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-white text-sm font-bold">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/20 relative overflow-hidden">
+                  {/* Modern background pattern */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 rounded-2xl"></div>
+                  <div className="absolute top-1 left-1 w-2 h-2 bg-white/30 rounded-full blur-sm"></div>
+                  <div className="absolute bottom-2 right-2 w-1.5 h-1.5 bg-white/40 rounded-full blur-sm"></div>
+                  <span className="text-white text-lg font-black relative z-10 drop-shadow-2xl" style={{ 
+                    fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+                    textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
+                    letterSpacing: '-0.5px'
+                  }}>
                     {user?.name?.charAt(0) || 'A'}
                   </span>
+                  {/* Animated shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-2xl"></div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] animate-pulse"></div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] shadow-lg flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse shadow-inner"></div>
+                </div>
               </div>
               {!isCollapsed && (
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-sm font-semibold text-white truncate">
+                  <div className="text-sm font-bold text-white truncate leading-tight mb-1">
                     {user?.name || 'Administrador'}
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-xs bg-[#0095da]/20 text-white border-[#0095da]/50">
+                      <Badge variant="outline" className="text-xs bg-gradient-to-r from-[#0095da]/20 to-[#0075b0]/20 text-white border-[#0095da]/50 backdrop-blur-sm shadow-sm">
                         {user?.role === 'admin' ? 'Admin' : 'Técnico'}
                       </Badge>
                     </div>
-                    <ChevronUp className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-colors" />
+                    <ChevronUp className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-all duration-300 group-hover:transform group-hover:scale-110" />
                   </div>
                 </div>
               )}
@@ -232,36 +244,39 @@ export default function Sidebar() {
           <DropdownMenuContent 
             side="top" 
             align="center" 
-            className="w-64 bg-white border border-[#e0e0e0] shadow-xl mb-2"
+            className="w-72 bg-white/95 backdrop-blur-lg border border-[#e0e0e0]/80 shadow-2xl shadow-[#0095da]/20 mb-2 rounded-2xl"
           >
-            <DropdownMenuLabel className="text-[#3a3a3c]">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#0095da] to-[#313d5a] rounded-lg flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">
+            <DropdownMenuLabel className="text-[#3a3a3c] p-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] to-[#313d5a] rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-white text-lg font-bold">
                     {user?.name?.charAt(0) || 'A'}
                   </span>
                 </div>
                 <div>
-                  <div className="font-semibold">{user?.name || 'Administrador'}</div>
-                  <div className="text-xs text-gray-500 font-normal">
-                    {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
+                  <div className="font-bold text-base">{user?.name || 'Administrador'}</div>
+                  <div className="text-sm text-gray-500 font-normal">
+                    {user?.role === 'admin' ? 'Administrador do Sistema' : 'Técnico de Suporte'}
+                  </div>
+                  <div className="text-xs text-gray-400 font-medium mt-1">
+                    {user?.email || 'admin@sistema.com'}
                   </div>
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-[#e0e0e0]" />
+            <DropdownMenuSeparator className="bg-[#e0e0e0] my-2" />
             {user?.role === 'admin' && (
-              <DropdownMenuItem className="text-[#3a3a3c] hover:bg-[#f4f4f4] hover:text-[#0095da]">
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
+              <DropdownMenuItem className="text-[#3a3a3c] hover:bg-gradient-to-r hover:from-[#0095da]/10 hover:to-[#0075b0]/10 hover:text-[#0095da] transition-all duration-200 mx-2 rounded-xl">
+                <Settings className="mr-3 h-5 w-5" />
+                <span className="font-medium">Configurações</span>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem 
               onClick={logout}
-              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              className="text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 mx-2 rounded-xl"
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
+              <LogOut className="mr-3 h-5 w-5" />
+              <span className="font-medium">Sair do Sistema</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
