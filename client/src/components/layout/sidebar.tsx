@@ -203,36 +203,14 @@ export default function Sidebar() {
       <div className="p-6 border-t border-[#3a3a3c]/30 bg-gradient-to-b from-[#2a3548]/30 to-[#313d5a]/60 backdrop-blur-sm">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!isCollapsed && (
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/20 relative overflow-hidden">
-                  {/* Modern background pattern */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 rounded-2xl"></div>
-                  <div className="absolute top-1 left-1 w-2 h-2 bg-white/30 rounded-full blur-sm"></div>
-                  <div className="absolute bottom-2 right-2 w-1.5 h-1.5 bg-white/40 rounded-full blur-sm"></div>
-                  <span className="text-white text-lg font-black relative z-10 drop-shadow-2xl" style={{ 
-                    fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-                    textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
-                    letterSpacing: '-0.5px'
-                  }}>
-                    {user?.name?.charAt(0) || 'A'}
-                  </span>
-                  {/* Animated shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000 rounded-2xl"></div>
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] shadow-lg flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse shadow-inner"></div>
-                </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-xl flex items-center justify-center shadow-lg border-2 border-white/20">
+                <span className="text-white text-sm font-bold drop-shadow-lg">
+                  {user?.name?.charAt(0) || 'A'}
+                </span>
               </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-bold text-white truncate leading-tight mb-1">
-                  {user?.name || 'Administrador'}
-                </div>
-                <div className="flex items-center">
-                  <Badge variant="outline" className="text-xs bg-gradient-to-r from-[#0095da]/20 to-[#0075b0]/20 text-white border-[#0095da]/50 backdrop-blur-sm shadow-sm">
-                    {user?.role === 'admin' ? 'Admin' : 'Técnico'}
-                  </Badge>
-                </div>
+              <div className="text-sm font-medium text-white">
+                Usuário
               </div>
             </div>
           )}
@@ -240,10 +218,10 @@ export default function Sidebar() {
           {/* Logout Button */}
           <button
             onClick={logout}
-            className={`group ${isCollapsed ? 'w-12 h-12' : 'w-11 h-11'} bg-gradient-to-br from-red-500/20 to-red-600/20 hover:from-red-500/30 hover:to-red-600/30 rounded-2xl flex items-center justify-center border border-red-500/30 hover:border-red-400/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transform hover:scale-105 active:scale-95`}
+            className={`group ${isCollapsed ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br from-red-500/20 to-red-600/20 hover:from-red-500/30 hover:to-red-600/30 rounded-xl flex items-center justify-center border border-red-500/30 hover:border-red-400/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transform hover:scale-105 active:scale-95`}
             title="Sair do Sistema"
           >
-            <LogOut className="w-5 h-5 text-red-300 group-hover:text-red-200 transition-colors duration-300" />
+            <LogOut className="w-4 h-4 text-red-300 group-hover:text-red-200 transition-colors duration-300" />
           </button>
         </div>
       </div>
