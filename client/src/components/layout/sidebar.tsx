@@ -69,7 +69,7 @@ export default function Sidebar() {
   return (
     <aside className={`${isCollapsed ? 'w-20' : 'w-72'} bg-gradient-to-b from-[#313d5a] to-[#2a3548] border-r border-[#3a3a3c]/50 h-screen shadow-2xl flex flex-col transition-all duration-300 ease-in-out`}>
       {/* Header Section */}
-      <div className="p-8 border-b border-[#3a3a3c]/30 relative">
+      <div className={`${isCollapsed ? 'p-4' : 'p-8'} border-b border-[#3a3a3c]/30 relative transition-all duration-300`}>
         {/* Collapse Toggle Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -82,9 +82,9 @@ export default function Sidebar() {
           )}
         </button>
 
-        <div className="flex items-center space-x-4">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'}`}>
           <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-3xl flex items-center justify-center shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-110 border-2 border-white/30 backdrop-blur-sm relative overflow-hidden group">
+            <div className={`${isCollapsed ? 'w-12 h-12' : 'w-16 h-16'} bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-3xl flex items-center justify-center shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-110 border-2 border-white/30 backdrop-blur-sm relative overflow-hidden group`}>
               {/* Background geometric pattern */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 rounded-3xl"></div>
               <div className="absolute top-1 left-1 w-3 h-3 bg-white/20 rounded-full blur-sm"></div>
@@ -92,7 +92,7 @@ export default function Sidebar() {
               
               {/* Modern DWU text */}
               <div className="relative z-10 flex items-center justify-center">
-                <span className="text-white font-black text-lg tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300" 
+                <span className={`text-white font-black ${isCollapsed ? 'text-sm' : 'text-lg'} tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300`} 
                       style={{ 
                         fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
                         textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
@@ -107,8 +107,8 @@ export default function Sidebar() {
             </div>
             
             {/* Status indicator with modern design */}
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] shadow-lg flex items-center justify-center">
-              <div className="w-3 h-3 bg-white rounded-full animate-pulse shadow-inner"></div>
+            <div className={`absolute -top-2 -right-2 ${isCollapsed ? 'w-4 h-4' : 'w-6 h-6'} bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] shadow-lg flex items-center justify-center transition-all duration-300`}>
+              <div className={`${isCollapsed ? 'w-2 h-2' : 'w-3 h-3'} bg-white rounded-full animate-pulse shadow-inner`}></div>
             </div>
           </div>
           {!isCollapsed && (
