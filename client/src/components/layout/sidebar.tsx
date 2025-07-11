@@ -68,12 +68,32 @@ export default function Sidebar() {
       <div className="p-8 border-b border-[#3a3a3c]/30">
         <div className="flex items-center space-x-4">
           <div className="relative">
-            <div className="w-14 h-14 bg-gradient-to-br from-[#0095da] via-[#007bb8] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-white/20">
-              <span className="text-white font-black text-xl tracking-tighter drop-shadow-lg" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                DW
-              </span>
+            <div className="w-16 h-16 bg-gradient-to-br from-[#0095da] via-[#33a9e6] to-[#0075b0] rounded-3xl flex items-center justify-center shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-110 border-2 border-white/30 backdrop-blur-sm relative overflow-hidden group">
+              {/* Background geometric pattern */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 rounded-3xl"></div>
+              <div className="absolute top-1 left-1 w-3 h-3 bg-white/20 rounded-full blur-sm"></div>
+              <div className="absolute bottom-2 right-2 w-2 h-2 bg-white/30 rounded-full blur-sm"></div>
+              
+              {/* Modern DW text */}
+              <div className="relative z-10 flex items-center justify-center">
+                <span className="text-white font-black text-xl tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300" 
+                      style={{ 
+                        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+                        textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
+                        letterSpacing: '-1px'
+                      }}>
+                  DW
+                </span>
+              </div>
+              
+              {/* Animated shine effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-3xl"></div>
             </div>
-            <div className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full border-3 border-[#313d5a] shadow-lg animate-pulse"></div>
+            
+            {/* Status indicator with modern design */}
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] shadow-lg flex items-center justify-center">
+              <div className="w-3 h-3 bg-white rounded-full animate-pulse shadow-inner"></div>
+            </div>
           </div>
           <div className="flex flex-col">
             <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
