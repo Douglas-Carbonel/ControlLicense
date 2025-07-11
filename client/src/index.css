@@ -165,6 +165,31 @@
   background: hsl(var(--primary) / 0.5);
 }
 
+/* Responsive table improvements */
+@media (max-width: 1024px) {
+  .license-table tbody td {
+    @apply px-2 py-2 text-xs;
+  }
+  
+  .license-table thead th {
+    @apply px-2 py-2 text-xs;
+  }
+}
+
+.license-table-container::-webkit-scrollbar-track {
+  background: hsl(var(--primary) / 0.1);
+  border-radius: 4px;
+}
+
+.license-table-container::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 4px;
+}
+
+.license-table-container::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
 /* Enhanced component styles */
 .license-code {
   @apply inline-flex items-center font-mono text-sm font-semibold text-primary px-3 py-1.5 rounded-lg;
