@@ -1,5 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { licenses, activities, users, type License, type InsertLicense, type Activity, type InsertActivity, type User, type InsertUser } from "@shared/schema";
 import { eq, desc, sql, and, gte, lte, count } from "drizzle-orm";
 
@@ -8,7 +8,7 @@ if (!connectionString) {
   throw new Error("SUPABASE_DATABASE_URL or DATABASE_URL environment variable is required");
 }
 
-const client = neon(connectionString);
+const client = postgres(connectionString);
 const db = drizzle(client);
 
 export interface IStorage {
