@@ -40,7 +40,7 @@ const AVAILABLE_COLUMNS = [
   { id: 'acoes', label: 'Ações', width: '100px', sticky: 'right' }
 ];
 
-// Componente input otimizado para evitar travadas
+// Direct input components for maximum performance
 const OptimizedInput = memo(({ value, onChange, placeholder, id, type = "text" }: {
   value: string | number;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -49,13 +49,14 @@ const OptimizedInput = memo(({ value, onChange, placeholder, id, type = "text" }
   type?: string;
 }) => {
   return (
-    <Input
+    <input
       id={id}
       type={type}
       value={value || ''}
       onChange={onChange}
       placeholder={placeholder}
-      className="transition-none"
+      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      style={{ transition: 'none', animation: 'none' }}
     />
   );
 });
@@ -68,13 +69,14 @@ const OptimizedTextarea = memo(({ value, onChange, placeholder, id, rows }: {
   rows?: number;
 }) => {
   return (
-    <Textarea
+    <textarea
       id={id}
       value={value || ''}
       onChange={onChange}
       placeholder={placeholder}
       rows={rows}
-      className="transition-none resize-none"
+      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+      style={{ transition: 'none', animation: 'none' }}
     />
   );
 });
@@ -97,7 +99,7 @@ export default function Licenses() {
   const queryClient = useQueryClient();
 
   // Debounce search with shorter delay for better responsiveness
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebounce(searchTerm, 200);
 
   // Memoize combined search to prevent re-computation
   const combinedSearch = useMemo(() => {
@@ -109,17 +111,20 @@ export default function Licenses() {
     return [debouncedSearchTerm, columnSearches].filter(Boolean).join(" ");
   }, [debouncedSearchTerm, columnFilters]);
 
-  // Query key memoization
-  const queryKey = useMemo(() => 
-    `/api/licenses?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(combinedSearch)}`,
-    [currentPage, pageSize, combinedSearch]
-  );
+  // Query key memoization with proper dependency array
+  const queryKey = useMemo(() => {
+    const searchParam = combinedSearch ? encodeURIComponent(combinedSearch) : '';
+    return `/api/licenses?page=${currentPage}&limit=${pageSize}&search=${searchParam}`;
+  }, [currentPage, pageSize, combinedSearch]);
 
   const { data: licensesResponse, isLoading, error, refetch } = useQuery({
-    queryKey: [queryKey],
-    staleTime: 30 * 1000,
-    gcTime: 2 * 60 * 1000,
-    retry: 2,
+    queryKey: ['licenses', currentPage, pageSize, combinedSearch],
+    queryFn: () => apiRequest('GET', queryKey),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const licenses = licensesResponse?.data || [];
@@ -208,10 +213,10 @@ export default function Licenses() {
     }
   }, [editingLicense, updateMutation]);
 
-  // Simplified field change handler to prevent re-renders
+  // Optimized field change handler with immediate state updates
   const handleFieldChange = useCallback((field: string, value: any) => {
     setEditingLicense((prev: any) => {
-      if (!prev) return prev;
+      if (!prev || prev[field] === value) return prev;
       return {
         ...prev,
         [field]: value

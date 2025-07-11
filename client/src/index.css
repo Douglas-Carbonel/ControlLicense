@@ -79,11 +79,32 @@
 input, textarea {
   will-change: contents;
   transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-/* Remove transition from inputs to prevent lag */
-input:focus, textarea:focus {
+/* Remove ALL transitions from form inputs to prevent lag */
+input, textarea, select {
   transition: none !important;
+  animation: none !important;
+}
+
+/* Disable transitions on focus for immediate response */
+input:focus, textarea:focus, select:focus {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Optimize modal performance */
+[role="dialog"] {
+  contain: layout style paint;
+  will-change: transform;
+}
+
+/* Optimize table cell interactions */
+.license-table-container td {
+  contain: layout style;
+  will-change: background-color;
 }
 
 /* Optimize table scrolling */
