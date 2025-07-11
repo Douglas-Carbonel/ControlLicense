@@ -7,37 +7,69 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Controle de renovação para evitar múltiplas requisições simultâneas
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+// Função para verificar se o token está próximo do vencimento
+function isTokenExpiringSoon(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const exp = payload.exp * 1000; // Converter para millisegundos
+    const now = Date.now();
+    const timeUntilExpiration = exp - now;
+    // Renovar se expira em menos de 30 minutos
+    return timeUntilExpiration < 30 * 60 * 1000;
+  } catch (error) {
+    console.error('Erro ao verificar token:', error);
+    return true; // Se não conseguir decodificar, considerar expirado
+  }
+}
+
 // Função para renovar token automaticamente
 async function renewTokenIfNeeded() {
   const token = localStorage.getItem("token");
   if (!token) return null;
 
-  try {
-    const response = await fetch("/api/auth/refresh", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-    });
+  // Se já está renovando, esperar o resultado
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
 
-    if (response.ok) {
-      const data = await response.json();
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      return data.token;
-    } else {
-      // Token não pode ser renovado
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        return data.token;
+      } else {
+        // Token não pode ser renovado
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        return null;
+      }
+    } catch (error) {
+      console.error("Erro ao renovar token:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
     }
-  } catch (error) {
-    console.error("Erro ao renovar token:", error);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    return null;
-  }
+  })();
+
+  return refreshPromise;
 }
 
 export async function apiRequest(
@@ -46,6 +78,14 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   let token = localStorage.getItem("token");
+  
+  // Verificar se o token está próximo do vencimento e renovar preventivamente
+  if (token && isTokenExpiringSoon(token)) {
+    const newToken = await renewTokenIfNeeded();
+    if (newToken) {
+      token = newToken;
+    }
+  }
   
   // Primeira tentativa
   let res = await fetch(url, {
@@ -87,6 +127,14 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     let token = localStorage.getItem("token");
     
+    // Verificar se o token está próximo do vencimento e renovar preventivamente
+    if (token && isTokenExpiringSoon(token)) {
+      const newToken = await renewTokenIfNeeded();
+      if (newToken) {
+        token = newToken;
+      }
+    }
+    
     // Primeira tentativa
     let res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
@@ -127,15 +175,15 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: 30000, // Refetch a cada 30 segundos
-      refetchOnWindowFocus: true,
+      refetchInterval: false, // Remover refetch automático que pode causar problemas
+      refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutos
       retry: (failureCount, error) => {
         // Não fazer retry em erros de autenticação
         if (error && error.message.includes('401')) {
           return false;
         }
-        return failureCount < 3;
+        return failureCount < 2;
       },
     },
     mutations: {

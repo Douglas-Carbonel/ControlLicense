@@ -106,14 +106,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
     }
 
-    // Configurar renovação automática de token a cada 23 horas
+    // Configurar renovação automática de token a cada 20 horas
     const refreshInterval = setInterval(() => {
       if (localStorage.getItem("token")) {
         refreshToken();
       }
-    }, 23 * 60 * 60 * 1000); // 23 horas em milissegundos
+    }, 20 * 60 * 60 * 1000); // 20 horas em milissegundos
 
-    return () => clearInterval(refreshInterval);
+    // Verificar token quando a janela recebe foco
+    const handleFocus = () => {
+      const currentToken = localStorage.getItem("token");
+      if (currentToken && !user) {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(refreshInterval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const login = async (username: string, password: string) => {

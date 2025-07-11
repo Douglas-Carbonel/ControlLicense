@@ -40,6 +40,12 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Enhanced search bar with rounded corners and improved placeholder text
 ✓ Added professional dropdown menu for user profile with role badges
 ✓ Included notification bell with counter badge for system alerts
+✓ Implementado sistema robusto de renovação automática de tokens JWT
+✓ Corrigido erro "activities?.map is not a function" com verificação de tipo segura
+✓ Criado sistema preventivo de renovação de tokens antes do vencimento
+✓ Adicionado controle de múltiplas requisições simultâneas para evitar conflitos
+✓ Aumentada duração dos tokens de 8h para 24h para maior estabilidade
+✓ Implementado endpoint /api/auth/refresh para renovação segura de tokens
 
 ## Configuração Padrão do Supabase
 
