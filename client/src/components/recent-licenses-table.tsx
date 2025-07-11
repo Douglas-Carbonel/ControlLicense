@@ -8,8 +8,19 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function RecentLicensesTable() {
-  const { data: licenses, isLoading } = useQuery({
-    queryKey: ["/api", "licenses"],
+  const { data: licensesResponse, isLoading } = useQuery({
+    queryKey: ["/api", "licenses", 1, 5, ""], // Página 1, limit 5, sem busca
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: "1",
+        limit: "5",
+        search: ""
+      });
+      return await fetch(`/api/licenses?${params}`).then(res => res.json());
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {
@@ -29,7 +40,7 @@ export default function RecentLicensesTable() {
     );
   }
 
-  const recentLicenses = licenses?.slice(0, 5) || [];
+  const recentLicenses = licensesResponse?.data || [];
 
   const getStatusVariant = (ativo: boolean) => {
     return ativo ? "default" : "secondary";
