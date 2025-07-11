@@ -1,3 +1,4 @@
+
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { users } from "./shared/schema";
@@ -13,45 +14,46 @@ const db = drizzle(sql);
 
 async function createAdmin() {
   try {
-    // Hash da senha padrão
+    console.log("Criando usuário administrador...");
+    
     const hashedPassword = await bcrypt.hash("admin123", 10);
     
-    // Criar usuário administrador
-    const admin = await db.insert(users).values({
+    const newAdmin = await db.insert(users).values({
       username: "admin",
-      email: "admin@empresa.com",
+      email: "admin@sistema.com",
       passwordHash: hashedPassword,
       role: "admin",
-      name: "Administrador",
+      name: "Administrador do Sistema",
       active: true
     }).returning();
     
-    console.log("Usuário administrador criado com sucesso!");
-    console.log("Login: admin");
+    console.log("Administrador criado com sucesso:");
+    console.log("Usuário:", newAdmin[0].username);
+    console.log("Email:", newAdmin[0].email);
     console.log("Senha: admin123");
-    console.log("Role: admin");
-    console.log("Por favor, altere a senha após o primeiro login.");
+    console.log("Role:", newAdmin[0].role);
     
-    // Criar usuário de suporte de exemplo
-    const supportPassword = await bcrypt.hash("support123", 10);
-    const support = await db.insert(users).values({
-      username: "suporte",
-      email: "suporte@empresa.com",
-      passwordHash: supportPassword,
+    // Criar também um usuário técnico de exemplo
+    const hashedTechPassword = await bcrypt.hash("tech123", 10);
+    
+    const newTech = await db.insert(users).values({
+      username: "tecnico",
+      email: "tecnico@sistema.com",
+      passwordHash: hashedTechPassword,
       role: "support",
-      name: "Usuário de Suporte",
+      name: "Técnico do Sistema",
       active: true
     }).returning();
     
-    console.log("\nUsuário de suporte criado com sucesso!");
-    console.log("Login: suporte");
-    console.log("Senha: support123");
-    console.log("Role: support");
-    console.log("Por favor, altere a senha após o primeiro login.");
+    console.log("\nTécnico criado com sucesso:");
+    console.log("Usuário:", newTech[0].username);
+    console.log("Email:", newTech[0].email);
+    console.log("Senha: tech123");
+    console.log("Role:", newTech[0].role);
     
   } catch (error) {
     console.error("Erro ao criar usuários:", error);
   }
 }
 
-createAdmin().catch(console.error);
+createAdmin();

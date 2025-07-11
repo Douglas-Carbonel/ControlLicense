@@ -18,7 +18,7 @@ export interface IStorage {
   createLicense(license: InsertLicense): Promise<License>;
   updateLicense(id: number, license: Partial<InsertLicense>): Promise<License>;
   deleteLicense(id: number): Promise<void>;
-  
+
   // License statistics
   getLicenseStats(): Promise<{
     total: number;
@@ -26,11 +26,11 @@ export interface IStorage {
     inactive: number;
     totalLicenseCount: number;
   }>;
-  
+
   // Activity operations
   getActivities(limit?: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
-  
+
   // User operations
   getUsers(): Promise<User[]>;
   getUser(id: number): Promise<User | undefined>;
@@ -84,7 +84,7 @@ export class DbStorage implements IStorage {
       .select({ count: count() })
       .from(licenses)
       .where(eq(licenses.ativo, false));
-    
+
     // Sum all license quantities
     const [licenseCountResult] = await db
       .select({ 
@@ -113,42 +113,69 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  // User operations
+  async updateLicense(id: number, data: Partial<InsertLicense>): Promise<License> {
+    const updated = await this.db
+      .update(licenses)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(licenses.id, id))
+      .returning();
+
+    if (!updated[0]) {
+      throw new Error("License not found");
+    }
+
+    return updated[0];
+  }
+
+  // Métodos para usuários
   async getUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
+    return this.db.select().from(users).orderBy(users.createdAt);
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+  async getUser(id: number): Promise<User | null> {
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    return result[0] || null;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0];
+  async getUserByUsername(username: string): Promise<User | null> {
+    const result = await this.db.select().from(users).where(eq(users.username, username));
+    return result[0] || null;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.email, email));
-    return result[0];
+  async getUserByEmail(email: string): Promise<User | null> {
+    const result = await this.db.select().from(users).where(eq(users.email, email));
+    return result[0] || null;
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
-    return result[0];
+  async createUser(data: InsertUser): Promise<User> {
+    const created = await this.db
+      .insert(users)
+      .values({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    return created[0];
   }
 
-  async updateUser(id: number, user: Partial<InsertUser>): Promise<User> {
-    const result = await db
+  async updateUser(id: number, data: Partial<InsertUser>): Promise<User> {
+    const updated = await this.db
       .update(users)
-      .set(user)
+      .set({ ...data, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
-    return result[0];
+
+    if (!updated[0]) {
+      throw new Error("User not found");
+    }
+
+    return updated[0];
   }
 
   async deleteUser(id: number): Promise<void> {
-    await db.delete(users).where(eq(users.id, id));
+    await this.db.delete(users).where(eq(users.id, id));
   }
 }
 
