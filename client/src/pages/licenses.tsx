@@ -41,6 +41,7 @@ const AVAILABLE_COLUMNS = [
 
 export default function Licenses() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [visibleColumns, setVisibleColumns] = useState(
     AVAILABLE_COLUMNS.map(col => col.id)
   );
@@ -111,12 +112,35 @@ export default function Licenses() {
     return ativo ? "Ativa" : "Inativa";
   };
 
-  const filteredLicenses = licenses?.filter((license: any) =>
-    license.nomeCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    license.codCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    license.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    license.hardwareKey?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredLicenses = licenses?.filter((license: any) => {
+    // Global search filter
+    const globalMatch = searchTerm === "" || 
+      license.nomeCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      license.codCliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      license.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      license.hardwareKey?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Column-specific filters
+    const columnMatch = Object.entries(columnFilters).every(([columnId, filterValue]) => {
+      if (!filterValue) return true;
+      
+      const licenseValue = license[columnId];
+      if (licenseValue === null || licenseValue === undefined) return false;
+      
+      switch (columnId) {
+        case 'ativo':
+          const statusText = licenseValue ? 'ativo' : 'inativo';
+          return statusText.toLowerCase().includes(filterValue.toLowerCase());
+        case 'qtLicencas':
+        case 'qtLicencasAdicionais':
+          return licenseValue.toString() === filterValue;
+        default:
+          return licenseValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+      }
+    });
+
+    return globalMatch && columnMatch;
+  }) || [];
 
   const handleDelete = (id: number) => {
     if (confirm("Tem certeza que deseja excluir esta licença?")) {
@@ -194,6 +218,18 @@ export default function Licenses() {
       [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
       return newOrder;
     });
+  };
+
+  const updateColumnFilter = (columnId: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnId]: value
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setColumnFilters({});
+    setSearchTerm("");
   };
 
   const getVisibleColumnsInOrder = () => {
@@ -474,18 +510,33 @@ export default function Licenses() {
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-lg font-semibold text-slate-800">Todas as Licenças</CardTitle>
-              <p className="text-sm text-gray-500 mt-1">Mostrando {filteredLicenses.length} de {licenses?.length || 0} licenças</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Mostrando {filteredLicenses.length} de {licenses?.length || 0} licenças
+                {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && 
+                  ` (${filteredLicenses.length} filtradas)`
+                }
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Buscar licenças..."
+                  placeholder="Busca geral..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="pl-10 w-48 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
+              {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-xs"
+                >
+                  Limpar Filtros
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -517,7 +568,18 @@ export default function Licenses() {
                             width: column.id === 'qtLicencas' || column.id === 'qtLicencasAdicionais' || column.id === 'acoes' ? column.width : undefined
                           }}
                         >
-                          {column.label}
+                          <div className="space-y-2">
+                            <div>{column.label}</div>
+                            {column.id !== 'acoes' && (
+                              <Input
+                                placeholder={`Filtrar ${column.label.toLowerCase()}...`}
+                                value={columnFilters[column.id] || ''}
+                                onChange={(e) => updateColumnFilter(column.id, e.target.value)}
+                                className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            )}
+                          </div>
                         </th>
                       ))}
                     </tr>
