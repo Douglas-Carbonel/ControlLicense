@@ -62,7 +62,7 @@ export default function Sidebar() {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">LicenseManager</h2>
+            <h2 className="text-lg text-gray-900 font-bold">DWU License</h2>
           </div>
         </div>
 
