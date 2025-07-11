@@ -103,11 +103,11 @@ export default function Licenses() {
     setCurrentPage(1);
   }, []);
 
-  // Debounce search with longer delay for better UX - silent search
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  // Debounce search with longer delay for better UX - silent search (800ms para evitar requisições excessivas)
+  const debouncedSearchTerm = useDebounce(searchTerm, 800);
   
-  // Debounce column filters with longer delay for better user experience
-  const debouncedColumnFilters = useDebounce(columnFilters, 300);
+  // Debounce column filters with longer delay for better user experience (800ms)
+  const debouncedColumnFilters = useDebounce(columnFilters, 800);
 
   // Memoize combined search to prevent re-computation
   const combinedSearch = useMemo(() => {
@@ -125,7 +125,7 @@ export default function Licenses() {
     [currentPage, pageSize, combinedSearch]
   );
 
-  const { data: licensesResponse, isLoading, error, refetch } = useQuery({
+  const { data: licensesResponse, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: [queryKey],
     staleTime: 5 * 60 * 1000, // 5 minutos para melhor cache
     gcTime: 10 * 60 * 1000, // 10 minutos para garbage collection
@@ -391,6 +391,12 @@ export default function Licenses() {
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-48 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
+                {/* Indicador sutil de busca em andamento */}
+                {isFetching && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin"></div>
+                  </div>
+                )}
               </div>
               {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && (
                 <Button
@@ -406,7 +412,8 @@ export default function Licenses() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {isLoading ? (
+          {/* Loading apenas no primeiro carregamento, não durante filtros */}
+          {isLoading && !licensesResponse ? (
             <div className="space-y-4 p-6">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
@@ -458,14 +465,22 @@ export default function Licenses() {
                           <div className="space-y-2">
                             <div>{column.label}</div>
                             {column.id !== 'acoes' && (
-                              <Input
-                                placeholder="Digite para filtrar..."
-                                value={columnFilters[column.id] || ''}
-                                onChange={(e) => updateColumnFilter(column.id, e.target.value)}
-                                className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none"
-                                onClick={(e) => e.stopPropagation()}
-                                autoComplete="off"
-                              />
+                              <div className="relative">
+                                <Input
+                                  placeholder="Digite para filtrar..."
+                                  value={columnFilters[column.id] || ''}
+                                  onChange={(e) => updateColumnFilter(column.id, e.target.value)}
+                                  className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none pr-8"
+                                  onClick={(e) => e.stopPropagation()}
+                                  autoComplete="off"
+                                />
+                                {/* Indicador sutil quando há filtro ativo */}
+                                {isFetching && columnFilters[column.id] && (
+                                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                    <div className="w-3 h-3 border border-gray-300 border-t-primary rounded-full animate-spin"></div>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                         </th>
