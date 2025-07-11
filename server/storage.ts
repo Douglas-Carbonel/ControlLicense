@@ -5,7 +5,7 @@ dotenv.config();
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { licenses, activities, users, type License, type InsertLicense, type Activity, type InsertActivity, type User, type InsertUser } from "@shared/schema";
-import { eq, desc, sql, and, gte, lte, count } from "drizzle-orm";
+import { eq, desc, sql, and, gte, lte, count, or, ilike } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 if (!connectionString) {
@@ -56,14 +56,10 @@ export class DbStorage implements IStorage {
     let query = db.select().from(licenses);
     
     if (search) {
-      query = query.where(
-        or(
-          ilike(licenses.nomeCliente, `%${search}%`),
-          ilike(licenses.codCliente, `%${search}%`),
-          ilike(licenses.code, `%${search}%`),
-          ilike(licenses.hardwareKey, `%${search}%`)
-        )
-      );
+      const conditions = this.buildSearchConditions(search);
+      if (conditions.length > 0) {
+        query = query.where(or(...conditions));
+      }
     }
     
     const result = await query
@@ -78,18 +74,72 @@ export class DbStorage implements IStorage {
     let query = db.select({ count: count() }).from(licenses);
     
     if (search) {
-      query = query.where(
-        or(
-          ilike(licenses.nomeCliente, `%${search}%`),
-          ilike(licenses.codCliente, `%${search}%`),
-          ilike(licenses.code, `%${search}%`),
-          ilike(licenses.hardwareKey, `%${search}%`)
-        )
-      );
+      const conditions = this.buildSearchConditions(search);
+      if (conditions.length > 0) {
+        query = query.where(or(...conditions));
+      }
     }
     
     const result = await query;
     return result[0].count;
+  }
+
+  private buildSearchConditions(search: string): any[] {
+    const conditions: any[] = [];
+    const parts = search.trim().split(' ');
+    
+    for (const part of parts) {
+      if (part.includes(':')) {
+        // Filtro específico de coluna (formato: coluna:valor)
+        const [column, value] = part.split(':');
+        if (value) {
+          switch (column) {
+            case 'codCliente':
+              conditions.push(ilike(licenses.codCliente, `%${value}%`));
+              break;
+            case 'nomeCliente':
+              conditions.push(ilike(licenses.nomeCliente, `%${value}%`));
+              break;
+            case 'code':
+              conditions.push(ilike(licenses.code, `%${value}%`));
+              break;
+            case 'hardwareKey':
+              conditions.push(ilike(licenses.hardwareKey, `%${value}%`));
+              break;
+            case 'ativo':
+              const isActive = value.toLowerCase() === 'ativo' || value.toLowerCase() === 'true';
+              conditions.push(eq(licenses.ativo, isActive));
+              break;
+            case 'qtLicencas':
+            case 'qtLicencasAdicionais':
+              const num = parseInt(value);
+              if (!isNaN(num)) {
+                conditions.push(eq(licenses[column as keyof typeof licenses], num));
+              }
+              break;
+            default:
+              // Para outras colunas, buscar como texto
+              if (licenses[column as keyof typeof licenses]) {
+                conditions.push(ilike(licenses[column as keyof typeof licenses], `%${value}%`));
+              }
+          }
+        }
+      } else {
+        // Busca global em múltiplas colunas
+        conditions.push(
+          or(
+            ilike(licenses.nomeCliente, `%${part}%`),
+            ilike(licenses.codCliente, `%${part}%`),
+            ilike(licenses.code, `%${part}%`),
+            ilike(licenses.hardwareKey, `%${part}%`),
+            ilike(licenses.dadosEmpresa, `%${part}%`),
+            ilike(licenses.listaCnpj, `%${part}%`)
+          )
+        );
+      }
+    }
+    
+    return conditions;
   }
 
   async getLicense(id: number): Promise<License | undefined> {

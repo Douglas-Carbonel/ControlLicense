@@ -83,8 +83,18 @@ export default function Licenses() {
   // Debounce otimizado para 300ms para busca server-side
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+  // Combinar filtros de coluna com busca global para nova query
+  const combinedSearch = useMemo(() => {
+    const columnSearches = Object.entries(columnFilters)
+      .filter(([_, value]) => value !== "")
+      .map(([column, value]) => `${column}:${value}`)
+      .join(" ");
+    
+    return [debouncedSearchTerm, columnSearches].filter(Boolean).join(" ");
+  }, [debouncedSearchTerm, columnFilters]);
+
   const { data: licensesResponse, isLoading, error, refetch } = useQuery({
-    queryKey: [`/api/licenses?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(debouncedSearchTerm)}`],
+    queryKey: [`/api/licenses?page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(combinedSearch)}`],
     staleTime: 30 * 1000,
     gcTime: 2 * 60 * 1000,
     retry: 2,
@@ -156,33 +166,8 @@ export default function Licenses() {
     return ativo ? "Ativa" : "Inativa";
   };
 
-  // Filtros de coluna aplicados localmente nos dados paginados
-  const filteredLicenses = useMemo(() => {
-    if (!licenses) return [];
-    
-    return licenses.filter((license: any) => {
-      // Column-specific filters apenas (search global já é feito no backend)
-      const columnMatch = Object.entries(columnFilters).every(([columnId, filterValue]) => {
-        if (!filterValue) return true;
-        
-        const licenseValue = license[columnId];
-        if (licenseValue === null || licenseValue === undefined) return false;
-        
-        switch (columnId) {
-          case 'ativo':
-            const statusText = licenseValue ? 'ativo' : 'inativo';
-            return statusText.toLowerCase().includes(filterValue.toLowerCase());
-          case 'qtLicencas':
-          case 'qtLicencasAdicionais':
-            return licenseValue.toString() === filterValue;
-          default:
-            return licenseValue.toString().toLowerCase().includes(filterValue.toLowerCase());
-        }
-      });
-
-      return columnMatch;
-    });
-  }, [licenses, columnFilters]);
+  // Usar todos os dados retornados (já filtrados no backend)
+  const filteredLicenses = licenses;
 
   const handleDelete = useCallback((id: number) => {
     if (confirm("Tem certeza que deseja excluir esta licença?")) {
@@ -226,6 +211,7 @@ export default function Licenses() {
       ...prev,
       [columnId]: value
     }));
+    setCurrentPage(1); // Reset para página 1 quando filtrar
   }, []);
 
   const clearAllFilters = useCallback(() => {
@@ -565,11 +551,11 @@ export default function Licenses() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent 
           className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg"
-          description="Atualize as informações da licença"
+          aria-describedby="edit-dialog-description"
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Editar Licença</DialogTitle>
-            <p id="dialog-description" className="text-sm text-[#3a3a3c] mt-2">Atualize as informações da licença</p>
+            <p id="edit-dialog-description" className="text-sm text-[#3a3a3c] mt-2">Atualize as informações da licença</p>
           </DialogHeader>
           
           {editingLicense && (
@@ -619,6 +605,125 @@ export default function Licenses() {
                     onChange={(e: any) => handleEditingLicenseChange('listaCnpj', e.target.value)}
                     placeholder="12.345.678/0001-90"
                   />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="ambiente" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-nomeDb">Nome do Banco</Label>
+                    <OptimizedInput
+                      id="edit-nomeDb"
+                      value={editingLicense.nomeDb || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('nomeDb', e.target.value)}
+                      placeholder="SBODemo_BR"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-descDb">Descrição do Banco</Label>
+                    <OptimizedInput
+                      id="edit-descDb"
+                      value={editingLicense.descDb || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('descDb', e.target.value)}
+                      placeholder="Base de Teste"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-endApi">Endpoint da API</Label>
+                  <OptimizedInput
+                    id="edit-endApi"
+                    value={editingLicense.endApi || ''}
+                    onChange={(e: any) => handleEditingLicenseChange('endApi', e.target.value)}
+                    placeholder="http://api.exemplo.com:8099/Database/API"
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="licenca" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-hardwareKey">Hardware Key</Label>
+                    <OptimizedInput
+                      id="edit-hardwareKey"
+                      value={editingLicense.hardwareKey || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('hardwareKey', e.target.value)}
+                      placeholder="D0950733748"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-installNumber">Install Number</Label>
+                    <OptimizedInput
+                      id="edit-installNumber"
+                      value={editingLicense.installNumber || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('installNumber', e.target.value)}
+                      placeholder="0090289858"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-systemNumber">System Number</Label>
+                    <OptimizedInput
+                      id="edit-systemNumber"
+                      value={editingLicense.systemNumber || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('systemNumber', e.target.value)}
+                      placeholder="000000000850521388"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-versaoSap">Versão SAP</Label>
+                    <OptimizedInput
+                      id="edit-versaoSap"
+                      value={editingLicense.versaoSap || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('versaoSap', e.target.value)}
+                      placeholder="9.3"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-qtLicencas">Quantidade de Licenças</Label>
+                    <OptimizedInput
+                      id="edit-qtLicencas"
+                      type="number"
+                      value={editingLicense.qtLicencas || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('qtLicencas', parseInt(e.target.value) || 0)}
+                      placeholder="1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-qtLicencasAdicionais">Licenças Adicionais</Label>
+                    <OptimizedInput
+                      id="edit-qtLicencasAdicionais"
+                      type="number"
+                      value={editingLicense.qtLicencasAdicionais || ''}
+                      onChange={(e: any) => handleEditingLicenseChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-observacao">Observações</Label>
+                  <OptimizedTextarea
+                    id="edit-observacao"
+                    value={editingLicense.observacao || ''}
+                    onChange={(e: any) => handleEditingLicenseChange('observacao', e.target.value)}
+                    placeholder="Observações sobre a licença..."
+                    rows={3}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="edit-ativo"
+                    checked={editingLicense.ativo || false}
+                    onChange={(e) => handleEditingLicenseChange('ativo', e.target.checked)}
+                    className="w-4 h-4 text-[#0095da] bg-gray-100 border-gray-300 rounded focus:ring-[#0095da] focus:ring-2"
+                  />
+                  <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#3a3a3c]">
+                    Licença Ativa
+                  </Label>
                 </div>
               </TabsContent>
               
