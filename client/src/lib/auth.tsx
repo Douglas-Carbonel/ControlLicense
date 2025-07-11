@@ -113,6 +113,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }, 20 * 60 * 60 * 1000); // 20 horas em milissegundos
 
+    // Heartbeat para verificar se o token ainda é válido a cada 5 minutos
+    const heartbeatInterval = setInterval(() => {
+      const token = localStorage.getItem("token");
+      if (token && user) {
+        // Fazer uma requisição simples para verificar se o token ainda é válido
+        fetch("/api/licenses/stats", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        }).then((response) => {
+          if (response.status === 401) {
+            console.log('Token inválido detectado no heartbeat, renovando...');
+            refreshToken();
+          }
+        }).catch((error) => {
+          console.error('Erro no heartbeat:', error);
+        });
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+
     // Verificar token quando a janela recebe foco
     const handleFocus = () => {
       const currentToken = localStorage.getItem("token");
@@ -124,11 +145,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
+    // Verificar mudanças no localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'token' && !e.newValue) {
+        console.log('Token removido do localStorage');
+        setUser(null);
+      }
+    };
+
     window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       clearInterval(refreshInterval);
+      clearInterval(heartbeatInterval);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

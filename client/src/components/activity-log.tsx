@@ -6,7 +6,8 @@ import { ptBR } from "date-fns/locale";
 
 export default function ActivityLog() {
   const { data: activities, isLoading } = useQuery({
-    queryKey: ["/api/activities"],
+    queryKey: ["/api", "activities"],
+    // Usar o queryFn padrão que já tem renovação automática de token
   });
 
   if (isLoading) {

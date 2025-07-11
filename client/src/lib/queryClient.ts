@@ -18,8 +18,14 @@ function isTokenExpiringSoon(token: string): boolean {
     const exp = payload.exp * 1000; // Converter para millisegundos
     const now = Date.now();
     const timeUntilExpiration = exp - now;
-    // Renovar se expira em menos de 30 minutos
-    return timeUntilExpiration < 30 * 60 * 1000;
+    
+    // Debug: Log do tempo restante apenas se próximo do vencimento
+    if (timeUntilExpiration < 2 * 60 * 60 * 1000) {
+      console.log('Token expira em:', Math.round(timeUntilExpiration / 1000 / 60), 'minutos');
+    }
+    
+    // Renovar se expira em menos de 2 horas (mais agressivo)
+    return timeUntilExpiration < 2 * 60 * 60 * 1000;
   } catch (error) {
     console.error('Erro ao verificar token:', error);
     return true; // Se não conseguir decodificar, considerar expirado
@@ -51,9 +57,11 @@ async function renewTokenIfNeeded() {
         const data = await response.json();
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        console.log('Token renovado com sucesso');
         return data.token;
       } else {
         // Token não pode ser renovado
+        console.error('Falha ao renovar token:', response.status);
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         return null;
@@ -127,6 +135,16 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     let token = localStorage.getItem("token");
     
+    // Debug: verificar se o token existe
+    if (!token) {
+      console.error('Token não encontrado no localStorage');
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      }
+      window.location.reload();
+      return null;
+    }
+    
     // Verificar se o token está próximo do vencimento e renovar preventivamente
     if (token && isTokenExpiringSoon(token)) {
       const newToken = await renewTokenIfNeeded();
@@ -145,6 +163,7 @@ export const getQueryFn: <T>(options: {
 
     // Se got 401, tentar renovar token e repetir
     if (res.status === 401 && token) {
+      console.log('Token expirado, renovando automaticamente...');
       const newToken = await renewTokenIfNeeded();
       if (newToken) {
         // Repetir requisição com novo token
@@ -154,10 +173,12 @@ export const getQueryFn: <T>(options: {
             Authorization: `Bearer ${newToken}`,
           },
         });
+        console.log('Token renovado com sucesso');
       }
     }
 
     if (res.status === 401) {
+      console.error('Falha na autenticação, redirecionando para login...');
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }
