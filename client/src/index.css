@@ -160,14 +160,14 @@ body {
   --destructive-foreground: hsl(0, 0%, 100%);
   --ring: #0095da;
   --radius: 0.75rem;
-  
+
   /* DW IT Solutions Official Colors */
   --dw-gray-light: #f4f4f4;
   --dw-blue-primary: #0095da;
   --dw-blue-dark: #313d5a;
   --dw-gray-dark: #3a3a3c;
   --dw-blue-darkest: #0c151f;
-  
+
   /* Extended palette for gradients and variations */
   --dw-blue-light: #33a9e6;
   --dw-blue-lighter: #66bdef;
@@ -195,7 +195,7 @@ body {
   --border: hsl(220, 13%, 18%);
   --input: hsl(220, 13%, 18%);
   --ring: hsl(162, 25%, 55%);
-  
+
   /* Dark mode extended colors */
   --sage-green: hsl(162, 25%, 55%);
   --sage-green-light: hsl(162, 25%, 65%);
@@ -474,7 +474,7 @@ body {
   .license-table tbody td {
     @apply px-2 py-2 text-xs;
   }
-  
+
   .license-table thead th {
     @apply px-2 py-2 text-xs;
   }
@@ -557,7 +557,7 @@ body {
   .license-table tbody td {
     @apply px-2 py-2 text-xs;
   }
-  
+
   .license-table thead th {
     @apply px-2 py-2 text-xs;
   }
@@ -802,12 +802,80 @@ body {
   .professional-container {
     @apply px-4 py-6;
   }
-  
+
   .professional-title {
     @apply text-2xl;
   }
-  
+
   .stats-grid {
     @apply grid-cols-2;
   }
+}
+
+/* Otimizações de performance para tabelas */
+.license-table-container {
+  contain: layout style paint;
+  will-change: scroll-position;
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+.license-table-container table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  contain: layout style;
+}
+
+.license-table-container th,
+.license-table-container td {
+  contain: layout style paint size;
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+/* Desabilitar transições desnecessárias */
+.transition-none {
+  transition: none !important;
+  transform: translateZ(0);
+}
+
+/* Otimizar inputs */
+input.transition-none,
+textarea.transition-none {
+  transition: none !important;
+  will-change: contents;
+  contain: layout style;
+}
+
+/* Otimizar animações */
+.animate-pulse {
+  animation: pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .8;
+  }
+}
+
+/* Melhorar scroll performance */
+.license-table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.license-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.license-table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.license-table-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

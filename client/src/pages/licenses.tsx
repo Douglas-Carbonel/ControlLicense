@@ -96,18 +96,21 @@ export default function Licenses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debounce search with shorter delay for better responsiveness
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  // Debounce search with much shorter delay for better responsiveness
+  const debouncedSearchTerm = useDebounce(searchTerm, 100);
+  
+  // Debounce column filters with even shorter delay
+  const debouncedColumnFilters = useDebounce(columnFilters, 150);
 
   // Memoize combined search to prevent re-computation
   const combinedSearch = useMemo(() => {
-    const columnSearches = Object.entries(columnFilters)
+    const columnSearches = Object.entries(debouncedColumnFilters)
       .filter(([_, value]) => value !== "")
       .map(([column, value]) => `${column}:${value}`)
       .join(" ");
     
     return [debouncedSearchTerm, columnSearches].filter(Boolean).join(" ");
-  }, [debouncedSearchTerm, columnFilters]);
+  }, [debouncedSearchTerm, debouncedColumnFilters]);
 
   // Query key memoization
   const queryKey = useMemo(() => 
@@ -117,9 +120,12 @@ export default function Licenses() {
 
   const { data: licensesResponse, isLoading, error, refetch } = useQuery({
     queryKey: [queryKey],
-    staleTime: 30 * 1000,
-    gcTime: 2 * 60 * 1000,
-    retry: 2,
+    staleTime: 10 * 1000, // Reduzir stale time para dados mais frescos
+    gcTime: 30 * 1000, // Reduzir garbage collection time
+    retry: 1, // Menos tentativas para resposta mais rápida
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    enabled: true, // Sempre habilitado
   });
 
   const licenses = licensesResponse?.data || [];
@@ -229,11 +235,14 @@ export default function Licenses() {
   }, [toast]);
 
   const updateColumnFilter = useCallback((columnId: string, value: string) => {
-    setColumnFilters(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
-    setCurrentPage(1);
+    setColumnFilters(prev => {
+      const newFilters = { ...prev, [columnId]: value };
+      return newFilters;
+    });
+    // Só resetar página se não estiver vazio
+    if (value !== '') {
+      setCurrentPage(1);
+    }
   }, []);
 
   const clearAllFilters = useCallback(() => {
@@ -446,11 +455,12 @@ export default function Licenses() {
                             <div>{column.label}</div>
                             {column.id !== 'acoes' && (
                               <Input
-                                placeholder="Pesquisar..."
+                                placeholder="Filtrar..."
                                 value={columnFilters[column.id] || ''}
                                 onChange={(e) => updateColumnFilter(column.id, e.target.value)}
-                                className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary"
+                                className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none"
                                 onClick={(e) => e.stopPropagation()}
+                                autoComplete="off"
                               />
                             )}
                           </div>
@@ -460,10 +470,10 @@ export default function Licenses() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
                     {filteredLicenses.map((license: any) => (
-                      <tr key={license.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <tr key={license.id} className="hover:bg-gray-50 transition-none">
                         {getVisibleColumnsInOrder().map((column) => (
                           <td
-                            key={column.id}
+                            key={`${license.id}-${column.id}`}
                             className={`px-3 py-3 text-sm border-r border-gray-200 ${
                               column.sticky === 'left'
                                 ? 'sticky left-0 z-10 bg-white px-4 font-medium text-slate-800 hover:bg-slate-50'
