@@ -1,23 +1,284 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLicenseSchema, insertActivitySchema } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
 import * as XLSX from "xlsx";
 import { readFileSync } from "fs";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// Extend Request interface to include multer file
+// Extend Request interface to include multer file and user info
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
 
+interface AuthRequest extends Request {
+  user?: {
+    id: number;
+    username: string;
+    role: string;
+    name: string;
+  };
+}
+
 const upload = multer({ dest: "uploads/" });
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+
+// Middleware para verificar autenticação
+function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Token de acesso requerido' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    if (err) {
+      return res.status(403).json({ message: 'Token inválido' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+// Middleware para verificar se é admin
+function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ message: 'Acesso negado. Apenas administradores.' });
+  }
+  next();
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // License routes
-  app.get("/api/licenses", async (req, res) => {
+  // Rotas de autenticação
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: "Usuário ou senha incorretos" });
+      }
+
+      if (!user.active) {
+        return res.status(401).json({ message: "Usuário inativo" });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Usuário ou senha incorretos" });
+      }
+
+      const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role, name: user.name },
+        JWT_SECRET,
+        { expiresIn: '8h' }
+      );
+
+      // Log da atividade
+      await storage.createActivity({
+        userId: user.id.toString(),
+        userName: user.name,
+        action: "LOGIN",
+        resourceType: "user",
+        resourceId: user.id,
+        description: `Usuário ${user.name} (${user.role}) fez login`,
+      });
+
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          email: user.email
+        }
+      });
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post("/api/auth/logout", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (req.user) {
+        await storage.createActivity({
+          userId: req.user.id.toString(),
+          userName: req.user.name,
+          action: "LOGOUT",
+          resourceType: "user",
+          resourceId: req.user.id,
+          description: `Usuário ${req.user.name} fez logout`,
+        });
+      }
+      res.json({ message: "Logout realizado com sucesso" });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Rotas de gerenciamento de usuários (apenas admin)
+  app.get("/api/users", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const users = await storage.getUsers();
+      // Não enviar hash da senha
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        active: user.active,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Erro ao buscar usuários" });
+    }
+  });
+
+  app.post("/api/users", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Verificar se usuário já existe
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Usuário já existe" });
+      }
+
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email já está em uso" });
+      }
+
+      // Hash da senha
+      const hashedPassword = await bcrypt.hash(userData.passwordHash, 10);
+      
+      const newUser = await storage.createUser({
+        ...userData,
+        passwordHash: hashedPassword
+      });
+
+      // Log da atividade
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "CREATE",
+        resourceType: "user",
+        resourceId: newUser.id,
+        description: `Usuário ${newUser.name} criado por ${req.user!.name}`,
+      });
+
+      // Não enviar hash da senha
+      const safeUser = {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        active: newUser.active,
+        createdAt: newUser.createdAt,
+        updatedAt: newUser.updatedAt
+      };
+
+      res.status(201).json(safeUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao criar usuário" });
+    }
+  });
+
+  app.put("/api/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = req.body;
+
+      // Se está alterando a senha, fazer hash
+      if (userData.passwordHash) {
+        userData.passwordHash = await bcrypt.hash(userData.passwordHash, 10);
+      }
+
+      const updatedUser = await storage.updateUser(id, userData);
+
+      // Log da atividade
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "UPDATE",
+        resourceType: "user",
+        resourceId: id,
+        description: `Usuário ${updatedUser.name} atualizado por ${req.user!.name}`,
+      });
+
+      // Não enviar hash da senha
+      const safeUser = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        active: updatedUser.active,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt
+      };
+
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Erro ao atualizar usuário" });
+    }
+  });
+
+  app.delete("/api/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (req.user!.id === id) {
+        return res.status(400).json({ message: "Não é possível excluir seu próprio usuário" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      await storage.deleteUser(id);
+
+      // Log da atividade
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "user",
+        resourceId: id,
+        description: `Usuário ${user.name} excluído por ${req.user!.name}`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Erro ao excluir usuário" });
+    }
+  });
+  // License routes (requer autenticação)
+  app.get("/api/licenses", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const licenses = await storage.getLicenses();
       res.json(licenses);
@@ -28,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Statistics route - must come before parameterized routes
-  app.get("/api/licenses/stats", async (req, res) => {
+  app.get("/api/licenses/stats", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const stats = await storage.getLicenseStats();
       res.json(stats);
@@ -38,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/licenses/:id", async (req, res) => {
+  app.get("/api/licenses/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
       const license = await storage.getLicense(id);
@@ -51,19 +312,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/licenses", async (req, res) => {
+  app.post("/api/licenses", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const validatedData = insertLicenseSchema.parse(req.body);
       const license = await storage.createLicense(validatedData);
       
       // Log activity
       await storage.createActivity({
-        userId: "current-user", // TODO: Get from session
-        userName: "Current User", // TODO: Get from session
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
         action: "CREATE",
         resourceType: "license",
         resourceId: license.id,
-        description: `Created license for ${license.nomeCliente}`,
+        description: `${req.user!.name} criou licença para ${license.nomeCliente}`,
       });
       
       res.status(201).json(license);
@@ -76,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/licenses/:id", async (req, res) => {
+  app.put("/api/licenses/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertLicenseSchema.partial().parse(req.body);
@@ -84,12 +345,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivity({
-        userId: "current-user",
-        userName: "Current User",
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
         action: "UPDATE",
         resourceType: "license",
         resourceId: license.id,
-        description: `Updated license for ${license.nomeCliente}`,
+        description: `${req.user!.name} atualizou licença para ${license.nomeCliente}`,
       });
       
       res.json(license);
@@ -102,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/licenses/:id", async (req, res) => {
+  app.delete("/api/licenses/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
       const license = await storage.getLicense(id);
@@ -114,12 +375,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivity({
-        userId: "current-user",
-        userName: "Current User",
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
         action: "DELETE",
         resourceType: "license",
         resourceId: id,
-        description: `Deleted license for ${license.nomeCliente}`,
+        description: `${req.user!.name} excluiu licença para ${license.nomeCliente}`,
       });
       
       res.status(204).send();
@@ -131,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Activity routes
-  app.get("/api/activities", async (req, res) => {
+  app.get("/api/activities", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const activities = await storage.getActivities(limit);
@@ -141,8 +402,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Import route
-  app.post("/api/import", upload.single("file"), async (req: MulterRequest, res) => {
+  // Import route (apenas admin)
+  app.post("/api/import", authenticateToken, requireAdmin, upload.single("file"), async (req: MulterRequest & AuthRequest, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -177,12 +438,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Log activity
             await storage.createActivity({
-              userId: "current-user",
-              userName: "Current User",
+              userId: req.user!.id.toString(),
+              userName: req.user!.name,
               action: "IMPORT",
               resourceType: "license",
               resourceId: null,
-              description: `Imported ${importedCount} licenses from CSV`,
+              description: `${req.user!.name} importou ${importedCount} licenças do arquivo CSV`,
             });
             
             res.json({ message: `Successfully imported ${importedCount} licenses` });
@@ -202,12 +463,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Log activity
         await storage.createActivity({
-          userId: "current-user",
-          userName: "Current User",
+          userId: req.user!.id.toString(),
+          userName: req.user!.name,
           action: "IMPORT",
           resourceType: "license",
           resourceId: null,
-          description: `Imported ${importedCount} licenses from Excel`,
+          description: `${req.user!.name} importou ${importedCount} licenças do arquivo Excel`,
         });
         
         res.json({ message: `Successfully imported ${importedCount} licenses` });
