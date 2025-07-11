@@ -2,7 +2,15 @@
 
 ## Overview
 
-This is a full-stack license management system built with React (frontend) and Express.js (backend). The application allows users to manage software licenses, track their status, import data from CSV/Excel files, and view activity history. It features a modern UI built with shadcn/ui components and uses PostgreSQL for data persistence.
+This is a full-stack license management system built with React (frontend) and Express.js (backend). The application allows users to manage software licenses, track their status, import data from CSV/Excel files, and view activity history. It features a modern UI built with shadcn/ui components and uses Supabase PostgreSQL for data persistence.
+
+## Recent Changes (Jan 2025)
+
+✓ Migrated from Replit Agent to Replit environment
+✓ Configured Supabase database integration
+✓ Created admin users for system access
+✓ Fixed CSS styling issues for Replit compatibility
+✓ Established database schema with tables: licenses, users, activities
 
 ## User Preferences
 

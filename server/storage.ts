@@ -3,9 +3,9 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { licenses, activities, users, type License, type InsertLicense, type Activity, type InsertActivity, type User, type InsertUser } from "@shared/schema";
 import { eq, desc, sql, and, gte, lte, count } from "drizzle-orm";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is required");
+  throw new Error("SUPABASE_DATABASE_URL or DATABASE_URL environment variable is required");
 }
 
 const client = neon(connectionString);
