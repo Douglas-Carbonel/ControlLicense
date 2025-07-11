@@ -20,6 +20,8 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Created modern login layout matching provided design mockup
 ✓ Redesigned login with diamond/geometric layout
 ✓ Implemented teal/coral color scheme from new design mockup
+✓ Changed placeholders to Portuguese (Usuário/Senha)
+✓ Applied diamond color palette to entire application
 
 ## Configuração Simplificada do Supabase
 

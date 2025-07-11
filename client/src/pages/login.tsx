@@ -38,7 +38,7 @@ export default function Login() {
               </div>
               <input
                 type="text"
-                placeholder="Username"
+                placeholder="Usuário"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -54,7 +54,7 @@ export default function Login() {
               </div>
               <input
                 type="password"
-                placeholder="Password"
+                placeholder="Senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
