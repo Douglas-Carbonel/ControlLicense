@@ -93,36 +93,47 @@ export default function ActivityHistory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activities?.map((activity: any) => {
-                  const Icon = getActivityIcon(activity.action);
-                  
-                  return (
-                    <TableRow key={activity.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Icon className="h-4 w-4" />
-                          <Badge variant={getActivityColor(activity.action)}>
-                            {getActionText(activity.action)}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-primary text-sm font-medium">
-                              {activity.userName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-                            </span>
+                {Array.isArray(activities) && activities.length > 0 ? (
+                  activities.map((activity: any) => {
+                    const Icon = getActivityIcon(activity.action);
+                    
+                    return (
+                      <TableRow key={activity.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Icon className="h-4 w-4" />
+                            <Badge variant={getActivityColor(activity.action)}>
+                              {getActionText(activity.action)}
+                            </Badge>
                           </div>
-                          <span className="text-sm font-medium">{activity.userName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{activity.description}</TableCell>
-                      <TableCell>
-                        {format(new Date(activity.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-primary text-sm font-medium">
+                                {activity.userName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                              </span>
+                            </div>
+                            <span className="text-sm font-medium">{activity.userName || 'Usuário'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{activity.description || 'Sem descrição'}</TableCell>
+                        <TableCell>
+                          {activity.timestamp ? 
+                            format(new Date(activity.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) 
+                            : 'Data não disponível'
+                          }
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                      {activities === null || activities === undefined ? 'Carregando atividades...' : 'Nenhuma atividade encontrada'}
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           )}
