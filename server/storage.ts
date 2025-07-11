@@ -18,6 +18,8 @@ const db = drizzle(client);
 export interface IStorage {
   // License operations
   getLicenses(): Promise<License[]>;
+  getPaginatedLicenses(offset: number, limit: number, search?: string): Promise<License[]>;
+  getLicensesCount(search?: string): Promise<number>;
   getLicense(id: number): Promise<License | undefined>;
   createLicense(license: InsertLicense): Promise<License>;
   updateLicense(id: number, license: Partial<InsertLicense>): Promise<License>;
@@ -48,6 +50,46 @@ export interface IStorage {
 export class DbStorage implements IStorage {
   async getLicenses(): Promise<License[]> {
     return await db.select().from(licenses).orderBy(desc(licenses.id));
+  }
+
+  async getPaginatedLicenses(offset: number, limit: number, search?: string): Promise<License[]> {
+    let query = db.select().from(licenses);
+    
+    if (search) {
+      query = query.where(
+        or(
+          ilike(licenses.nomeCliente, `%${search}%`),
+          ilike(licenses.codCliente, `%${search}%`),
+          ilike(licenses.code, `%${search}%`),
+          ilike(licenses.hardwareKey, `%${search}%`)
+        )
+      );
+    }
+    
+    const result = await query
+      .orderBy(desc(licenses.id))
+      .offset(offset)
+      .limit(limit);
+    
+    return result;
+  }
+
+  async getLicensesCount(search?: string): Promise<number> {
+    let query = db.select({ count: count() }).from(licenses);
+    
+    if (search) {
+      query = query.where(
+        or(
+          ilike(licenses.nomeCliente, `%${search}%`),
+          ilike(licenses.codCliente, `%${search}%`),
+          ilike(licenses.code, `%${search}%`),
+          ilike(licenses.hardwareKey, `%${search}%`)
+        )
+      );
+    }
+    
+    const result = await query;
+    return result[0].count;
   }
 
   async getLicense(id: number): Promise<License | undefined> {

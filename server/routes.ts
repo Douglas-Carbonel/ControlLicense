@@ -323,8 +323,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // License routes (requer autenticação)
   app.get("/api/licenses", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const licenses = await storage.getLicenses();
-      res.json(licenses);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const search = req.query.search as string || '';
+      
+      const offset = (page - 1) * limit;
+      
+      // Get paginated licenses with search
+      const licenses = await storage.getPaginatedLicenses(offset, limit, search);
+      const total = await storage.getLicensesCount(search);
+      
+      res.json({
+        data: licenses,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      });
     } catch (error) {
       console.error("Error fetching licenses:", error);
       res.status(500).json({ message: "Failed to fetch licenses" });

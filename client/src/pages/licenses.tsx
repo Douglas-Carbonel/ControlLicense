@@ -4,11 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, Search, Plus, Copy, Download, Settings, Info, GripVertical, FileDown } from "lucide-react";
+import { Edit, Trash2, Search, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,19 +75,39 @@ export default function Licenses() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debounce otimizado para 100ms
-  const debouncedSearchTerm = useDebounce(searchTerm, 100);
+  // Debounce otimizado para 300ms para busca server-side
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: licenses, isLoading } = useQuery({
-    queryKey: ["/api", "licenses"],
+  const { data: licensesResponse, isLoading } = useQuery({
+    queryKey: ["/api", "licenses", currentPage, pageSize, debouncedSearchTerm],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+        search: debouncedSearchTerm || '',
+      });
+      return await apiRequest("GET", `/api/licenses?${params}`);
+    },
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
+
+  const licenses = licensesResponse?.data || [];
+  const pagination = licensesResponse?.pagination || {
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -144,19 +163,12 @@ export default function Licenses() {
     return ativo ? "Ativa" : "Inativa";
   };
 
-  // Filtros memoizados com otimização máxima
+  // Filtros de coluna aplicados localmente nos dados paginados
   const filteredLicenses = useMemo(() => {
     if (!licenses) return [];
     
     return licenses.filter((license: any) => {
-      // Global search filter usando termo com debounce
-      const globalMatch = debouncedSearchTerm === "" || 
-        license.nomeCliente?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        license.codCliente?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        license.code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        license.hardwareKey?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-
-      // Column-specific filters
+      // Column-specific filters apenas (search global já é feito no backend)
       const columnMatch = Object.entries(columnFilters).every(([columnId, filterValue]) => {
         if (!filterValue) return true;
         
@@ -175,9 +187,9 @@ export default function Licenses() {
         }
       });
 
-      return globalMatch && columnMatch;
+      return columnMatch;
     });
-  }, [licenses, debouncedSearchTerm, columnFilters]);
+  }, [licenses, columnFilters]);
 
   const handleDelete = useCallback((id: number) => {
     if (confirm("Tem certeza que deseja excluir esta licença?")) {
@@ -226,6 +238,38 @@ export default function Licenses() {
   const clearAllFilters = useCallback(() => {
     setSearchTerm("");
     setColumnFilters({});
+    setCurrentPage(1);
+  }, []);
+
+  // Controles de paginação
+  const goToPage = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const goToFirstPage = useCallback(() => {
+    setCurrentPage(1);
+  }, []);
+
+  const goToLastPage = useCallback(() => {
+    setCurrentPage(pagination.totalPages);
+  }, [pagination.totalPages]);
+
+  const goToNextPage = useCallback(() => {
+    if (pagination.hasNext) {
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [pagination.hasNext]);
+
+  const goToPrevPage = useCallback(() => {
+    if (pagination.hasPrev) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [pagination.hasPrev]);
+
+  // Reset página quando busca muda
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
   }, []);
 
   const getVisibleColumnsInOrder = useCallback(() => {
@@ -319,9 +363,9 @@ export default function Licenses() {
             <div>
               <CardTitle className="text-lg font-semibold text-slate-800">Todas as Licenças</CardTitle>
               <p className="text-sm text-gray-500 mt-1">
-                Mostrando {filteredLicenses.length} de {licenses?.length || 0} licenças
+                Mostrando {filteredLicenses.length} de {pagination.total} licenças
                 {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && 
-                  ` (${filteredLicenses.length} filtradas)`
+                  ` (página ${pagination.page} de ${pagination.totalPages})`
                 }
               </p>
             </div>
@@ -331,7 +375,7 @@ export default function Licenses() {
                 <Input
                   placeholder="Busca geral..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-48 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
@@ -423,10 +467,86 @@ export default function Licenses() {
               )}
             </div>
           )}
+          
+          {/* Componente de Paginação */}
+          {!isLoading && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <span>Página {pagination.page} de {pagination.totalPages}</span>
+                <span>({pagination.total} itens no total)</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToFirstPage}
+                  disabled={!pagination.hasPrev}
+                  className="p-2"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPrevPage}
+                  disabled={!pagination.hasPrev}
+                  className="p-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min(
+                      pagination.totalPages - 4, 
+                      pagination.page - 2
+                    )) + i;
+                    
+                    if (pageNum <= pagination.totalPages) {
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={pageNum === pagination.page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={!pagination.hasNext}
+                  className="p-2"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToLastPage}
+                  disabled={!pagination.hasNext}
+                  className="p-2"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Modal de Edição ULTRA OTIMIZADO */}
+      {/* Modal de Edição continua igual... */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent 
           className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg"
