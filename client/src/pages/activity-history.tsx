@@ -8,8 +8,11 @@ import { ptBR } from "date-fns/locale";
 
 export default function ActivityHistory() {
   const { data: activities, isLoading } = useQuery({
-    queryKey: ["/api", "activities"],
-    // Usar o queryFn padrão que já tem renovação automática de token
+    queryKey: ["/api/activities"],
+    staleTime: 30 * 1000, // 30 segundos - mais frequente para atividades
+    gcTime: 2 * 60 * 1000, // 2 minutos para garbage collection
+    refetchOnWindowFocus: true, // Atualizar quando focar na janela
+    refetchInterval: 60 * 1000, // Atualizar a cada 1 minuto
   });
 
   const getActivityIcon = (action: string) => {

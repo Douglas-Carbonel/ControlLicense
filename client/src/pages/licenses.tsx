@@ -193,7 +193,9 @@ export default function Licenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/licenses?limit=1000"] });
       queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
+      // Invalidar atividades com atualização forçada
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.refetchQueries({ queryKey: ["/api/activities"] });
       toast({
         title: "Sucesso",
         description: "Licença excluída com sucesso!",
@@ -215,7 +217,9 @@ export default function Licenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/licenses?limit=1000"] });
       queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
+      // Invalidar atividades com atualização forçada
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.refetchQueries({ queryKey: ["/api/activities"] });
       toast({
         title: "Sucesso",
         description: "Licença atualizada com sucesso!",
