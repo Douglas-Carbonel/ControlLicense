@@ -103,14 +103,14 @@ export default function Licenses() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Hardware Key</TableHead>
-                  <TableHead>Database</TableHead>
-                  <TableHead>Qt. Licenças</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold">Cliente</TableHead>
+                  <TableHead className="font-semibold">Código da Licença</TableHead>
+                  <TableHead className="font-semibold">Hardware Key / Install</TableHead>
+                  <TableHead className="font-semibold">Database / API</TableHead>
+                  <TableHead className="font-semibold text-center">Quantidade</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -118,34 +118,61 @@ export default function Licenses() {
                   <TableRow key={license.id}>
                     <TableCell>
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-primary text-sm font-medium">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                          <span className="text-white text-sm font-semibold">
                             {license.nomeCliente?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || license.codCliente?.slice(0, 2) || "??"}
                           </span>
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{license.nomeCliente}</div>
-                          <div className="text-sm text-gray-500">{license.codCliente}</div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-900 mb-1">{license.nomeCliente || 'Nome não informado'}</div>
+                          <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md inline-block font-mono">
+                            {license.codCliente || 'Código não informado'}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{license.code}</TableCell>
-                    <TableCell>{license.hardwareKey}</TableCell>
                     <TableCell>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{license.nomeDb}</div>
-                        <div className="text-sm text-gray-500">{license.descDb}</div>
+                      <div className="font-mono text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-md">
+                        {license.code || 'N/A'}
                       </div>
                     </TableCell>
-                    <TableCell>{license.qtLicencas}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(license.ativo)}>
+                      <div className="space-y-1">
+                        <div className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border">
+                          {license.hardwareKey || 'Não informado'}
+                        </div>
+                        {license.installNumber && (
+                          <div className="text-xs text-gray-500">
+                            Install: <span className="font-mono">{license.installNumber}</span>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-gray-900">{license.nomeDb || 'N/A'}</div>
+                        <div className="text-xs text-gray-500">{license.descDb || 'Descrição não informada'}</div>
+                        {license.endApi && (
+                          <div className="text-xs text-blue-600 font-mono truncate max-w-32" title={license.endApi}>
+                            {license.endApi}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-900">{license.qtLicencas || 0}</div>
+                        <div className="text-xs text-gray-500">licenças</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusVariant(license.ativo)} className="font-medium">
                         {getStatusText(license.ativo)}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm" className="hover:bg-blue-50 hover:text-blue-600">
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -153,6 +180,7 @@ export default function Licenses() {
                           size="sm"
                           onClick={() => handleDelete(license.id)}
                           disabled={deleteMutation.isPending}
+                          className="hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

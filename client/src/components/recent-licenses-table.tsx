@@ -66,27 +66,38 @@ export default function RecentLicensesTable() {
               <TableRow key={license.id}>
                 <TableCell>
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-primary text-sm font-medium">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                      <span className="text-white text-sm font-semibold">
                         {license.nomeCliente?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || license.codCliente?.slice(0, 2) || "??"}
                       </span>
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{license.nomeCliente}</div>
-                      <div className="text-sm text-gray-500">{license.codCliente}</div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-gray-900 mb-1">{license.nomeCliente || 'Nome não informado'}</div>
+                      <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md inline-block font-mono">
+                        {license.codCliente || 'Código não informado'}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{license.hardwareKey}</TableCell>
                 <TableCell>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{license.nomeDb}</div>
-                    <div className="text-sm text-gray-500">{license.descDb}</div>
+                  <div className="font-mono text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded border">
+                    {license.hardwareKey || 'Não informado'}
                   </div>
                 </TableCell>
-                <TableCell>{license.qtLicencas}</TableCell>
                 <TableCell>
-                  <Badge variant={getStatusVariant(license.ativo)}>
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-gray-900">{license.nomeDb || 'N/A'}</div>
+                    <div className="text-xs text-gray-500">{license.descDb || 'Descrição não informada'}</div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-900">{license.qtLicencas || 0}</div>
+                    <div className="text-xs text-gray-500">licenças</div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getStatusVariant(license.ativo)} className="font-medium">
                     {getStatusText(license.ativo)}
                   </Badge>
                 </TableCell>
