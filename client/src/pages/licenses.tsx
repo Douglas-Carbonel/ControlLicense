@@ -9,6 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Edit, Trash2, Search, Plus, Copy, Download, Settings, Info, GripVertical } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import NewLicenseModal from "@/components/modals/new-license-modal";
@@ -44,6 +48,8 @@ export default function Licenses() {
     AVAILABLE_COLUMNS.map(col => col.id)
   );
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [editingLicense, setEditingLicense] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -73,6 +79,30 @@ export default function Licenses() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async (data: { id: number; license: any }) => {
+      return await apiRequest("PUT", `/api/licenses/${data.id}`, data.license);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      toast({
+        title: "Sucesso",
+        description: "Licença atualizada com sucesso!",
+      });
+      setIsEditModalOpen(false);
+      setEditingLicense(null);
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar licença. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusVariant = (ativo: boolean) => {
     return ativo ? "default" : "secondary";
   };
@@ -91,6 +121,20 @@ export default function Licenses() {
   const handleDelete = (id: number) => {
     if (confirm("Tem certeza que deseja excluir esta licença?")) {
       deleteMutation.mutate(id);
+    }
+  };
+
+  const handleEdit = (license: any) => {
+    setEditingLicense({ ...license });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateLicense = () => {
+    if (editingLicense) {
+      updateMutation.mutate({
+        id: editingLicense.id,
+        license: editingLicense
+      });
     }
   };
 
@@ -299,6 +343,7 @@ export default function Licenses() {
               variant="ghost" 
               size="sm" 
               className="p-1 h-7 w-7 hover:bg-gray-100 text-gray-500"
+              onClick={() => handleEdit(license)}
               title="Editar"
             >
               <Edit className="w-3.5 h-3.5" />
@@ -510,6 +555,195 @@ export default function Licenses() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Edição com Abas */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Licença</DialogTitle>
+          </DialogHeader>
+          
+          {editingLicense && (
+            <Tabs defaultValue="cliente" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="cliente">Dados do Cliente</TabsTrigger>
+                <TabsTrigger value="ambiente">Dados do Ambiente</TabsTrigger>
+                <TabsTrigger value="licenca">Dados da Licença</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="cliente" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-codCliente">Código do Cliente</Label>
+                    <Input
+                      id="edit-codCliente"
+                      value={editingLicense.codCliente || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, codCliente: e.target.value})}
+                      placeholder="C0001"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-nomeCliente">Nome do Cliente</Label>
+                    <Input
+                      id="edit-nomeCliente"
+                      value={editingLicense.nomeCliente || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, nomeCliente: e.target.value})}
+                      placeholder="Nome da empresa"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-dadosEmpresa">Dados da Empresa</Label>
+                  <Textarea
+                    id="edit-dadosEmpresa"
+                    value={editingLicense.dadosEmpresa || ''}
+                    onChange={(e) => setEditingLicense({...editingLicense, dadosEmpresa: e.target.value})}
+                    placeholder="Informações da empresa..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-listaCnpj">Lista de CNPJ</Label>
+                  <Input
+                    id="edit-listaCnpj"
+                    value={editingLicense.listaCnpj || ''}
+                    onChange={(e) => setEditingLicense({...editingLicense, listaCnpj: e.target.value})}
+                    placeholder="12.345.678/0001-90"
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="ambiente" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-hardwareKey">Hardware Key</Label>
+                    <Input
+                      id="edit-hardwareKey"
+                      value={editingLicense.hardwareKey || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, hardwareKey: e.target.value})}
+                      placeholder="ABC123XYZ"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-installNumber">Install Number</Label>
+                    <Input
+                      id="edit-installNumber"
+                      value={editingLicense.installNumber || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, installNumber: e.target.value})}
+                      placeholder="123456789"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-systemNumber">System Number</Label>
+                    <Input
+                      id="edit-systemNumber"
+                      value={editingLicense.systemNumber || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, systemNumber: e.target.value})}
+                      placeholder="000000000312513489"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-nomeDb">Nome do Database</Label>
+                    <Input
+                      id="edit-nomeDb"
+                      value={editingLicense.nomeDb || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, nomeDb: e.target.value})}
+                      placeholder="SBO_EMPRESA"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-descDb">Descrição do Database</Label>
+                  <Textarea
+                    id="edit-descDb"
+                    value={editingLicense.descDb || ''}
+                    onChange={(e) => setEditingLicense({...editingLicense, descDb: e.target.value})}
+                    placeholder="Base de produção..."
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-endApi">Endereço da API</Label>
+                    <Input
+                      id="edit-endApi"
+                      value={editingLicense.endApi || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, endApi: e.target.value})}
+                      placeholder="http://servidor:8090/SBO_DB/DWUAPI"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-versaoSap">Versão SAP</Label>
+                    <Input
+                      id="edit-versaoSap"
+                      value={editingLicense.versaoSap || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, versaoSap: e.target.value})}
+                      placeholder="1000230"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="licenca" className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="edit-ativo"
+                    checked={editingLicense.ativo}
+                    onCheckedChange={(checked) => setEditingLicense({...editingLicense, ativo: checked})}
+                  />
+                  <Label htmlFor="edit-ativo">Licença Ativa</Label>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-qtLicencas">Quantidade de Licenças</Label>
+                    <Input
+                      id="edit-qtLicencas"
+                      type="number"
+                      value={editingLicense.qtLicencas || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, qtLicencas: parseInt(e.target.value) || 0})}
+                      placeholder="1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-qtLicencasAdicionais">Licenças Adicionais</Label>
+                    <Input
+                      id="edit-qtLicencasAdicionais"
+                      type="number"
+                      value={editingLicense.qtLicencasAdicionais || ''}
+                      onChange={(e) => setEditingLicense({...editingLicense, qtLicencasAdicionais: parseInt(e.target.value) || 0})}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-observacao">Observação</Label>
+                  <Textarea
+                    id="edit-observacao"
+                    value={editingLicense.observacao || ''}
+                    onChange={(e) => setEditingLicense({...editingLicense, observacao: e.target.value})}
+                    placeholder="Observações adicionais..."
+                    rows={4}
+                  />
+                </div>
+              </TabsContent>
+              
+              <div className="flex justify-end space-x-3 pt-6 border-t">
+                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleUpdateLicense}
+                  disabled={updateMutation.isPending}
+                  style={{ backgroundColor: '#FF6B5B', color: 'white' }}
+                  className="hover:opacity-90"
+                >
+                  {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </div>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
