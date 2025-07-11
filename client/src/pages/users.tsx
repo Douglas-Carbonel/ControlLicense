@@ -232,15 +232,15 @@ export default function UsersPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gerenciar Usuários</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-slate-800">Gerenciar Usuários</h1>
+          <p className="text-slate-600 mt-2">
             Administre usuários do sistema e suas permissões
           </p>
         </div>
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2" style={{ backgroundColor: '#FF6B5B', color: 'white' }}>
+            <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Novo Usuário
             </Button>

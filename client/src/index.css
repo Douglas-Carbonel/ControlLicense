@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* DWU IT Solutions Corporate Palette - Baseada no design do login */
+  /* DWU IT Solutions Corporate Palette - Baseada exatamente no design do login */
   --background: #F8FAFC;
   --foreground: #2C3E50;
   --muted: #E8F4FD;
@@ -24,6 +24,15 @@
   --destructive-foreground: hsl(0, 0%, 100%);
   --ring: #3498DB;
   --radius: 0.75rem;
+  
+  /* Cores específicas do login para usar em toda aplicação */
+  --login-primary: #3498DB;
+  --login-primary-dark: #2980B9;
+  --login-primary-darker: #1F4E79;
+  --login-accent: #17365C;
+  --login-deep: #0F2A44;
+  --login-bg: #34495E;
+  --login-bg-dark: #2C3E50;
   
   /* DWU Login Palette - Cores harmoniosas baseadas na identidade */
   --diamond-bg: #34495E;

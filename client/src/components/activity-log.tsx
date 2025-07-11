@@ -44,22 +44,22 @@ export default function ActivityLog() {
   const getActivityColor = (action: string) => {
     switch (action) {
       case "CREATE":
-        return "bg-primary";
+        return "bg-gradient-to-r from-blue-500 to-blue-600";
       case "UPDATE":
-        return "bg-yellow-500";
+        return "bg-gradient-to-r from-amber-500 to-amber-600";
       case "DELETE":
-        return "bg-red-500";
+        return "bg-gradient-to-r from-red-500 to-red-600";
       case "IMPORT":
-        return "bg-blue-500";
+        return "bg-gradient-to-r from-emerald-500 to-emerald-600";
       default:
-        return "bg-gray-500";
+        return "bg-gradient-to-r from-slate-500 to-slate-600";
     }
   };
 
   return (
-    <Card>
+    <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader>
-        <CardTitle>Atividades Recentes</CardTitle>
+        <CardTitle className="text-slate-800">Atividades Recentes</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flow-root">
@@ -72,7 +72,7 @@ export default function ActivityLog() {
                 <li key={activity.id}>
                   <div className="relative pb-8">
                     {!isLast && (
-                      <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
+                      <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-slate-200"></span>
                     )}
                     <div className="relative flex space-x-3">
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center ${getActivityColor(activity.action)}`}>

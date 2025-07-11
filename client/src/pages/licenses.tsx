@@ -384,8 +384,8 @@ export default function Licenses() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Licenças</h1>
-          <p className="text-gray-600 mt-1">Gerencie todas as licenças e suas informações detalhadas</p>
+          <h1 className="text-2xl font-bold text-slate-800">Gerenciamento de Licenças</h1>
+          <p className="text-slate-600 mt-1">Gerencie todas as licenças e suas informações detalhadas</p>
         </div>
         <div className="flex space-x-3">
           <Button variant="outline" className="flex items-center space-x-2">
@@ -473,7 +473,7 @@ export default function Licenses() {
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-lg font-semibold text-gray-900">Todas as Licenças</CardTitle>
+              <CardTitle className="text-lg font-semibold text-slate-800">Todas as Licenças</CardTitle>
               <p className="text-sm text-gray-500 mt-1">Mostrando {filteredLicenses.length} de {licenses?.length || 0} licenças</p>
             </div>
             <div className="flex items-center space-x-2">
@@ -530,7 +530,7 @@ export default function Licenses() {
                             key={column.id}
                             className={`px-3 py-3 text-sm border-r border-gray-200 ${
                               column.sticky === 'left'
-                                ? 'sticky left-0 z-10 bg-white px-4 font-medium text-gray-900 hover:bg-gray-50'
+                                ? 'sticky left-0 z-10 bg-white px-4 font-medium text-slate-800 hover:bg-slate-50'
                                 : column.sticky === 'right'
                                 ? 'sticky right-0 z-10 bg-white text-center border-l border-gray-200 hover:bg-gray-50'
                                 : column.id === 'qtLicencas' || column.id === 'qtLicencasAdicionais'
