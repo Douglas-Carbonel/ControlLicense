@@ -40,11 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const token = localStorage.getItem("token");
     if (token) {
       // Verificar se o token é válido fazendo uma requisição
-      apiRequest("/api/licenses/stats", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      apiRequest("GET", "/api/licenses/stats")
         .then(() => {
           // Token válido, recuperar dados do usuário do localStorage
           const userData = localStorage.getItem("user");
@@ -66,9 +62,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const response = await apiRequest("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
+    const response = await apiRequest("POST", "/api/auth/login", {
+      username,
+      password,
     });
 
     if (!response.ok) {
@@ -86,12 +82,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = () => {
     // Fazer logout no servidor
-    apiRequest("/api/auth/logout", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    }).catch(() => {
+    apiRequest("POST", "/api/auth/logout").catch(() => {
       // Ignorar erros de logout
     });
 
