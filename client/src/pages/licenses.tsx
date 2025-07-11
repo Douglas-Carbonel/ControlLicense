@@ -99,12 +99,7 @@ export default function Licenses() {
 
   // ABORDAGEM PROFISSIONAL: Carregar todos os dados uma vez
   const { data: allLicensesResponse, isLoading: isLoadingAll, error } = useQuery({
-    queryKey: ["/api/licenses/all"],
-    queryFn: async () => {
-      const response = await fetch("/api/licenses?limit=1000"); // Buscar todos os dados
-      if (!response.ok) throw new Error("Erro ao carregar licenças");
-      return response.json();
-    },
+    queryKey: ["/api/licenses?limit=1000"],
     staleTime: 10 * 60 * 1000, // 10 minutos de cache
     gcTime: 20 * 60 * 1000, // 20 minutos para garbage collection
     retry: 2,
@@ -184,7 +179,7 @@ export default function Licenses() {
       await apiRequest("DELETE", `/api/licenses/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses?limit=1000"] });
       queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
@@ -206,7 +201,7 @@ export default function Licenses() {
       return await apiRequest("PUT", `/api/licenses/${data.id}`, data.license);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses?limit=1000"] });
       queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
@@ -452,7 +447,7 @@ export default function Licenses() {
             <div className="text-center py-8 text-red-500">
               <p>Erro ao carregar licenças: {(error as Error).message}</p>
               <Button 
-                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] })} 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/licenses?limit=1000"] })} 
                 variant="outline" 
                 className="mt-2"
               >
@@ -463,7 +458,7 @@ export default function Licenses() {
             <div className="text-center py-8 text-gray-500">
               <p>Carregando dados...</p>
               <Button 
-                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/licenses/all"] })} 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/licenses?limit=1000"] })} 
                 variant="outline" 
                 className="mt-2"
               >
@@ -544,7 +539,7 @@ export default function Licenses() {
           )}
           
           {/* Paginação */}
-          {!isLoading && pagination.totalPages > 1 && (
+          {!isLoadingAll && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <span>Página {pagination.page} de {pagination.totalPages}</span>
