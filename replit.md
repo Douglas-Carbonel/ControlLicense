@@ -53,6 +53,10 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Cache de queries otimizado com staleTime de 5 minutos e gcTime de 10 minutos
 ✓ Memoização aplicada em filtros e funções callback para reduzir re-renders
 ✓ CSS otimizado com will-change e transições suaves para melhor UX
+✓ Implementado sistema de busca silenciosa para melhor experiência do usuário
+✓ Busca global funciona em todos os 417 registros, não apenas na página atual
+✓ Campos de filtro permitem digitação livre sem indicadores de "procurando"
+✓ Hook personalizado useSilentSearch para busca responsiva e otimizada
 
 ## Configuração Padrão do Supabase
 

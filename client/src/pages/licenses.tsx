@@ -20,6 +20,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 
+
 const AVAILABLE_COLUMNS = [
   { id: 'code', label: 'Código', width: '120px', sticky: 'left' },
   { id: 'ativo', label: 'Status', width: '100px' },
@@ -96,11 +97,17 @@ export default function Licenses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debounce search with much shorter delay for better responsiveness
-  const debouncedSearchTerm = useDebounce(searchTerm, 100);
+  // Handler para busca - permite digitação livre sem indicadores de loading
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  }, []);
+
+  // Debounce search with longer delay for better UX - silent search
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   
-  // Debounce column filters with even shorter delay
-  const debouncedColumnFilters = useDebounce(columnFilters, 150);
+  // Debounce column filters with longer delay for better user experience
+  const debouncedColumnFilters = useDebounce(columnFilters, 300);
 
   // Memoize combined search to prevent re-computation
   const combinedSearch = useMemo(() => {
@@ -120,9 +127,9 @@ export default function Licenses() {
 
   const { data: licensesResponse, isLoading, error, refetch } = useQuery({
     queryKey: [queryKey],
-    staleTime: 10 * 1000, // Reduzir stale time para dados mais frescos
-    gcTime: 30 * 1000, // Reduzir garbage collection time
-    retry: 1, // Menos tentativas para resposta mais rápida
+    staleTime: 5 * 60 * 1000, // 5 minutos para melhor cache
+    gcTime: 10 * 60 * 1000, // 10 minutos para garbage collection
+    retry: 2, // Mais tentativas para melhor confiabilidade
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     enabled: true, // Sempre habilitado
@@ -276,10 +283,7 @@ export default function Licenses() {
     }
   }, [pagination.hasPrev]);
 
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  }, []);
+
 
   const getVisibleColumnsInOrder = useCallback(() => {
     return columnOrder
@@ -455,7 +459,7 @@ export default function Licenses() {
                             <div>{column.label}</div>
                             {column.id !== 'acoes' && (
                               <Input
-                                placeholder="Filtrar..."
+                                placeholder="Digite para filtrar..."
                                 value={columnFilters[column.id] || ''}
                                 onChange={(e) => updateColumnFilter(column.id, e.target.value)}
                                 className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary transition-none"
