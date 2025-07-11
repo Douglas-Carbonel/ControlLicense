@@ -73,21 +73,19 @@ export default function Sidebar() {
             const isActive = location === item.href;
             
             return (
-              <Link key={item.href} href={item.href}>
-                <a className={`sidebar-nav-item group ${isActive ? 'active' : ''}`}>
-                  <div className="flex items-center space-x-3 flex-1">
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium">{item.label}</div>
-                      <div className="text-xs text-muted-foreground group-hover:text-muted-foreground/80">
-                        {item.description}
-                      </div>
+              <Link key={item.href} href={item.href} className={`sidebar-nav-item group ${isActive ? 'active' : ''}`}>
+                <div className="flex items-center space-x-3 flex-1">
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">{item.label}</div>
+                    <div className="text-xs text-muted-foreground group-hover:text-muted-foreground/80">
+                      {item.description}
                     </div>
                   </div>
-                  {isActive && (
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  )}
-                </a>
+                </div>
+                {isActive && (
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                )}
               </Link>
             );
           })}

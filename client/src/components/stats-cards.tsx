@@ -11,10 +11,17 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ stats }: StatsCardsProps) {
+  // Provide default values if stats is undefined
+  const safeStats = stats || {
+    total: 0,
+    active: 0,
+    inactive: 0,
+    expiring: 0
+  };
   const cards = [
     {
       title: "Total de Licenças",
-      value: stats.total,
+      value: safeStats.total,
       icon: FileText,
       color: "bg-blue-500/10 text-blue-600",
       iconBg: "bg-blue-500/20",
@@ -22,7 +29,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
     },
     {
       title: "Licenças Ativas",
-      value: stats.active,
+      value: safeStats.active,
       icon: CheckCircle,
       color: "bg-green-500/10 text-green-600",
       iconBg: "bg-green-500/20",
@@ -30,7 +37,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
     },
     {
       title: "Licenças Inativas",
-      value: stats.inactive,
+      value: safeStats.inactive,
       icon: XCircle,
       color: "bg-red-500/10 text-red-600",
       iconBg: "bg-red-500/20",
@@ -38,7 +45,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
     },
     {
       title: "Próximas ao Vencimento",
-      value: stats.expiring || 0,
+      value: safeStats.expiring || 0,
       icon: Clock,
       color: "bg-yellow-500/10 text-yellow-600",
       iconBg: "bg-yellow-500/20",
