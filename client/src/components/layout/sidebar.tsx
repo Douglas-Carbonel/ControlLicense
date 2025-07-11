@@ -217,13 +217,48 @@ export default function Sidebar() {
           
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-            {/* Settings Button */}
-            <button
-              className={`group ${isCollapsed ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br from-[#3a3a3c]/40 to-[#3a3a3c]/20 hover:from-[#0095da]/20 hover:to-[#0075b0]/20 rounded-xl flex items-center justify-center border border-[#3a3a3c]/50 hover:border-[#0095da]/40 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#0095da]/10 transform hover:scale-105 active:scale-95`}
-              title="Configurações"
-            >
-              <Settings className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-colors duration-300" />
-            </button>
+            {/* Settings Button with Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={`group ${isCollapsed ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br from-[#3a3a3c]/40 to-[#3a3a3c]/20 hover:from-[#0095da]/20 hover:to-[#0075b0]/20 rounded-xl flex items-center justify-center border border-[#3a3a3c]/50 hover:border-[#0095da]/40 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#0095da]/10 transform hover:scale-105 active:scale-95`}
+                  title="Configurações"
+                >
+                  <Settings className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-colors duration-300" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                side="top" 
+                align="start" 
+                className="w-60 bg-gradient-to-b from-[#2a3548] to-[#313d5a] backdrop-blur-md border border-[#3a3a3c]/60 shadow-2xl shadow-black/40 mb-2 rounded-2xl text-white"
+                sideOffset={8}
+              >
+                <DropdownMenuLabel className="text-white p-4 border-b border-[#3a3a3c]/30">
+                  <div className="flex items-center space-x-3">
+                    <Settings className="w-5 h-5 text-[#0095da]" />
+                    <span className="font-bold text-base">Configurações</span>
+                  </div>
+                </DropdownMenuLabel>
+                <div className="p-2">
+                  <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3 mb-1">
+                    <User className="mr-3 h-5 w-5" />
+                    <span className="font-medium">Perfil do Usuário</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3 mb-1">
+                    <Database className="mr-3 h-5 w-5" />
+                    <span className="font-medium">Configurações do Sistema</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3 mb-1">
+                    <Shield className="mr-3 h-5 w-5" />
+                    <span className="font-medium">Segurança</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3">
+                    <BarChart3 className="mr-3 h-5 w-5" />
+                    <span className="font-medium">Relatórios</span>
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {/* Logout Button */}
             <button
