@@ -3,26 +3,26 @@
 @tailwind utilities;
 
 :root {
-  /* DWU IT Solutions Corporate Palette - Baseada na identidade visual */
-  --background: #F5F7FA;
+  /* DWU IT Solutions Corporate Palette - Baseada no design do login */
+  --background: #F8FAFC;
   --foreground: #2C3E50;
-  --muted: #ECF0F1;
-  --muted-foreground: #7F8C8D;
+  --muted: #E8F4FD;
+  --muted-foreground: #64748B;
   --popover: hsl(0, 0%, 100%);
   --popover-foreground: #2C3E50;
   --card: hsl(0, 0%, 100%);
   --card-foreground: #2C3E50;
-  --border: #D5DBDB;
+  --border: #CBD5E1;
   --input: #FFFFFF;
-  --primary: #5DADE2;
+  --primary: #3498DB;
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: #ECF0F1;
-  --secondary-foreground: #5DADE2;
-  --accent: #5DADE2;
+  --secondary: #E8F4FD;
+  --secondary-foreground: #2980B9;
+  --accent: #3498DB;
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: #E74C3C;
   --destructive-foreground: hsl(0, 0%, 100%);
-  --ring: #5DADE2;
+  --ring: #3498DB;
   --radius: 0.75rem;
   
   /* DWU Login Palette - Cores harmoniosas baseadas na identidade */
