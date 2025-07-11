@@ -63,6 +63,41 @@ function blockSupportUsers(req: AuthRequest, res: Response, next: NextFunction) 
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas de autenticação
+  app.post("/api/auth/refresh", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Token inválido" });
+      }
+
+      // Buscar dados atualizados do usuário
+      const user = await storage.getUser(req.user.id);
+      if (!user || !user.active) {
+        return res.status(401).json({ message: "Usuário inativo" });
+      }
+
+      // Gerar novo token
+      const newToken = jwt.sign(
+        { id: user.id, username: user.username, role: user.role, name: user.name },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      res.json({ 
+        token: newToken,
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao renovar token:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -88,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = jwt.sign(
         { id: user.id, username: user.username, role: user.role, name: user.name },
         JWT_SECRET,
-        { expiresIn: '8h' }
+        { expiresIn: '24h' } // Aumentar para 24 horas
       );
 
       // Log da atividade

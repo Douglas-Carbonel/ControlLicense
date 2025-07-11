@@ -35,21 +35,67 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Função para renovar token automaticamente
+  const refreshToken = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user);
+        return true;
+      } else {
+        // Token não pode ser renovado, fazer logout
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setUser(null);
+        return false;
+      }
+    } catch (error) {
+      console.error("Erro ao renovar token:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setUser(null);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Verificar se há token armazenado
     const token = localStorage.getItem("token");
     if (token) {
-      // Verificar se o token é válido fazendo uma requisição
-      apiRequest("GET", "/api/licenses/stats")
-        .then(() => {
-          // Token válido, recuperar dados do usuário do localStorage
-          const userData = localStorage.getItem("user");
-          if (userData) {
-            setUser(JSON.parse(userData));
+      // Verificar se o token é válido fazendo uma requisição simples
+      fetch("/api/licenses/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+        .then((response) => {
+          if (response.ok) {
+            // Token válido, recuperar dados do usuário do localStorage
+            const userData = localStorage.getItem("user");
+            if (userData) {
+              setUser(JSON.parse(userData));
+            }
+          } else if (response.status === 401) {
+            // Token inválido, tentar renovar
+            refreshToken();
           }
         })
         .catch(() => {
-          // Token inválido, limpar dados
+          // Erro de rede ou token inválido, limpar dados
           localStorage.removeItem("token");
           localStorage.removeItem("user");
         })
@@ -59,6 +105,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setIsLoading(false);
     }
+
+    // Configurar renovação automática de token a cada 23 horas
+    const refreshInterval = setInterval(() => {
+      if (localStorage.getItem("token")) {
+        refreshToken();
+      }
+    }, 23 * 60 * 60 * 1000); // 23 horas em milissegundos
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const login = async (username: string, password: string) => {
