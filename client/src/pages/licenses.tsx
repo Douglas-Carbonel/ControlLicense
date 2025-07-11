@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useCallback, memo, lazy, Suspense } from "react";
+import { useState, useMemo, useCallback, memo, lazy, Suspense, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
