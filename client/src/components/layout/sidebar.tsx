@@ -68,8 +68,10 @@ export default function Sidebar() {
       <div className="p-8 border-b border-[#3a3a3c]/30">
         <div className="flex items-center space-x-4">
           <div className="relative">
-            <div className="w-14 h-14 bg-gradient-to-br from-[#0095da] via-[#007bb8] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-              <Building2 className="w-8 h-8 text-white drop-shadow-lg" />
+            <div className="w-14 h-14 bg-gradient-to-br from-[#0095da] via-[#007bb8] to-[#0075b0] rounded-2xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-white/20">
+              <span className="text-white font-black text-xl tracking-tighter drop-shadow-lg" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                DW
+              </span>
             </div>
             <div className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full border-3 border-[#313d5a] shadow-lg animate-pulse"></div>
           </div>
