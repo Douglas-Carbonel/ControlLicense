@@ -72,3 +72,26 @@ export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export const licenseSchema = z.object({
+  id: z.number().optional(),
+  code: z.string(),
+  linha: z.number(),
+  ativo: z.boolean(),
+  nomeCliente: z.string(),
+  dadosEmpresa: z.string().optional(),
+  hardwareKey: z.string().optional(),
+  installNumber: z.string().optional(),
+  systemNumber: z.string().optional(),
+  nomeDb: z.string().optional(),
+  descDb: z.string().optional(),
+  endApi: z.string().optional(),
+  listaCnpj: z.string().optional(),
+  qtLicencas: z.number().optional(),
+  qtLicencasAdicionais: z.number().optional(),
+  versaoSap: z.string().optional(),
+  observacao: z.string().optional(),
+  codCliente: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});

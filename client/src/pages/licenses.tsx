@@ -5,15 +5,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit, Trash2, Search, Plus, Copy, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Edit, Trash2, Search, Plus, Copy, Download, Settings, Info, GripVertical } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import NewLicenseModal from "@/components/modals/new-license-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+// Define available columns
+const AVAILABLE_COLUMNS = [
+  { id: 'codCliente', label: 'Código Cliente', width: '120px', sticky: 'left' },
+  { id: 'ativo', label: 'Status', width: '80px' },
+  { id: 'nomeCliente', label: 'Nome do Cliente', width: '180px' },
+  { id: 'dadosEmpresa', label: 'Dados Empresa', width: '150px' },
+  { id: 'hardwareKey', label: 'Hardware Key', width: '160px' },
+  { id: 'installNumber', label: 'Install Number', width: '120px' },
+  { id: 'systemNumber', label: 'System Number', width: '120px' },
+  { id: 'nomeDb', label: 'Nome DB', width: '120px' },
+  { id: 'descDb', label: 'Desc. DB', width: '120px' },
+  { id: 'endApi', label: 'End. API', width: '140px' },
+  { id: 'listaCnpj', label: 'Lista CNPJ', width: '130px' },
+  { id: 'qtLicencas', label: 'Qt.Lic.', width: '80px' },
+  { id: 'qtLicencasAdicionais', label: 'Qt.Lic.Adicionais', width: '120px' },
+  { id: 'versaoSap', label: 'Versão SAP', width: '100px' },
+  { id: 'observacao', label: 'Observação', width: '120px' },
+  { id: 'acoes', label: 'Ações', width: '100px', sticky: 'right' }
+];
+
 export default function Licenses() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [visibleColumns, setVisibleColumns] = useState(
+    AVAILABLE_COLUMNS.map(col => col.id)
+  );
+  const [columnOrder, setColumnOrder] = useState(
+    AVAILABLE_COLUMNS.map(col => col.id)
+  );
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -87,7 +117,9 @@ export default function Licenses() {
       license.endApi || '',
       license.listaCnpj || '',
       license.qtLicencas || '',
-      license.versaoSap || ''
+      license.qtLicencasAdicionais || '',
+      license.versaoSap || '',
+      license.observacao || ''
     ].join('\t');
 
     navigator.clipboard.writeText(rowData).then(() => {
@@ -96,6 +128,211 @@ export default function Licenses() {
         description: "Todas as informações da licença foram copiadas",
       });
     });
+  };
+
+  const toggleColumnVisibility = (columnId: string) => {
+    setVisibleColumns(prev => 
+      prev.includes(columnId) 
+        ? prev.filter(id => id !== columnId)
+        : [...prev, columnId]
+    );
+  };
+
+  const moveColumn = (columnId: string, direction: 'up' | 'down') => {
+    setColumnOrder(prev => {
+      const currentIndex = prev.indexOf(columnId);
+      if (currentIndex === -1) return prev;
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      
+      const newOrder = [...prev];
+      [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
+      return newOrder;
+    });
+  };
+
+  const getVisibleColumnsInOrder = () => {
+    return columnOrder
+      .filter(colId => visibleColumns.includes(colId))
+      .map(colId => AVAILABLE_COLUMNS.find(col => col.id === colId))
+      .filter(Boolean);
+  };
+
+  const renderCellContent = (license: any, column: any) => {
+    const value = license[column.id];
+    
+    switch (column.id) {
+      case 'codCliente':
+        return (
+          <div className="flex items-center group">
+            <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">
+              {value || 'N/A'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-blue-100"
+              onClick={() => copyToClipboard(value || '', 'Código do Cliente')}
+            >
+              <Copy className="w-3 h-3 text-blue-600" />
+            </Button>
+          </div>
+        );
+      
+      case 'ativo':
+        return (
+          <div className="flex items-center group">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+            }`}>
+              {value ? "Ativo" : "Inativo"}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
+              onClick={() => copyToClipboard(value ? 'Ativo' : 'Inativo', 'Status')}
+            >
+              <Copy className="w-3 h-3 text-gray-500" />
+            </Button>
+          </div>
+        );
+
+      case 'hardwareKey':
+        return (
+          <div className="flex items-center group">
+            <span className="font-mono text-gray-600 bg-gray-50 px-2 py-1 rounded text-xs truncate max-w-[140px]" title={value || 'N/A'}>
+              {value || 'N/A'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
+              onClick={() => copyToClipboard(value || '', 'Hardware Key')}
+            >
+              <Copy className="w-3 h-3 text-gray-500" />
+            </Button>
+          </div>
+        );
+
+      case 'qtLicencas':
+      case 'qtLicencasAdicionais':
+        return (
+          <div className="flex items-center justify-center group">
+            <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+              {value || '0'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
+              onClick={() => copyToClipboard(value?.toString() || '0', column.label)}
+            >
+              <Copy className="w-3 h-3 text-gray-500" />
+            </Button>
+          </div>
+        );
+
+      case 'observacao':
+        return (
+          <div className="flex items-center group">
+            {value && value.trim() ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center cursor-help">
+                      <Info className="w-4 h-4 text-blue-500" />
+                      <span className="ml-1 text-xs text-gray-500">Ver obs.</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs p-3">
+                    <p className="text-sm">{value}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <span className="text-xs text-gray-400">Sem obs.</span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
+              onClick={() => copyToClipboard(value || '', 'Observação')}
+            >
+              <Copy className="w-3 h-3 text-gray-500" />
+            </Button>
+          </div>
+        );
+
+      case 'installNumber':
+      case 'systemNumber':
+        return (
+          <div className="flex items-center group">
+            <span className="font-mono text-gray-600 text-xs">
+              {value || 'N/A'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
+              onClick={() => copyToClipboard(value || '', column.label)}
+            >
+              <Copy className="w-3 h-3 text-gray-500" />
+            </Button>
+          </div>
+        );
+
+      case 'acoes':
+        return (
+          <div className="flex items-center justify-center space-x-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-1 h-7 w-7 hover:bg-blue-50 text-blue-600"
+              onClick={() => copyFullRow(license)}
+              title="Copiar linha completa"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-1 h-7 w-7 hover:bg-gray-100 text-gray-500"
+              title="Editar"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleDelete(license.id)}
+              disabled={deleteMutation.isPending}
+              className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
+              title="Excluir"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="flex items-center group">
+            <span className="text-gray-600 truncate" style={{ maxWidth: `calc(${column.width} - 40px)` }} title={value || 'N/A'}>
+              {value || 'N/A'}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
+              onClick={() => copyToClipboard(value || '', column.label)}
+            >
+              <Copy className="w-3 h-3 text-gray-500" />
+            </Button>
+          </div>
+        );
+    }
   };
 
   return (
@@ -114,6 +351,75 @@ export default function Licenses() {
             <Download className="h-4 w-4" />
             <span>Exportar</span>
           </Button>
+          <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <Settings className="h-4 w-4" />
+                <span>Configurar Colunas</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Configurar Exibição de Colunas</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                <p className="text-sm text-gray-600">
+                  Selecione as colunas que deseja exibir e organize a ordem:
+                </p>
+                {columnOrder.map((colId, index) => {
+                  const column = AVAILABLE_COLUMNS.find(col => col.id === colId);
+                  if (!column) return null;
+                  
+                  return (
+                    <div key={colId} className="flex items-center space-x-3 p-2 border rounded-lg">
+                      <Checkbox
+                        checked={visibleColumns.includes(colId)}
+                        onCheckedChange={() => toggleColumnVisibility(colId)}
+                        disabled={column.sticky === 'left' || column.sticky === 'right'}
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium">{column.label}</span>
+                      </div>
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-6 w-6"
+                          onClick={() => moveColumn(colId, 'up')}
+                          disabled={index === 0}
+                        >
+                          <GripVertical className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-6 w-6"
+                          onClick={() => moveColumn(colId, 'down')}
+                          disabled={index === columnOrder.length - 1}
+                        >
+                          <GripVertical className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-end space-x-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setVisibleColumns(AVAILABLE_COLUMNS.map(col => col.id));
+                      setColumnOrder(AVAILABLE_COLUMNS.map(col => col.id));
+                    }}
+                  >
+                    Restaurar Padrão
+                  </Button>
+                  <Button onClick={() => setIsConfigOpen(false)}>
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <NewLicenseModal />
         </div>
       </div>
@@ -148,313 +454,48 @@ export default function Licenses() {
           ) : (
             <div className="w-full relative">
               <div className="overflow-auto max-h-[70vh] border rounded-lg license-table-container" style={{ maxWidth: '100vw' }}>
-                <table className="w-full" style={{ minWidth: '2000px' }}>
+                <table className="w-full" style={{ minWidth: `${getVisibleColumnsInOrder().reduce((acc, col) => acc + parseInt(col.width), 0)}px` }}>
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                        Código Cliente
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '180px' }}>
-                        Nome do Cliente
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '150px' }}>
-                        Dados Empresa
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '160px' }}>
-                        Hardware Key
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
-                        Install Number
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
-                        System Number
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
-                        Nome DB
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '120px' }}>
-                        Desc. DB
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '140px' }}>
-                        End. API
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '130px' }}>
-                        Lista CNPJ
-                      </th>
-                      <th className="px-3 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
-                        Qt.Lic.
-                      </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style={{ minWidth: '100px' }}>
-                        Versão SAP
-                      </th>
-                      <th className="sticky right-0 z-20 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider border-l border-gray-200" style={{ width: '100px' }}>
-                        Ações
-                      </th>
+                      {getVisibleColumnsInOrder().map((column) => (
+                        <th
+                          key={column.id}
+                          className={`px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200 ${
+                            column.sticky === 'left' 
+                              ? 'sticky left-0 z-20 bg-gray-50 px-4' 
+                              : column.sticky === 'right'
+                              ? 'sticky right-0 z-20 bg-gray-50 border-l border-gray-200 text-center'
+                              : ''
+                          }`}
+                          style={{ 
+                            minWidth: column.width,
+                            width: column.id === 'qtLicencas' || column.id === 'qtLicencasAdicionais' || column.id === 'acoes' ? column.width : undefined
+                          }}
+                        >
+                          {column.label}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {filteredLicenses.map((license: any, index: number) => (
+                    {filteredLicenses.map((license: any) => (
                       <tr key={license.id} className="hover:bg-gray-50 transition-colors duration-150">
-                        {/* Código do Cliente - Sticky */}
-                        <td className="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 hover:bg-gray-50">
-                          <div className="flex items-center group">
-                            <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs font-semibold">
-                              {license.codCliente || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-blue-100"
-                              onClick={() => copyToClipboard(license.codCliente || '', 'Código do Cliente')}
-                            >
-                              <Copy className="w-3 h-3 text-blue-600" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Status */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              license.ativo 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {license.ativo ? "Ativo" : "Inativo"}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.ativo ? 'Ativo' : 'Inativo', 'Status')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Nome do Cliente */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="text-gray-900 font-medium truncate max-w-[160px]" title={license.nomeCliente || 'N/A'}>
-                              {license.nomeCliente || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.nomeCliente || '', 'Nome do Cliente')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Dados da Empresa */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="text-gray-600 truncate max-w-[130px]" title={license.dadosEmpresa || 'N/A'}>
-                              {license.dadosEmpresa || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.dadosEmpresa || '', 'Dados da Empresa')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Hardware Key */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="font-mono text-gray-600 bg-gray-50 px-2 py-1 rounded text-xs truncate max-w-[140px]" title={license.hardwareKey || 'N/A'}>
-                              {license.hardwareKey || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.hardwareKey || '', 'Hardware Key')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Install Number */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="font-mono text-gray-600 text-xs">
-                              {license.installNumber || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.installNumber || '', 'Install Number')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* System Number */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="font-mono text-gray-600 text-xs">
-                              {license.systemNumber || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.systemNumber || '', 'System Number')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Nome DB */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="text-gray-600 truncate max-w-[100px]" title={license.nomeDb || 'N/A'}>
-                              {license.nomeDb || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.nomeDb || '', 'Nome DB')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Desc. DB */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="text-gray-600 truncate max-w-[100px]" title={license.descDb || 'N/A'}>
-                              {license.descDb || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.descDb || '', 'Desc. DB')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* End. API */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="text-gray-600 truncate max-w-[120px]" title={license.endApi || 'N/A'}>
-                              {license.endApi || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.endApi || '', 'End.API')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Lista de CNPJ */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="font-mono text-gray-600 text-xs truncate max-w-[110px]" title={license.listaCnpj || 'N/A'}>
-                              {license.listaCnpj || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.listaCnpj || '', 'Lista de CNPJ')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Quantidade de Licenças */}
-                        <td className="px-3 py-3 text-sm text-center">
-                          <div className="flex items-center justify-center group">
-                            <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                              {license.qtLicencas || '0'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.qtLicencas?.toString() || '0', 'Qt.Licenças')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Versão SAP */}
-                        <td className="px-3 py-3 text-sm">
-                          <div className="flex items-center group">
-                            <span className="text-gray-600">
-                              {license.versaoSap || 'N/A'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="opacity-0 group-hover:opacity-100 ml-2 p-1 h-6 w-6 hover:bg-gray-100"
-                              onClick={() => copyToClipboard(license.versaoSap || '', 'Versão SAP')}
-                            >
-                              <Copy className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          </div>
-                        </td>
-
-                        {/* Ações - Sticky */}
-                        <td className="sticky right-0 z-10 bg-white px-3 py-3 text-center border-l border-gray-200 hover:bg-gray-50">
-                          <div className="flex items-center justify-center space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="p-1 h-7 w-7 hover:bg-blue-50 text-blue-600"
-                              onClick={() => copyFullRow(license)}
-                              title="Copiar linha completa"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="p-1 h-7 w-7 hover:bg-gray-100 text-gray-500"
-                              title="Editar"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleDelete(license.id)}
-                              disabled={deleteMutation.isPending}
-                              className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </td>
+                        {getVisibleColumnsInOrder().map((column) => (
+                          <td
+                            key={column.id}
+                            className={`px-3 py-3 text-sm border-r border-gray-200 ${
+                              column.sticky === 'left'
+                                ? 'sticky left-0 z-10 bg-white px-4 font-medium text-gray-900 hover:bg-gray-50'
+                                : column.sticky === 'right'
+                                ? 'sticky right-0 z-10 bg-white text-center border-l border-gray-200 hover:bg-gray-50'
+                                : column.id === 'qtLicencas' || column.id === 'qtLicencasAdicionais'
+                                ? 'text-center'
+                                : ''
+                            }`}
+                          >
+                            {renderCellContent(license, column)}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
