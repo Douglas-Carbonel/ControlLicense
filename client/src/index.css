@@ -79,21 +79,20 @@
 }
 
 .diamond-container {
-  width: 400px;
-  height: 400px;
+  width: 380px;
+  height: 380px;
   transform: rotate(45deg);
-  background: linear-gradient(135deg, 
-    #7A9B9B 0%, 
-    #6B8E8E 20%,
-    #5C8080 40%,
-    #4D7373 60%,
-    #3E6565 80%,
-    #2F5858 100%
+  background: linear-gradient(45deg, 
+    #8FA9A3 0%, 
+    #7A9B95 30%,
+    #6B8E88 50%,
+    #5C807A 70%,
+    #4D726C 100%
   );
   border-radius: 0px;
   box-shadow: 
-    0 20px 40px rgba(47, 88, 88, 0.4),
-    0 10px 20px rgba(47, 88, 88, 0.2);
+    0 25px 50px rgba(45, 65, 60, 0.35),
+    0 15px 30px rgba(45, 65, 60, 0.25);
   position: relative;
   overflow: hidden;
 }
@@ -103,44 +102,44 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-45deg);
-  width: 300px;
+  width: 280px;
   text-align: center;
 }
 
 .diamond-title {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
   font-weight: 300;
-  letter-spacing: 3px;
-  margin-bottom: 40px;
+  letter-spacing: 4px;
+  margin-bottom: 45px;
   text-transform: uppercase;
 }
 
 .diamond-input {
-  background: #2F3D3D;
+  background: #1F2D2D;
   border: none;
-  border-radius: 2px;
-  color: #A0B5B5;
+  border-radius: 0px;
+  color: #8FA9A3;
   font-weight: 400;
   transition: all 0.2s ease;
-  height: 45px;
+  height: 48px;
   width: 100%;
   padding: 0 15px 0 40px;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   font-size: 14px;
-  border-bottom: 1px solid #4A5A5A;
+  border-bottom: 1px solid #3A4A4A;
 }
 
 .diamond-input::placeholder {
-  color: #A0B5B5;
+  color: #8FA9A3;
   font-weight: 400;
 }
 
 .diamond-input:focus {
   outline: none;
-  background: #253030;
+  background: #1A2525;
   color: white;
-  border-bottom: 1px solid #7A9B9B;
+  border-bottom: 1px solid #8FA9A3;
 }
 
 .diamond-input-wrapper {
@@ -153,7 +152,7 @@
   left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: #7A9B9B;
+  color: #8FA9A3;
   z-index: 1;
 }
 
@@ -161,15 +160,15 @@
   background: #FF6B5B;
   color: white;
   border: none;
-  border-radius: 2px;
+  border-radius: 0px;
   font-weight: 600;
   letter-spacing: 2px;
   transition: all 0.2s ease;
   width: 100%;
-  height: 45px;
+  height: 48px;
   font-size: 12px;
   text-transform: uppercase;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .diamond-button:hover {
