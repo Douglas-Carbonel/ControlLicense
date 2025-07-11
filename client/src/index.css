@@ -6,20 +6,20 @@
   /* Professional Green/Blue Corporate Palette */
   --background: hsl(25, 15%, 85%);
   --foreground: hsl(180, 20%, 20%);
-  --muted: hsl(25, 15%, 80%);
-  --muted-foreground: hsl(180, 20%, 30%);
+  --muted: hsl(210, 11%, 96%);
+  --muted-foreground: hsl(215, 8%, 47%);
   --popover: hsl(0, 0%, 100%);
   --popover-foreground: hsl(180, 20%, 20%);
   --card: hsl(0, 0%, 100%);
   --card-foreground: hsl(180, 20%, 20%);
-  --border: hsl(180, 15%, 25%);
-  --input: hsl(180, 20%, 20%);
+  --border: hsl(214.3, 31.8%, 91.4%);
+  --input: hsl(214.3, 31.8%, 91.4%);
   --primary: hsl(180, 25%, 45%);
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(180, 15%, 25%);
-  --secondary-foreground: hsl(180, 25%, 65%);
-  --accent: hsl(180, 25%, 45%);
-  --accent-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(210, 11%, 96%);
+  --secondary-foreground: hsl(180, 20%, 20%);
+  --accent: hsl(210, 11%, 96%);
+  --accent-foreground: hsl(180, 20%, 20%);
   --destructive: hsl(10, 85%, 60%);
   --destructive-foreground: hsl(210, 40%, 98%);
   --ring: hsl(180, 25%, 45%);
