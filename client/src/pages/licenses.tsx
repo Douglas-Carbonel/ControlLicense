@@ -572,7 +572,7 @@ export default function Licenses() {
                             <div>{column.label}</div>
                             {column.id !== 'acoes' && (
                               <Input
-                                placeholder={`Filtrar ${column.label.toLowerCase()}...`}
+                                placeholder="Pesquisar..."
                                 value={columnFilters[column.id] || ''}
                                 onChange={(e) => updateColumnFilter(column.id, e.target.value)}
                                 className="h-7 text-xs bg-white border-gray-300 focus:ring-1 focus:ring-primary focus:border-primary"
