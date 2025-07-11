@@ -1,3 +1,4 @@
+
 import { ReactNode } from "react";
 import Header from "./header";
 import Sidebar from "./sidebar";
@@ -8,12 +9,14 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-8">
-          {children}
+        <main className="flex-1 professional-container">
+          <div className="animate-slide-in">
+            {children}
+          </div>
         </main>
       </div>
     </div>

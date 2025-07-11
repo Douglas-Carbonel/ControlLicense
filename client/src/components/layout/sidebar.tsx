@@ -1,84 +1,131 @@
+
 import { Link, useLocation } from "wouter";
-import { Home, Tag, Upload, History, Users, LogOut, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { 
+  Home, 
+  FileText, 
+  Upload, 
+  Activity, 
+  Users, 
+  Settings,
+  BarChart3,
+  Shield,
+  Database
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
-// Navegação baseada no papel do usuário
-const adminNavigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Licenças", href: "/licenses", icon: Tag },
-  { name: "Importar Dados", href: "/import", icon: Upload },
-  { name: "Histórico de Atividades", href: "/activities", icon: History },
-  { name: "Usuários", href: "/users", icon: Users },
-];
-
-const supportNavigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Licenças", href: "/licenses", icon: Tag },
-  { name: "Importar Dados", href: "/import", icon: Upload },
-  { name: "Histórico de Atividades", href: "/activities", icon: History },
-];
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const { user } = useAuth();
 
-  const navigation = isAdmin ? adminNavigation : supportNavigation;
+  const navigationItems = [
+    { 
+      href: "/", 
+      label: "Dashboard", 
+      icon: Home,
+      description: "Visão geral do sistema"
+    },
+    { 
+      href: "/licenses", 
+      label: "Licenças", 
+      icon: FileText,
+      description: "Gerenciar licenças"
+    },
+    { 
+      href: "/import", 
+      label: "Importar Dados", 
+      icon: Upload,
+      description: "Importar planilhas"
+    },
+    { 
+      href: "/activities", 
+      label: "Atividades", 
+      icon: Activity,
+      description: "Histórico de ações"
+    },
+  ];
+
+  // Adicionar item de usuários apenas para administradores
+  if (user?.role === 'admin') {
+    navigationItems.push({
+      href: "/users",
+      label: "Usuários",
+      icon: Users,
+      description: "Gerenciar usuários"
+    });
+  }
 
   return (
-    <aside className="w-64 bg-white shadow-md h-screen sticky top-0 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <User className="h-5 w-5 text-blue-600" />
+    <aside className="w-72 sidebar-professional">
+      <div className="p-6">
+        <div className="flex items-center space-x-3 mb-8">
+          <div className="w-10 h-10 professional-gradient rounded-lg flex items-center justify-center">
+            <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">{user?.name}</p>
-            <div className="flex items-center space-x-2">
-              <Badge variant={isAdmin ? "default" : "secondary"}>
-                {isAdmin ? "Admin" : "Suporte"}
-              </Badge>
-            </div>
+            <h2 className="text-lg font-bold text-foreground">LicenseManager</h2>
+            <p className="text-xs text-muted-foreground">Sistema Profissional</p>
           </div>
         </div>
-      </div>
 
-      <nav className="flex-1 mt-6 px-4">
-        <div className="space-y-2">
-          {navigation.map((item) => {
+        <nav className="space-y-2">
+          {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
-
+            
             return (
-              <Link key={item.name} href={item.href}>
-                <div
-                  className={cn(
-                    "flex items-center px-4 py-3 rounded-lg font-medium transition-colors cursor-pointer",
-                    isActive
-                      ? "text-primary bg-primary/10"
-                      : "text-gray-700 hover:bg-gray-100"
+              <Link key={item.href} href={item.href}>
+                <a className={`sidebar-nav-item group ${isActive ? 'active' : ''}`}>
+                  <div className="flex items-center space-x-3 flex-1">
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">{item.label}</div>
+                      <div className="text-xs text-muted-foreground group-hover:text-muted-foreground/80">
+                        {item.description}
+                      </div>
+                    </div>
+                  </div>
+                  {isActive && (
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                   )}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.name}
-                </div>
+                </a>
               </Link>
             );
           })}
-        </div>
-      </nav>
+        </nav>
 
-      <div className="p-4 border-t border-gray-200">
-        <Button 
-          variant="outline" 
-          className="w-full justify-start"
-          onClick={logout}
-        >
-          <LogOut className="mr-3 h-4 w-4" />
-          Sair
-        </Button>
+        <div className="mt-8 pt-6 border-t border-outline">
+          <div className="professional-card bg-primary/5 border-primary/20">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-foreground">Status do Sistema</div>
+                <div className="text-xs text-muted-foreground">Funcionando perfeitamente</div>
+              </div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="professional-card bg-muted/50">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+                <Database className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-foreground">Usuário</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {user?.name || 'Administrador'}
+                </div>
+                <div className="text-xs text-primary font-medium">
+                  {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
   );

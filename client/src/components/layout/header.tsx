@@ -1,31 +1,56 @@
-import { Bell, ChevronDown, Shield } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/auth";
+import { LogOut, User, Bell, Search } from "lucide-react";
 
 export default function Header() {
+  const { logout, user } = useAuth();
+
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <Shield className="text-primary text-2xl mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Sistema de Licenças</h1>
+    <header className="bg-surface border-b border-outline professional-shadow-lg sticky top-0 z-50">
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Buscar licenças, clientes..."
+                  className="form-input pl-10 w-80 bg-muted/50 border-outline/50"
+                />
+              </div>
             </div>
           </div>
+
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 text-xs p-0 flex items-center justify-center">
-                3
-              </Badge>
+            <Button variant="ghost" size="sm" className="relative">
+              <Bell className="w-4 h-4" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
             </Button>
-            <Button variant="ghost" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">JS</span>
+
+            <div className="flex items-center space-x-3 px-3 py-2 bg-muted/50 rounded-lg">
+              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-gray-700 font-medium">João Silva</span>
-              <ChevronDown className="h-4 w-4 text-gray-500" />
+              <div className="hidden md:block">
+                <div className="text-sm font-medium text-foreground">
+                  {user?.name || 'Administrador'}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={logout}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden md:inline ml-2">Sair</span>
             </Button>
           </div>
         </div>
