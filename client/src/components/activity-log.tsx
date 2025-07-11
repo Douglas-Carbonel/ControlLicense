@@ -11,14 +11,14 @@ export default function ActivityLog() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="bg-white border border-[#e0e0e0] shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
-          <CardTitle>Atividades Recentes</CardTitle>
+          <CardTitle className="text-[#3a3a3c]">Atividades Recentes</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+              <div key={i} className="h-16 bg-[#f4f4f4] rounded animate-pulse"></div>
             ))}
           </div>
         </CardContent>
@@ -44,15 +44,15 @@ export default function ActivityLog() {
   const getActivityColor = (action: string) => {
     switch (action) {
       case "CREATE":
-        return "bg-gradient-to-r from-blue-500 to-blue-600";
+        return "bg-[#0095da]";
       case "UPDATE":
-        return "bg-gradient-to-r from-amber-500 to-amber-600";
+        return "bg-[#313d5a]";
       case "DELETE":
-        return "bg-gradient-to-r from-red-500 to-red-600";
+        return "bg-red-500";
       case "IMPORT":
-        return "bg-gradient-to-r from-emerald-500 to-emerald-600";
+        return "bg-emerald-500";
       default:
-        return "bg-gradient-to-r from-slate-500 to-slate-600";
+        return "bg-[#3a3a3c]";
     }
   };
 

@@ -3,47 +3,40 @@
 @tailwind utilities;
 
 :root {
-  /* DWU IT Solutions Corporate Palette - Baseada exatamente no design do login */
-  --background: #F8FAFC;
-  --foreground: #2C3E50;
-  --muted: #E8F4FD;
-  --muted-foreground: #64748B;
+  /* DW IT Solutions Official Corporate Palette */
+  --background: #f4f4f4;
+  --foreground: #3a3a3c;
+  --muted: #f4f4f4;
+  --muted-foreground: #3a3a3c;
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: #2C3E50;
+  --popover-foreground: #3a3a3c;
   --card: hsl(0, 0%, 100%);
-  --card-foreground: #2C3E50;
-  --border: #CBD5E1;
+  --card-foreground: #3a3a3c;
+  --border: #e0e0e0;
   --input: #FFFFFF;
-  --primary: #3498DB;
+  --primary: #0095da;
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: #E8F4FD;
-  --secondary-foreground: #2980B9;
-  --accent: #3498DB;
+  --secondary: #313d5a;
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: #0095da;
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: #E74C3C;
   --destructive-foreground: hsl(0, 0%, 100%);
-  --ring: #3498DB;
+  --ring: #0095da;
   --radius: 0.75rem;
   
-  /* Cores específicas do login para usar em toda aplicação */
-  --login-primary: #3498DB;
-  --login-primary-dark: #2980B9;
-  --login-primary-darker: #1F4E79;
-  --login-accent: #17365C;
-  --login-deep: #0F2A44;
-  --login-bg: #34495E;
-  --login-bg-dark: #2C3E50;
+  /* DW IT Solutions Official Colors */
+  --dw-gray-light: #f4f4f4;
+  --dw-blue-primary: #0095da;
+  --dw-blue-dark: #313d5a;
+  --dw-gray-dark: #3a3a3c;
+  --dw-blue-darkest: #0c151f;
   
-  /* DWU Login Palette - Cores harmoniosas baseadas na identidade */
-  --diamond-bg: #34495E;
-  --diamond-blue: #3498DB;
-  --diamond-blue-dark: #2980B9;
-  --diamond-blue-light: #5DADE2;
-  --diamond-gray: #34495E;
-  --diamond-gray-light: #566573;
-  --diamond-input: #2C3E50;
-  --diamond-text: #3498DB;
-  --diamond-shadow: rgba(52, 152, 219, 0.25);
+  /* Extended palette for gradients and variations */
+  --dw-blue-light: #33a9e6;
+  --dw-blue-lighter: #66bdef;
+  --dw-gray-medium: #666668;
+  --dw-shadow: rgba(0, 149, 218, 0.15);
 }
 
 .dark {
