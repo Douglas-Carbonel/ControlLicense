@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, Search, Plus, Copy, Download, Settings, Info, GripVertical } from "lucide-react";
+import { Edit, Trash2, Search, Plus, Copy, Download, Settings, Info, GripVertical, FileDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -232,6 +232,72 @@ export default function Licenses() {
     setSearchTerm("");
   };
 
+  const exportToCSV = () => {
+    const visibleCols = getVisibleColumnsInOrder();
+    const headers = visibleCols.filter(col => col.id !== 'acoes').map(col => col.label);
+    
+    let csvContent = headers.join(';') + '\n';
+    
+    filteredLicenses.forEach((license: any) => {
+      const row = visibleCols
+        .filter(col => col.id !== 'acoes')
+        .map(col => {
+          let value = license[col.id];
+          if (col.id === 'ativo') {
+            value = value ? 'Ativo' : 'Inativo';
+          }
+          return `"${String(value || '').replace(/"/g, '""')}"`;
+        });
+      csvContent += row.join(';') + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `licencas_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Exportado!",
+      description: `${filteredLicenses.length} licenças exportadas para CSV`,
+    });
+  };
+
+  const exportToExcel = async () => {
+    // Dynamically import xlsx to avoid bundle size issues
+    const XLSX = await import('xlsx');
+    
+    const visibleCols = getVisibleColumnsInOrder();
+    const headers = visibleCols.filter(col => col.id !== 'acoes').map(col => col.label);
+    
+    const data = filteredLicenses.map((license: any) => {
+      const row: any = {};
+      visibleCols.filter(col => col.id !== 'acoes').forEach(col => {
+        let value = license[col.id];
+        if (col.id === 'ativo') {
+          value = value ? 'Ativo' : 'Inativo';
+        }
+        row[col.label] = value || '';
+      });
+      return row;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Licenças');
+    
+    XLSX.writeFile(wb, `licencas_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    toast({
+      title: "Exportado!",
+      description: `${filteredLicenses.length} licenças exportadas para Excel`,
+    });
+  };
+
   const getVisibleColumnsInOrder = () => {
     return columnOrder
       .filter(colId => visibleColumns.includes(colId))
@@ -428,10 +494,56 @@ export default function Licenses() {
             <Search className="h-4 w-4" />
             <span>Filtrar</span>
           </Button>
-          <Button variant="outline" className="flex items-center space-x-2">
-            <Download className="h-4 w-4" />
-            <span>Exportar</span>
-          </Button>
+          <div className="relative">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Download className="h-4 w-4" />
+                  <span>Exportar</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Exportar Licenças</DialogTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Exportando {filteredLicenses.length} de {licenses?.length || 0} licenças
+                    {(Object.values(columnFilters).some(filter => filter !== "") || searchTerm !== "") && 
+                      " (com filtros aplicados)"
+                    }
+                  </p>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid gap-3">
+                    <Button
+                      onClick={exportToCSV}
+                      className="flex items-center justify-start space-x-3 h-12"
+                      variant="outline"
+                    >
+                      <FileDown className="h-5 w-5 text-green-600" />
+                      <div className="text-left">
+                        <div className="font-medium">Exportar para CSV</div>
+                        <div className="text-xs text-gray-500">Arquivo separado por vírgulas</div>
+                      </div>
+                    </Button>
+                    <Button
+                      onClick={exportToExcel}
+                      className="flex items-center justify-start space-x-3 h-12"
+                      variant="outline"
+                    >
+                      <FileDown className="h-5 w-5 text-blue-600" />
+                      <div className="text-left">
+                        <div className="font-medium">Exportar para Excel</div>
+                        <div className="text-xs text-gray-500">Planilha do Microsoft Excel</div>
+                      </div>
+                    </Button>
+                  </div>
+                  <div className="text-xs text-gray-500 border-t pt-3">
+                    <p><strong>Nota:</strong> Apenas as colunas visíveis serão exportadas. Use "Configurar Colunas" para ajustar quais campos incluir.</p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="flex items-center space-x-2">
