@@ -9,7 +9,7 @@ import { ptBR } from "date-fns/locale";
 
 export default function RecentLicensesTable() {
   const { data: licenses, isLoading } = useQuery({
-    queryKey: ["/api/licenses"],
+    queryKey: ["/api", "licenses"],
   });
 
   if (isLoading) {

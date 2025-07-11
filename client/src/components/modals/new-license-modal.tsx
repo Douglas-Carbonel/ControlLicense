@@ -49,9 +49,9 @@ export default function NewLicenseModal() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "licenses", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "activities"] });
       toast({
         title: "Sucesso",
         description: "Licença criada com sucesso!",

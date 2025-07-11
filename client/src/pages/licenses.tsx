@@ -55,7 +55,7 @@ export default function Licenses() {
   const queryClient = useQueryClient();
 
   const { data: licenses, isLoading } = useQuery({
-    queryKey: ["/api/licenses"],
+    queryKey: ["/api", "licenses"],
   });
 
   const deleteMutation = useMutation({
@@ -63,9 +63,9 @@ export default function Licenses() {
       await apiRequest("DELETE", `/api/licenses/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "licenses", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "activities"] });
       toast({
         title: "Sucesso",
         description: "Licença excluída com sucesso!",
@@ -85,9 +85,9 @@ export default function Licenses() {
       return await apiRequest("PUT", `/api/licenses/${data.id}`, data.license);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/licenses/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "licenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "licenses", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api", "activities"] });
       toast({
         title: "Sucesso",
         description: "Licença atualizada com sucesso!",

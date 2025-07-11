@@ -9,20 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading, error } = useQuery({
-    queryKey: ["/api/licenses/stats"],
-    queryFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/licenses/stats", {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch stats");
-      }
-      return response.json();
-    },
+    queryKey: ["/api", "licenses", "stats"],
+    // Usar o queryFn padrão que já tem renovação automática de token
   });
 
   return (
