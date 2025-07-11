@@ -148,7 +148,7 @@ export default function Licenses() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-              <Table className="relative"">
+              <Table className="relative">
                 <TableHeader>
                   <TableRow className="border-gray-200 bg-gray-50">
                     <TableHead className="text-gray-700 font-semibold text-xs uppercase tracking-wide min-w-[100px] sticky left-0 bg-gray-50 z-10">
