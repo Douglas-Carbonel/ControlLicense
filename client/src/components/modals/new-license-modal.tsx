@@ -80,9 +80,10 @@ export default function NewLicenseModal() {
           Nova Licença
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] bg-white border border-[#e0e0e0] shadow-lg">
         <DialogHeader>
-          <DialogTitle>Nova Licença</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Nova Licença</DialogTitle>
+          <p className="text-sm text-[#3a3a3c] mt-2">Preencha os dados para criar uma nova licença</p>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -274,14 +275,13 @@ export default function NewLicenseModal() {
                 )}
               />
             </div>
-            <div className="flex justify-end space-x-3 pt-6 border-t">
+            <div className="flex justify-end space-x-3 pt-6 border-t border-[#e0e0e0]">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
                 disabled={createMutation.isPending}
-                className="btn-primary"
               >
                 {createMutation.isPending ? "Criando..." : "Criar Licença"}
               </Button>

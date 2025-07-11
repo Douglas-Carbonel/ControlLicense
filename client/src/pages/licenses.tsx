@@ -558,17 +558,18 @@ export default function Licenses() {
 
       {/* Modal de Edição com Abas */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg">
           <DialogHeader>
-            <DialogTitle>Editar Licença</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Editar Licença</DialogTitle>
+            <p className="text-sm text-[#3a3a3c] mt-2">Atualize as informações da licença</p>
           </DialogHeader>
           
           {editingLicense && (
             <Tabs defaultValue="cliente" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="cliente">Dados do Cliente</TabsTrigger>
-                <TabsTrigger value="ambiente">Dados do Ambiente</TabsTrigger>
-                <TabsTrigger value="licenca">Dados da Licença</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 bg-[#f4f4f4] border border-[#e0e0e0]">
+                <TabsTrigger value="cliente" className="text-[#3a3a3c] data-[state=active]:bg-[#0095da] data-[state=active]:text-white">Dados do Cliente</TabsTrigger>
+                <TabsTrigger value="ambiente" className="text-[#3a3a3c] data-[state=active]:bg-[#0095da] data-[state=active]:text-white">Dados do Ambiente</TabsTrigger>
+                <TabsTrigger value="licenca" className="text-[#3a3a3c] data-[state=active]:bg-[#0095da] data-[state=active]:text-white">Dados da Licença</TabsTrigger>
               </TabsList>
               
               <TabsContent value="cliente" className="space-y-4">
@@ -727,15 +728,13 @@ export default function Licenses() {
                 </div>
               </TabsContent>
               
-              <div className="flex justify-end space-x-3 pt-6 border-t">
+              <div className="flex justify-end space-x-3 pt-6 border-t border-[#e0e0e0]">
                 <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
                   Cancelar
                 </Button>
                 <Button 
                   onClick={handleUpdateLicense}
                   disabled={updateMutation.isPending}
-                  style={{ backgroundColor: '#FF6B5B', color: 'white' }}
-                  className="hover:opacity-90"
                 >
                   {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
                 </Button>

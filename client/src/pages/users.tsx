@@ -245,9 +245,10 @@ export default function UsersPage() {
               Novo Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="bg-white border border-[#e0e0e0] shadow-lg">
             <DialogHeader>
-              <DialogTitle>Criar Novo Usuário</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Criar Novo Usuário</DialogTitle>
+              <p className="text-sm text-[#3a3a3c] mt-2">Preencha os dados para criar um novo usuário</p>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -311,12 +312,10 @@ export default function UsersPage() {
                 />
                 <Label htmlFor="active">Usuário Ativo</Label>
               </div>
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-2 pt-4 border-t border-[#e0e0e0]">
                 <Button 
                   onClick={handleCreateUser} 
                   disabled={createUserMutation.isPending}
-                  style={{ backgroundColor: '#FF6B5B', color: 'white' }}
-                  className="hover:opacity-90"
                 >
                   {createUserMutation.isPending ? "Criando..." : "Criar Usuário"}
                 </Button>
@@ -397,9 +396,10 @@ export default function UsersPage() {
 
       {/* Dialog de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white border border-[#e0e0e0] shadow-lg">
           <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Editar Usuário</DialogTitle>
+            <p className="text-sm text-[#3a3a3c] mt-2">Atualize as informações do usuário</p>
           </DialogHeader>
           {editingUser && (
             <div className="space-y-4">
@@ -451,7 +451,7 @@ export default function UsersPage() {
                 />
                 <Label htmlFor="edit-active">Usuário Ativo</Label>
               </div>
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-2 pt-4 border-t border-[#e0e0e0]">
                 <Button onClick={handleUpdateUser} disabled={updateUserMutation.isPending}>
                   {updateUserMutation.isPending ? "Salvando..." : "Salvar Alterações"}
                 </Button>
