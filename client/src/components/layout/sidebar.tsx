@@ -74,15 +74,15 @@ export default function Sidebar() {
               <div className="absolute top-1 left-1 w-3 h-3 bg-white/20 rounded-full blur-sm"></div>
               <div className="absolute bottom-2 right-2 w-2 h-2 bg-white/30 rounded-full blur-sm"></div>
               
-              {/* Modern DW text */}
+              {/* Modern DWU text */}
               <div className="relative z-10 flex items-center justify-center">
-                <span className="text-white font-black text-xl tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300" 
+                <span className="text-white font-black text-lg tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300" 
                       style={{ 
                         fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
                         textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
                         letterSpacing: '-1px'
                       }}>
-                  DW
+                  DWU
                 </span>
               </div>
               
@@ -97,10 +97,10 @@ export default function Sidebar() {
           </div>
           <div className="flex flex-col">
             <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
-              DW IT License
+              DWU IT Solutions
             </h2>
             <p className="text-[#a1b3d3] text-sm font-medium mt-1 leading-tight">
-              {getCurrentPageTitle()}
+              Controle de Licenças
             </p>
           </div>
         </div>
