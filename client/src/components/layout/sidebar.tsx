@@ -12,14 +12,20 @@ import {
   ChevronRight,
   Building2,
   ChevronLeft,
-  Menu
+  Menu,
+  LogOut,
+  ChevronDown,
+  ChevronUp,
+  User
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useState } from "react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navigationItems = [];
@@ -193,30 +199,72 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* User Profile Section */}
+      {/* User Profile Section with Dropdown */}
       <div className="p-6 border-t border-[#3a3a3c]/30 bg-gradient-to-r from-[#2a3548]/50 to-[#313d5a]/50">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'} p-4 rounded-xl bg-[#3a3a3c]/30 backdrop-blur-sm border border-[#3a3a3c]/50 hover:bg-[#3a3a3c]/50 transition-all duration-300`}>
-          <div className="relative">
-            <div className="w-11 h-11 bg-gradient-to-br from-[#0095da] to-[#0075b0] rounded-full flex items-center justify-center shadow-lg">
-              <Database className="w-5 h-5 text-white" />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] animate-pulse"></div>
-          </div>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-white truncate">
-                {user?.name || 'Administrador'}
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="text-xs text-[#a1b3d3] font-medium">
-                  {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className={`group w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-4'} p-4 rounded-xl bg-[#3a3a3c]/30 backdrop-blur-sm border border-[#3a3a3c]/50 hover:bg-[#3a3a3c]/50 transition-all duration-300`}>
+              <div className="relative">
+                <div className="w-11 h-11 bg-gradient-to-br from-[#0095da] to-[#0075b0] rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-white text-sm font-bold">
+                    {user?.name?.charAt(0) || 'A'}
+                  </span>
                 </div>
-                <div className="w-1 h-1 bg-emerald-400 rounded-full"></div>
-                <div className="text-xs text-emerald-400 font-medium">Online</div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full border-2 border-[#313d5a] animate-pulse"></div>
               </div>
-            </div>
-          )}
-        </div>
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-sm font-semibold text-white truncate">
+                    {user?.name || 'Administrador'}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-xs bg-[#0095da]/20 text-white border-[#0095da]/50">
+                        {user?.role === 'admin' ? 'Admin' : 'Técnico'}
+                      </Badge>
+                    </div>
+                    <ChevronUp className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-colors" />
+                  </div>
+                </div>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            side="top" 
+            align="center" 
+            className="w-64 bg-white border border-[#e0e0e0] shadow-xl mb-2"
+          >
+            <DropdownMenuLabel className="text-[#3a3a3c]">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-[#0095da] to-[#313d5a] rounded-lg flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">
+                    {user?.name?.charAt(0) || 'A'}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-semibold">{user?.name || 'Administrador'}</div>
+                  <div className="text-xs text-gray-500 font-normal">
+                    {user?.role === 'admin' ? 'Administrador' : 'Técnico'}
+                  </div>
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-[#e0e0e0]" />
+            {user?.role === 'admin' && (
+              <DropdownMenuItem className="text-[#3a3a3c] hover:bg-[#f4f4f4] hover:text-[#0095da]">
+                <Settings className="mr-2 h-4 w-4" />
+                Configurações
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem 
+              onClick={logout}
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   );
