@@ -434,9 +434,13 @@ export default function Licenses() {
             <div className="flex items-center space-x-2">
               <Dialog open={isColumnConfigOpen} onOpenChange={setIsColumnConfigOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                    <Columns className="h-4 w-4" />
-                    <span>Configurar Colunas</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center space-x-2 bg-white hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-700 hover:text-blue-800 font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-lg px-4 py-2 group"
+                  >
+                    <Columns className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                    <span className="text-sm">Configurar Colunas</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
