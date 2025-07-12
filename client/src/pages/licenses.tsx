@@ -329,6 +329,15 @@ export default function Licenses() {
 
   const moveColumn = useCallback((fromIndex: number, toIndex: number) => {
     setColumnOrder(prev => {
+      const fromColumnId = prev[fromIndex];
+      const toColumnId = prev[toIndex];
+      
+      // Não permitir mover colunas fixas (código e ações)
+      if (fromColumnId === 'code' || fromColumnId === 'acoes' || 
+          toColumnId === 'code' || toColumnId === 'acoes') {
+        return prev;
+      }
+      
       const newOrder = [...prev];
       const [movedItem] = newOrder.splice(fromIndex, 1);
       newOrder.splice(toIndex, 0, movedItem);
@@ -479,30 +488,49 @@ export default function Licenses() {
                     
                     <TabsContent value="order" className="space-y-4">
                       <p className="text-sm text-gray-600">
-                        Arraste as colunas para reordenar:
+                        Arraste as colunas para reordenar (Código e Ações não podem ser movidas):
                       </p>
                       <div className="space-y-2 max-h-60 overflow-y-auto">
                         {columnOrder.map((columnId, index) => {
                           const column = AVAILABLE_COLUMNS.find(col => col.id === columnId);
                           if (!column) return null;
                           
+                          const isFixed = columnId === 'code' || columnId === 'acoes';
+                          
                           return (
                             <div 
                               key={columnId}
-                              className="flex items-center space-x-2 p-2 border rounded-lg bg-gray-50 hover:bg-gray-100 cursor-move"
-                              draggable
+                              className={`flex items-center space-x-2 p-2 border rounded-lg ${
+                                isFixed 
+                                  ? 'bg-gray-100 cursor-not-allowed opacity-75' 
+                                  : 'bg-gray-50 hover:bg-gray-100 cursor-move'
+                              }`}
+                              draggable={!isFixed}
                               onDragStart={(e) => {
+                                if (isFixed) {
+                                  e.preventDefault();
+                                  return;
+                                }
                                 e.dataTransfer.setData('text/plain', index.toString());
                               }}
                               onDragOver={(e) => e.preventDefault()}
                               onDrop={(e) => {
+                                if (isFixed) return;
                                 e.preventDefault();
                                 const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                                const fromColumnId = columnOrder[fromIndex];
+                                // Não permitir mover colunas fixas
+                                if (fromColumnId === 'code' || fromColumnId === 'acoes') return;
                                 moveColumn(fromIndex, index);
                               }}
                             >
-                              <GripVertical className="h-4 w-4 text-gray-400" />
+                              <GripVertical className={`h-4 w-4 ${isFixed ? 'text-gray-300' : 'text-gray-400'}`} />
                               <span className="text-sm font-medium flex-1">{column.label}</span>
+                              {isFixed && (
+                                <Badge variant="outline" className="text-xs">
+                                  Posição Fixa
+                                </Badge>
+                              )}
                               <Badge variant={visibleColumns.includes(columnId) ? "default" : "secondary"}>
                                 {visibleColumns.includes(columnId) ? "Visível" : "Oculta"}
                               </Badge>
