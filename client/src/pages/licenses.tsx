@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search } from "lucide-react";
+import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search, Bookmark, Save, Trash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,6 +92,9 @@ export default function Licenses() {
   const [visibleColumns, setVisibleColumns] = useState(DEFAULT_VISIBLE_COLUMNS);
   const [columnOrder, setColumnOrder] = useState(AVAILABLE_COLUMNS.map(col => col.id));
   const [isColumnConfigOpen, setIsColumnConfigOpen] = useState(false);
+  const [savedConfigs, setSavedConfigs] = useState<{name: string, config: any}[]>([]);
+  const [configName, setConfigName] = useState('');
+  const [isSaveConfigOpen, setIsSaveConfigOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -349,6 +352,91 @@ export default function Licenses() {
     setColumnOrder(AVAILABLE_COLUMNS.map(col => col.id));
   }, []);
 
+  // Carregar configurações salvas do localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('licenses-filter-configs');
+    if (saved) {
+      try {
+        setSavedConfigs(JSON.parse(saved));
+      } catch (error) {
+        console.error('Erro ao carregar configurações salvas:', error);
+      }
+    }
+    
+    // Carregar última configuração aplicada
+    const lastConfig = localStorage.getItem('licenses-last-config');
+    if (lastConfig) {
+      try {
+        const config = JSON.parse(lastConfig);
+        setVisibleColumns(config.visibleColumns || DEFAULT_VISIBLE_COLUMNS);
+        setColumnOrder(config.columnOrder || AVAILABLE_COLUMNS.map(col => col.id));
+        setColumnFilters(config.columnFilters || {});
+      } catch (error) {
+        console.error('Erro ao carregar última configuração:', error);
+      }
+    }
+  }, []);
+
+  const saveCurrentConfig = useCallback(() => {
+    if (!configName.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite um nome para a configuração",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const config = {
+      name: configName.trim(),
+      config: {
+        visibleColumns,
+        columnOrder,
+        columnFilters
+      }
+    };
+
+    const newConfigs = [...savedConfigs.filter(c => c.name !== configName.trim()), config];
+    setSavedConfigs(newConfigs);
+    localStorage.setItem('licenses-filter-configs', JSON.stringify(newConfigs));
+    
+    setConfigName('');
+    setIsSaveConfigOpen(false);
+    
+    toast({
+      title: "Sucesso",
+      description: `Configuração "${config.name}" salva com sucesso!`,
+    });
+  }, [configName, visibleColumns, columnOrder, columnFilters, savedConfigs, toast]);
+
+  const loadConfig = useCallback((config: any) => {
+    setVisibleColumns(config.visibleColumns || DEFAULT_VISIBLE_COLUMNS);
+    setColumnOrder(config.columnOrder || AVAILABLE_COLUMNS.map(col => col.id));
+    setColumnFilters(config.columnFilters || {});
+    setCurrentPage(1);
+    
+    // Salvar como última configuração
+    localStorage.setItem('licenses-last-config', JSON.stringify(config));
+    
+    toast({
+      title: "Configuração carregada",
+      description: "Filtros e colunas aplicados com sucesso!",
+    });
+  }, [toast]);
+
+  const deleteConfig = useCallback((configName: string) => {
+    if (confirm(`Tem certeza que deseja excluir a configuração "${configName}"?`)) {
+      const newConfigs = savedConfigs.filter(c => c.name !== configName);
+      setSavedConfigs(newConfigs);
+      localStorage.setItem('licenses-filter-configs', JSON.stringify(newConfigs));
+      
+      toast({
+        title: "Configuração excluída",
+        description: `"${configName}" foi removida`,
+      });
+    }
+  }, [savedConfigs, toast]);
+
   const exportToCSV = useCallback(() => {
     const visibleCols = getVisibleColumnsInOrder().filter(col => col.id !== 'acoes');
     const headers = visibleCols.map(col => col.label);
@@ -499,6 +587,110 @@ export default function Licenses() {
               </p>
             </div>
             <div className="flex items-center space-x-2">
+              <Dialog open={isSaveConfigOpen} onOpenChange={setIsSaveConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-300 hover:border-blue-400 text-blue-700 hover:text-blue-900 font-medium shadow-sm hover:shadow-lg transition-all duration-300 rounded-md px-3 py-2 group relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-500 transform -translate-x-full"></div>
+                    <Save className="h-4 w-4 group-hover:scale-110 transition-transform duration-300 relative z-10" />
+                    <span className="text-sm font-medium relative z-10">Salvar Filtros</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Salvar Configuração de Filtros</DialogTitle>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Salve a configuração atual de colunas visíveis, ordem e filtros aplicados
+                    </p>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="config-name">Nome da Configuração</Label>
+                      <Input
+                        id="config-name"
+                        value={configName}
+                        onChange={(e) => setConfigName(e.target.value)}
+                        placeholder="Ex: Filtros para relatório mensal"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
+                      <p><strong>Esta configuração salvará:</strong></p>
+                      <ul className="list-disc list-inside mt-1 space-y-1">
+                        <li>Colunas visíveis ({visibleColumns.length} de {AVAILABLE_COLUMNS.length})</li>
+                        <li>Ordem das colunas</li>
+                        <li>Filtros aplicados ({Object.values(columnFilters).filter(f => f !== '').length} ativos)</li>
+                      </ul>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => setIsSaveConfigOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={saveCurrentConfig}>
+                        Salvar Configuração
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {savedConfigs.length > 0 && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center space-x-2 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-purple-300 hover:border-purple-400 text-purple-700 hover:text-purple-900 font-medium shadow-sm hover:shadow-lg transition-all duration-300 rounded-md px-3 py-2 group relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-500 transform -translate-x-full"></div>
+                      <Bookmark className="h-4 w-4 group-hover:scale-110 transition-transform duration-300 relative z-10" />
+                      <span className="text-sm font-medium relative z-10">Carregar Filtros</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Configurações Salvas</DialogTitle>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Carregue uma configuração salva ou gerencie suas configurações
+                      </p>
+                    </DialogHeader>
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {savedConfigs.map((saved, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{saved.name}</div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {saved.config.visibleColumns?.length || 0} colunas visíveis • {Object.values(saved.config.columnFilters || {}).filter((f: any) => f !== '').length} filtros
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadConfig(saved.config)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              Carregar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteConfig(saved.name)}
+                              className="text-red-600 hover:text-red-800 p-1"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
               <Dialog>
                 <DialogTrigger asChild>
                   <Button 
