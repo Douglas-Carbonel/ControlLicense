@@ -437,10 +437,11 @@ export default function Licenses() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex items-center space-x-2 bg-white hover:bg-blue-50 border-blue-200 hover:border-blue-300 text-blue-700 hover:text-blue-800 font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-lg px-4 py-2 group"
+                    className="flex items-center space-x-2 bg-gradient-to-r from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 font-medium shadow-sm hover:shadow-lg transition-all duration-300 rounded-md px-3 py-2 group relative overflow-hidden"
                   >
-                    <Columns className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                    <span className="text-sm">Configurar Colunas</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-500 transform -translate-x-full"></div>
+                    <Settings className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300 relative z-10" />
+                    <span className="text-sm font-medium relative z-10">Configurar Colunas</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
