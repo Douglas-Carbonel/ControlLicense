@@ -349,6 +349,73 @@ export default function Licenses() {
     setColumnOrder(AVAILABLE_COLUMNS.map(col => col.id));
   }, []);
 
+  const exportToCSV = useCallback(() => {
+    const visibleCols = getVisibleColumnsInOrder().filter(col => col.id !== 'acoes');
+    const headers = visibleCols.map(col => col.label);
+    
+    let csvContent = headers.join(';') + '\n';
+    
+    filteredLicenses.forEach((license: any) => {
+      const row = visibleCols.map(col => {
+        let value = license[col.id];
+        if (col.id === 'ativo') {
+          value = value ? 'Ativo' : 'Inativo';
+        }
+        return `"${String(value || '').replace(/"/g, '""')}"`;
+      });
+      csvContent += row.join(';') + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `licencas_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Exportado!",
+      description: `${filteredLicenses.length} licenças exportadas para CSV`,
+    });
+  }, [filteredLicenses, getVisibleColumnsInOrder, toast]);
+
+  const exportToExcel = useCallback(() => {
+    const visibleCols = getVisibleColumnsInOrder().filter(col => col.id !== 'acoes');
+    const headers = visibleCols.map(col => col.label);
+    
+    const data = [
+      headers,
+      ...filteredLicenses.map((license: any) => 
+        visibleCols.map(col => {
+          const value = license[col.id];
+          if (col.id === 'ativo') {
+            return value ? 'Ativo' : 'Inativo';
+          }
+          return value || '';
+        })
+      )
+    ];
+
+    const worksheet = data.map(row => row.join('\t')).join('\n');
+    const blob = new Blob([worksheet], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `licencas_${new Date().toISOString().split('T')[0]}.xlsx`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Exportado!",
+      description: `${filteredLicenses.length} licenças exportadas para Excel`,
+    });
+  }, [filteredLicenses, getVisibleColumnsInOrder, toast]);
+
   // Optimized cell content rendering
   const renderCellContent = useCallback((license: any, column: any) => {
     const value = license[column.id];
@@ -432,6 +499,59 @@ export default function Licenses() {
               </p>
             </div>
             <div className="flex items-center space-x-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-300 hover:border-green-400 text-green-700 hover:text-green-900 font-medium shadow-sm hover:shadow-lg transition-all duration-300 rounded-md px-3 py-2 group relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-500 transform -translate-x-full"></div>
+                    <Download className="h-4 w-4 group-hover:translate-y-1 transition-transform duration-300 relative z-10" />
+                    <span className="text-sm font-medium relative z-10">Exportar</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Exportar Licenças</DialogTitle>
+                    <p className="text-sm text-gray-600 mt-2">
+                      Exportando {filteredLicenses.length} de {allLicenses.length} licenças
+                      {Object.values(columnFilters).some(filter => filter !== "") && 
+                        " (com filtros aplicados)"
+                      }
+                    </p>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid gap-3">
+                      <Button
+                        onClick={() => exportToCSV()}
+                        className="flex items-center justify-start space-x-3 h-12"
+                        variant="outline"
+                      >
+                        <FileDown className="h-5 w-5 text-green-600" />
+                        <div className="text-left">
+                          <div className="font-medium">Exportar para CSV</div>
+                          <div className="text-xs text-gray-500">Arquivo separado por vírgulas</div>
+                        </div>
+                      </Button>
+                      <Button
+                        onClick={() => exportToExcel()}
+                        className="flex items-center justify-start space-x-3 h-12"
+                        variant="outline"
+                      >
+                        <FileDown className="h-5 w-5 text-blue-600" />
+                        <div className="text-left">
+                          <div className="font-medium">Exportar para Excel</div>
+                          <div className="text-xs text-gray-500">Planilha do Microsoft Excel</div>
+                        </div>
+                      </Button>
+                    </div>
+                    <div className="text-xs text-gray-500 border-t pt-3">
+                      <p><strong>Nota:</strong> Apenas as colunas visíveis serão exportadas. Use "Configurar Colunas" para ajustar quais campos incluir.</p>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Dialog open={isColumnConfigOpen} onOpenChange={setIsColumnConfigOpen}>
                 <DialogTrigger asChild>
                   <Button 
