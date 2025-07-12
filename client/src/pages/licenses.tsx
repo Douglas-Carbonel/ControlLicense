@@ -90,6 +90,7 @@ export default function Licenses() {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   // Estado para configuração de colunas
   const [visibleColumns, setVisibleColumns] = useState(DEFAULT_VISIBLE_COLUMNS);
+  const [columnOrder, setColumnOrder] = useState(AVAILABLE_COLUMNS.map(col => col.id));
   const [isColumnConfigOpen, setIsColumnConfigOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -313,9 +314,10 @@ export default function Licenses() {
 
 
   const getVisibleColumnsInOrder = useCallback(() => {
-    return AVAILABLE_COLUMNS
-      .filter(col => visibleColumns.includes(col.id));
-  }, [visibleColumns]);
+    return columnOrder
+      .map(id => AVAILABLE_COLUMNS.find(col => col.id === id))
+      .filter((col): col is NonNullable<typeof col> => col !== undefined && visibleColumns.includes(col.id));
+  }, [visibleColumns, columnOrder]);
 
   const toggleColumnVisibility = useCallback((columnId: string) => {
     setVisibleColumns(prev => 
@@ -323,6 +325,19 @@ export default function Licenses() {
         ? prev.filter(id => id !== columnId)
         : [...prev, columnId]
     );
+  }, []);
+
+  const moveColumn = useCallback((fromIndex: number, toIndex: number) => {
+    setColumnOrder(prev => {
+      const newOrder = [...prev];
+      const [movedItem] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, movedItem);
+      return newOrder;
+    });
+  }, []);
+
+  const resetColumnOrder = useCallback(() => {
+    setColumnOrder(AVAILABLE_COLUMNS.map(col => col.id));
   }, []);
 
   // Optimized cell content rendering
@@ -415,46 +430,97 @@ export default function Licenses() {
                     <span>Configurar Colunas</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle>Configurar Colunas Visíveis</DialogTitle>
+                    <DialogTitle>Configurar Colunas</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
-                      Selecione quais colunas deseja visualizar na tabela:
-                    </p>
-                    <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
-                      {AVAILABLE_COLUMNS.map(column => (
-                        <div key={column.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={column.id}
-                            checked={visibleColumns.includes(column.id)}
-                            onCheckedChange={() => toggleColumnVisibility(column.id)}
-                            disabled={column.id === 'code' || column.id === 'acoes'}
-                          />
-                          <Label htmlFor={column.id} className="text-sm font-medium">
-                            {column.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between pt-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setVisibleColumns(AVAILABLE_COLUMNS.map(col => col.id))}
-                      >
-                        Selecionar Todas
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setVisibleColumns(DEFAULT_VISIBLE_COLUMNS)}
-                      >
-                        Restaurar Padrão
-                      </Button>
-                    </div>
-                  </div>
+                  <Tabs defaultValue="visibility" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="visibility">Visibilidade</TabsTrigger>
+                      <TabsTrigger value="order">Ordem</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="visibility" className="space-y-4">
+                      <p className="text-sm text-gray-600">
+                        Selecione quais colunas deseja visualizar na tabela:
+                      </p>
+                      <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+                        {AVAILABLE_COLUMNS.map(column => (
+                          <div key={column.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={column.id}
+                              checked={visibleColumns.includes(column.id)}
+                              onCheckedChange={() => toggleColumnVisibility(column.id)}
+                              disabled={column.id === 'code' || column.id === 'acoes'}
+                            />
+                            <Label htmlFor={column.id} className="text-sm font-medium">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between pt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setVisibleColumns(AVAILABLE_COLUMNS.map(col => col.id))}
+                        >
+                          Selecionar Todas
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setVisibleColumns(DEFAULT_VISIBLE_COLUMNS)}
+                        >
+                          Restaurar Padrão
+                        </Button>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="order" className="space-y-4">
+                      <p className="text-sm text-gray-600">
+                        Arraste as colunas para reordenar:
+                      </p>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {columnOrder.map((columnId, index) => {
+                          const column = AVAILABLE_COLUMNS.find(col => col.id === columnId);
+                          if (!column) return null;
+                          
+                          return (
+                            <div 
+                              key={columnId}
+                              className="flex items-center space-x-2 p-2 border rounded-lg bg-gray-50 hover:bg-gray-100 cursor-move"
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('text/plain', index.toString());
+                              }}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                                moveColumn(fromIndex, index);
+                              }}
+                            >
+                              <GripVertical className="h-4 w-4 text-gray-400" />
+                              <span className="text-sm font-medium flex-1">{column.label}</span>
+                              <Badge variant={visibleColumns.includes(columnId) ? "default" : "secondary"}>
+                                {visibleColumns.includes(columnId) ? "Visível" : "Oculta"}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex justify-between pt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={resetColumnOrder}
+                        >
+                          Restaurar Ordem
+                        </Button>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </DialogContent>
               </Dialog>
               {(Object.values(columnFilters).some(filter => filter !== "")) && (
