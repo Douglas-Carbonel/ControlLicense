@@ -66,6 +66,10 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ **SUCESSO CONFIRMADO**: Performance da busca e digitação otimizada com aprovação do usuário (Jan 2025)
 ✓ **MIGRAÇÃO COMPLETA**: Migração do Replit Agent para ambiente Replit finalizada com sucesso (Jan 2025)
 ✓ Sistema funcionando perfeitamente com login, licenças, atividades e criação de usuários operacionais
+✓ **NOVO ENDPOINT**: Criado endpoint POST /api/licenses/hardware-query para consulta externa de licenças
+✓ Endpoint recebe hardwareKey, systemNumber, installNumber e database como parâmetros
+✓ Retorna quantidade total de licenças e lista de CNPJs para sistemas externos
+✓ Implementado com validação Zod e logging de atividades para auditoria
 
 ## Configuração Padrão do Supabase
 

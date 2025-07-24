@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -451,7 +451,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
+  // Hardware license query endpoint (endpoint público para sistemas externos)
+  app.post("/api/licenses/hardware-query", async (req: Request, res: Response) => {
+    try {
+      // Validar dados recebidos
+      const validatedQuery = hardwareLicenseQuerySchema.parse(req.body);
+      
+      // Buscar licenças que correspondem aos critérios
+      const matchingLicenses = await storage.getLicensesByHardware(validatedQuery);
+      
+      if (matchingLicenses.length === 0) {
+        const response: HardwareLicenseResponse = {
+          success: false,
+          message: "Nenhuma licença encontrada para os dados fornecidos"
+        };
+        return res.status(404).json(response);
+      }
+      
+      // Calcular total de licenças e extrair CNPJs
+      let totalLicenses = 0;
+      const cnpjSet = new Set<string>();
+      
+      const processedLicenses = matchingLicenses.map(license => {
+        // Somar licenças principais e adicionais
+        const qtPrincipal = license.qtLicencas || 0;
+        const qtAdicionais = license.qtLicencasAdicionais || 0;
+        totalLicenses += qtPrincipal + qtAdicionais;
+        
+        // Extrair CNPJs da string (assumindo que podem estar separados por vírgula, ponto e vírgula ou quebra de linha)
+        if (license.listaCnpj) {
+          const cnpjs = license.listaCnpj
+            .split(/[,;\n\r]/)
+            .map(cnpj => cnpj.trim())
+            .filter(cnpj => cnpj.length > 0);
+          
+          cnpjs.forEach(cnpj => cnpjSet.add(cnpj));
+        }
+        
+        return {
+          id: license.id,
+          code: license.code,
+          nomeCliente: license.nomeCliente,
+          qtLicencas: qtPrincipal,
+          qtLicencasAdicionais: qtAdicionais,
+          listaCnpj: license.listaCnpj || "",
+          ativo: license.ativo
+        };
+      });
+      
+      const response: HardwareLicenseResponse = {
+        success: true,
+        data: {
+          totalLicenses,
+          cnpjList: Array.from(cnpjSet),
+          licenses: processedLicenses
+        }
+      };
+      
+      // Log da consulta (sem autenticação, então não temos req.user)
+      await storage.createActivity({
+        userId: "system",
+        userName: "Sistema Externo",
+        action: "QUERY",
+        resourceType: "license",
+        resourceId: null,
+        description: `Consulta externa por hardware: ${validatedQuery.hardwareKey} - ${matchingLicenses.length} licenças encontradas`,
+      });
+      
+      res.json(response);
+      
+    } catch (error) {
+      console.error("Erro na consulta de licenças por hardware:", error);
+      
+      if (error instanceof z.ZodError) {
+        const response: HardwareLicenseResponse = {
+          success: false,
+          message: "Dados inválidos: " + error.errors.map(e => e.message).join(", ")
+        };
+        return res.status(400).json(response);
+      }
+      
+      const response: HardwareLicenseResponse = {
+        success: false,
+        message: "Erro interno do servidor"
+      };
+      res.status(500).json(response);
+    }
+  });
 
   // Activity routes (only for admins)
   app.get("/api/activities", authenticateToken, blockSupportUsers, async (req: AuthRequest, res) => {

@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, activities, users, type License, type InsertLicense, type Activity, type InsertActivity, type User, type InsertUser } from "@shared/schema";
+import { licenses, activities, users, type License, type InsertLicense, type Activity, type InsertActivity, type User, type InsertUser, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, desc, sql, and, gte, lte, count, or, ilike } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -24,6 +24,9 @@ export interface IStorage {
   createLicense(license: InsertLicense): Promise<License>;
   updateLicense(id: number, license: Partial<InsertLicense>): Promise<License>;
   deleteLicense(id: number): Promise<void>;
+  
+  // Hardware license query
+  getLicensesByHardware(query: HardwareLicenseQuery): Promise<License[]>;
 
   // License statistics
   getLicenseStats(): Promise<{
@@ -163,6 +166,22 @@ export class DbStorage implements IStorage {
 
   async deleteLicense(id: number): Promise<void> {
     await db.delete(licenses).where(eq(licenses.id, id));
+  }
+  
+  async getLicensesByHardware(query: HardwareLicenseQuery): Promise<License[]> {
+    return await db
+      .select()
+      .from(licenses)
+      .where(
+        and(
+          eq(licenses.hardwareKey, query.hardwareKey),
+          eq(licenses.systemNumber, query.systemNumber),
+          eq(licenses.installNumber, query.installNumber),
+          eq(licenses.nomeDb, query.database),
+          eq(licenses.ativo, true) // Apenas licenças ativas
+        )
+      )
+      .orderBy(desc(licenses.id));
   }
 
   async getLicenseStats(): Promise<{
