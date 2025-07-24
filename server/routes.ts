@@ -34,11 +34,11 @@ function encryptData(data: string): { encryptedData: string; iv: string } {
   const algorithm = 'aes-256-cbc';
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
   const iv = crypto.randomBytes(16);
-  
+
   const cipher = crypto.createCipheriv(algorithm, key, iv);
   let encrypted = cipher.update(data, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  
+
   return {
     encryptedData: encrypted,
     iv: iv.toString('hex')
@@ -50,11 +50,11 @@ function decryptData(encryptedData: string, ivHex: string): string {
   const algorithm = 'aes-256-cbc';
   const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
   const iv = Buffer.from(ivHex, 'hex');
-  
+
   const decipher = crypto.createDecipheriv(algorithm, key, iv);
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
-  
+
   return decrypted;
 }
 
@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       if (!username || !password) {
         return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
       }
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       // Verificar se usuário já existe
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash da senha
       const hashedPassword = await bcrypt.hash(userData.passwordHash, 10);
-      
+
       const newUser = await storage.createUser({
         ...userData,
         passwordHash: hashedPassword
@@ -323,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       if (req.user!.id === id) {
         return res.status(400).json({ message: "Não é possível excluir seu próprio usuário" });
       }
@@ -357,13 +357,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
       const search = req.query.search as string || '';
-      
+
       const offset = (page - 1) * limit;
-      
+
       // Get paginated licenses with search
       const licenses = await storage.getPaginatedLicenses(offset, limit, search);
       const total = await storage.getLicensesCount(search);
-      
+
       res.json({
         data: licenses,
         pagination: {
@@ -409,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertLicenseSchema.parse(req.body);
       const license = await storage.createLicense(validatedData);
-      
+
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
@@ -419,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceId: license.id,
         description: `${req.user!.name} criou licença para ${license.nomeCliente}`,
       });
-      
+
       res.status(201).json(license);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const validatedData = insertLicenseSchema.partial().parse(req.body);
       const license = await storage.updateLicense(id, validatedData);
-      
+
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
@@ -445,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceId: license.id,
         description: `${req.user!.name} atualizou licença para ${license.nomeCliente}`,
       });
-      
+
       res.json(license);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -463,9 +463,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!license) {
         return res.status(404).json({ message: "License not found" });
       }
-      
+
       await storage.deleteLicense(id);
-      
+
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
@@ -475,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceId: id,
         description: `${req.user!.name} excluiu licença para ${license.nomeCliente}`,
       });
-      
+
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete license" });
@@ -487,10 +487,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Validar dados recebidos
       const validatedQuery = hardwareLicenseQuerySchema.parse(req.body);
-      
+
       // Buscar licenças que correspondem aos critérios
       const matchingLicenses = await storage.getLicensesByHardware(validatedQuery);
-      
+
       if (matchingLicenses.length === 0) {
         // Log da consulta sem resultado com todos os parâmetros para monitoramento
         await storage.createActivity({
@@ -501,45 +501,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
           resourceId: null,
           description: `Hardware: ${validatedQuery.hardwareKey} | System: ${validatedQuery.systemNumber} | Install: ${validatedQuery.installNumber} | Database: "${validatedQuery.database || 'vazio'}" | Resultado: 0 licenças encontradas (ERRO)`,
         });
-        
+
         return res.status(404).json({
           message: "Nenhuma licença encontrada para os dados fornecidos",
           encrypted: false
         });
       }
-      
-      // Calcular total de licenças e extrair CNPJs
+
       let totalLicenses = 0;
       const cnpjSet = new Set<string>();
-      
+
+      // Variáveis para controlar módulos (Y se pelo menos uma licença tiver o módulo ativo)
+      let hasModulo1 = false;
+      let hasModulo2 = false;
+      let hasModulo3 = false;
+      let hasModulo4 = false;
+      let hasModulo5 = false;
+
       matchingLicenses.forEach(license => {
         // Somar licenças principais e adicionais
         const qtPrincipal = license.qtLicencas || 0;
         const qtAdicionais = license.qtLicencasAdicionais || 0;
         totalLicenses += qtPrincipal + qtAdicionais;
-        
+
+        // Verificar módulos ativos
+        if (license.modulo1) hasModulo1 = true;
+        if (license.modulo2) hasModulo2 = true;
+        if (license.modulo3) hasModulo3 = true;
+        if (license.modulo4) hasModulo4 = true;
+        if (license.modulo5) hasModulo5 = true;
+
         // Extrair CNPJs da string
         if (license.listaCnpj) {
           const cnpjs = license.listaCnpj
             .split(/[,;\n\r]/)
             .map(cnpj => cnpj.trim())
             .filter(cnpj => cnpj.length > 0);
-          
+
           cnpjs.forEach(cnpj => cnpjSet.add(cnpj));
         }
       });
-      
+
       // Preparar dados para criptografia conforme documentação
       const originalData = {
-        cnpjList: Array.from(cnpjSet),
-        totalLicenses: totalLicenses,
-        foundLicenses: matchingLicenses.length
+        CNPJ: Array.from(cnpjSet),
+        QuantidadeLicenca: totalLicenses,
+        Modulo1: hasModulo1 ? "Y" : "N",
+        Modulo2: hasModulo2 ? "Y" : "N",
+        Modulo3: hasModulo3 ? "Y" : "N",
+        Modulo4: hasModulo4 ? "Y" : "N",
+        Modulo5: hasModulo5 ? "Y" : "N"
       };
-      
+
       // Criptografar os dados
       const dataToEncrypt = JSON.stringify(originalData);
       const { encryptedData, iv } = encryptData(dataToEncrypt);
-      
+
       const response = {
         message: "Informações de licença encontradas",
         encrypted: true,
@@ -547,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         iv: iv,
         hint: "Use a chave de descriptografia para acessar os dados"
       };
-      
+
       // Log da consulta criptografada com todos os parâmetros
       await storage.createActivity({
         userId: "system",
@@ -557,19 +574,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resourceId: null,
         description: `Hardware: ${validatedQuery.hardwareKey} | System: ${validatedQuery.systemNumber} | Install: ${validatedQuery.installNumber} | Database: "${validatedQuery.database || 'vazio'}" | Resultado: ${matchingLicenses.length} licenças encontradas`,
       });
-      
+
       res.json(response);
-      
+
     } catch (error) {
       console.error("Erro na consulta criptografada de licenças:", error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: "Dados inválidos: " + error.errors.map(e => e.message).join(", "),
           encrypted: false
         });
       }
-      
+
       res.status(500).json({
         message: "Erro interno do servidor",
         encrypted: false
@@ -583,21 +600,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/decrypt", async (req: Request, res: Response) => {
     try {
       const { encryptedData, iv } = req.body;
-      
+
       if (!encryptedData || !iv) {
         return res.status(400).json({
           message: "encryptedData e iv são obrigatórios"
         });
       }
-      
+
       const decryptedJson = decryptData(encryptedData, iv);
       const decryptedData = JSON.parse(decryptedJson);
-      
+
       res.json({
         message: "Dados descriptografados com sucesso",
         decryptedData: decryptedData
       });
-      
+
     } catch (error) {
       console.error("Erro na descriptografia:", error);
       res.status(400).json({
@@ -626,7 +643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const file = req.file;
       let data: any[] = [];
-      
+
       console.log('File info:', { 
         mimetype: file.mimetype, 
         originalname: file.originalname,
@@ -636,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (file.mimetype === "text/csv" || file.originalname.endsWith('.csv') || file.mimetype === "application/octet-stream") {
         // Parse CSV
         const fileContent = readFileSync(file.path, "utf-8");
-        
+
         parse(fileContent, {
           columns: true,
           skip_empty_lines: true,
@@ -646,11 +663,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("CSV parse error:", err);
             return res.status(400).json({ message: "Failed to parse CSV file", error: err.message });
           }
-          
+
           try {
             console.log(`Starting import of ${records.length} records`);
             const importedCount = await processImportData(records);
-            
+
             // Log activity
             await storage.createActivity({
               userId: req.user!.id.toString(),
@@ -660,7 +677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               resourceId: null,
               description: `${req.user!.name} importou ${importedCount} licenças do arquivo CSV`,
             });
-            
+
             res.json({ message: `Successfully imported ${importedCount} licenses` });
           } catch (error) {
             console.error("Import processing error:", error);
@@ -673,9 +690,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         data = XLSX.utils.sheet_to_json(worksheet);
-        
+
         const importedCount = await processImportData(data);
-        
+
         // Log activity
         await storage.createActivity({
           userId: req.user!.id.toString(),
@@ -685,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           resourceId: null,
           description: `${req.user!.name} importou ${importedCount} licenças do arquivo Excel`,
         });
-        
+
         res.json({ message: `Successfully imported ${importedCount} licenses` });
       } else {
         res.status(400).json({ message: "Unsupported file format" });
@@ -699,16 +716,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function processImportData(records: any[]): Promise<number> {
     let importedCount = 0;
     const batchSize = 50; // Processar em lotes menores para melhor performance
-    
+
     for (let i = 0; i < records.length; i += batchSize) {
       const batch = records.slice(i, i + batchSize);
-      
+
       for (const record of batch) {
         try {
           // Clean numeric values
         const linha = parseInt(record.Linha || record.linha || "1");
-        const qtLicencas = parseInt(record["Qt. Licen�as"] || record["Qt. Licenças"] || record["Qt. Licen?as"] || record.qtLicencas || record.qt_licencas || "1");
-        
+        const qtLicencas = parseInt(record["Qt. Licenas"] || record["Qt. Licenças"] || record["Qt. Licen?as"] || record.qtLicencas || record.qt_licencas || "1");
+
         const licenseData = {
           code: (record.Code || record.code || record.codigo || "").toString(),
           linha: isNaN(linha) ? 1 : linha,
@@ -724,15 +741,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endApi: (record["End. API"] || record.endApi || record.end_api || "").toString(),
           listaCnpj: (record["Lista de CNPJ"] || record.listaCnpj || record.lista_cnpj || "").toString(),
           qtLicencas: isNaN(qtLicencas) ? 1 : qtLicencas,
-          versaoSap: (record["Vers�o SAP"] || record["Versão SAP"] || record["Vers?o SAP"] || record.versaoSap || record.versao_sap || "").toString(),
+          versaoSap: (record["Verso SAP"] || record["Versão SAP"] || record["Vers?o SAP"] || record.versaoSap || record.versao_sap || "").toString(),
         };
-        
+
         console.log(`Processing record ${importedCount + 1}:`, licenseData.code);
-        
+
         const validatedData = insertLicenseSchema.parse(licenseData);
         await storage.createLicense(validatedData);
         importedCount++;
-        
+
         if (importedCount % 50 === 0) {
           console.log(`Imported ${importedCount} records so far...`);
         }
@@ -741,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     }
-    
+
     return importedCount;
   }
 

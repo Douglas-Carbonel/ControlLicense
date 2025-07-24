@@ -24,7 +24,7 @@ export interface IStorage {
   createLicense(license: InsertLicense): Promise<License>;
   updateLicense(id: number, license: Partial<InsertLicense>): Promise<License>;
   deleteLicense(id: number): Promise<void>;
-  
+
   // Hardware license query
   getLicensesByHardware(query: HardwareLicenseQuery): Promise<License[]>;
 
@@ -57,32 +57,32 @@ export class DbStorage implements IStorage {
 
   async getPaginatedLicenses(offset: number, limit: number, search?: string): Promise<License[]> {
     let query = db.select().from(licenses);
-    
+
     if (search) {
       const conditions = this.buildSearchConditions(search);
       if (conditions.length > 0) {
         query = query.where(or(...conditions));
       }
     }
-    
+
     const result = await query
       .orderBy(desc(licenses.id))
       .offset(offset)
       .limit(limit);
-    
+
     return result;
   }
 
   async getLicensesCount(search?: string): Promise<number> {
     let query = db.select({ count: count() }).from(licenses);
-    
+
     if (search) {
       const conditions = this.buildSearchConditions(search);
       if (conditions.length > 0) {
         query = query.where(or(...conditions));
       }
     }
-    
+
     const result = await query;
     return result[0].count;
   }
@@ -90,7 +90,7 @@ export class DbStorage implements IStorage {
   private buildSearchConditions(search: string): any[] {
     const conditions: any[] = [];
     const parts = search.trim().split(' ');
-    
+
     for (const part of parts) {
       if (part.includes(':')) {
         // Filtro específico de coluna (formato: coluna:valor)
@@ -141,7 +141,7 @@ export class DbStorage implements IStorage {
         );
       }
     }
-    
+
     return conditions;
   }
 
@@ -167,10 +167,36 @@ export class DbStorage implements IStorage {
   async deleteLicense(id: number): Promise<void> {
     await db.delete(licenses).where(eq(licenses.id, id));
   }
-  
+
   async getLicensesByHardware(query: HardwareLicenseQuery): Promise<License[]> {
     return await db
-      .select()
+      .select({
+        id: licenses.id,
+        code: licenses.code,
+        linha: licenses.linha,
+        ativo: licenses.ativo,
+        codCliente: licenses.codCliente,
+        nomeCliente: licenses.nomeCliente,
+        dadosEmpresa: licenses.dadosEmpresa,
+        hardwareKey: licenses.hardwareKey,
+        installNumber: licenses.installNumber,
+        systemNumber: licenses.systemNumber,
+        nomeDb: licenses.nomeDb,
+        descDb: licenses.descDb,
+        endApi: licenses.endApi,
+        listaCnpj: licenses.listaCnpj,
+        qtLicencas: licenses.qtLicencas,
+        qtLicencasAdicionais: licenses.qtLicencasAdicionais,
+        versaoSap: licenses.versaoSap,
+        observacao: licenses.observacao,
+        modulo1: licenses.modulo1,
+        modulo2: licenses.modulo2,
+        modulo3: licenses.modulo3,
+        modulo4: licenses.modulo4,
+        modulo5: licenses.modulo5,
+        createdAt: licenses.createdAt,
+        updatedAt: licenses.updatedAt,
+      })
       .from(licenses)
       .where(
         and(
