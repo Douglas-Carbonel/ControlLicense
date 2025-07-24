@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Upload, Trash2 } from "lucide-react";
+import { Plus, Edit, Upload, Trash2, Globe, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -25,6 +25,10 @@ export default function ActivityHistory() {
         return Trash2;
       case "IMPORT":
         return Upload;
+      case "QUERY":
+        return Globe;
+      case "QUERY_ENCRYPTED":
+        return Shield;
       default:
         return Plus;
     }
@@ -40,6 +44,10 @@ export default function ActivityHistory() {
         return "destructive";
       case "IMPORT":
         return "outline";
+      case "QUERY":
+        return "default";
+      case "QUERY_ENCRYPTED":
+        return "secondary";
       default:
         return "default";
     }
@@ -55,9 +63,36 @@ export default function ActivityHistory() {
         return "Exclusão";
       case "IMPORT":
         return "Importação";
+      case "QUERY":
+        return "Consulta API";
+      case "QUERY_ENCRYPTED":
+        return "Consulta Criptografada";
       default:
         return action;
     }
+  };
+
+  const formatActivityDescription = (activity: any) => {
+    if (activity.action === "QUERY" || activity.action === "QUERY_ENCRYPTED") {
+      // Extrair informações da descrição original
+      const description = activity.description || "";
+      const hardwareMatch = description.match(/hardware: ([A-Z0-9]+)/);
+      const countMatch = description.match(/(\d+) licenças encontradas/);
+      
+      const title = activity.action === "QUERY_ENCRYPTED" ? "Requisição de licença (Criptografada)" : "Requisição de licença";
+      const hardware = hardwareMatch ? hardwareMatch[1] : "Hardware não identificado";
+      const count = countMatch ? countMatch[1] : "0";
+      
+      return {
+        title,
+        details: `Hardware: ${hardware} • ${count} licenças encontradas`
+      };
+    }
+    
+    return {
+      title: activity.description || "Sem descrição",
+      details: null
+    };
   };
 
   return (
@@ -117,7 +152,19 @@ export default function ActivityHistory() {
                             <span className="text-sm font-medium">{activity.userName || 'Usuário'}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{activity.description || 'Sem descrição'}</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const formatted = formatActivityDescription(activity);
+                            return (
+                              <div>
+                                <p className="font-medium">{formatted.title}</p>
+                                {formatted.details && (
+                                  <p className="text-xs text-gray-600 mt-1">{formatted.details}</p>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell>
                           {activity.timestamp ? 
                             format(new Date(activity.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Edit, Upload, Trash2 } from "lucide-react";
+import { Plus, Edit, Upload, Trash2, Globe, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -40,6 +40,10 @@ export default function ActivityLog() {
         return Trash2;
       case "IMPORT":
         return Upload;
+      case "QUERY":
+        return Globe;
+      case "QUERY_ENCRYPTED":
+        return Shield;
       default:
         return Plus;
     }
@@ -55,9 +59,36 @@ export default function ActivityLog() {
         return "bg-red-500";
       case "IMPORT":
         return "bg-emerald-500";
+      case "QUERY":
+        return "bg-blue-500";
+      case "QUERY_ENCRYPTED":
+        return "bg-purple-600";
       default:
         return "bg-[#3a3a3c]";
     }
+  };
+
+  const formatActivityDescription = (activity: any) => {
+    if (activity.action === "QUERY" || activity.action === "QUERY_ENCRYPTED") {
+      // Extrair informações da descrição original
+      const description = activity.description || "";
+      const hardwareMatch = description.match(/hardware: ([A-Z0-9]+)/);
+      const countMatch = description.match(/(\d+) licenças encontradas/);
+      
+      const title = activity.action === "QUERY_ENCRYPTED" ? "Requisição de licença (Criptografada)" : "Requisição de licença";
+      const hardware = hardwareMatch ? hardwareMatch[1] : "Hardware não identificado";
+      const count = countMatch ? countMatch[1] : "0";
+      
+      return {
+        title,
+        details: `Hardware: ${hardware} • ${count} licenças encontradas`
+      };
+    }
+    
+    return {
+      title: activity.description || "Sem descrição",
+      details: null
+    };
   };
 
   return (
@@ -85,13 +116,23 @@ export default function ActivityLog() {
                         </div>
                         <div className="min-w-0 flex-1 pt-1.5">
                           <div>
-                            <p className="text-sm text-gray-900">{activity.description || 'Sem descrição'}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {activity.timestamp ? 
-                                format(new Date(activity.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) 
-                                : 'Data não disponível'
-                              }
-                            </p>
+                            {(() => {
+                              const formatted = formatActivityDescription(activity);
+                              return (
+                                <>
+                                  <p className="text-sm font-medium text-gray-900">{formatted.title}</p>
+                                  {formatted.details && (
+                                    <p className="text-xs text-gray-600 mt-0.5">{formatted.details}</p>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {activity.timestamp ? 
+                                      format(new Date(activity.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) 
+                                      : 'Data não disponível'
+                                    }
+                                  </p>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
