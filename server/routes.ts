@@ -531,20 +531,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (license.modulo4) hasModulo4 = true;
         if (license.modulo5) hasModulo5 = true;
 
-        // Extrair CNPJs da string
+        // Extrair CNPJs da string e processar corretamente
         if (license.listaCnpj) {
           const cnpjs = license.listaCnpj
-            .split(/[,;\n\r]/)
+            .split('*') // Separar por asterisco (como no front)
             .map(cnpj => cnpj.trim())
-            .filter(cnpj => cnpj.length > 0);
+            .filter(cnpj => cnpj.length > 0)
+            .map(cnpj => cnpj.replace(/[^\d]/g, '')); // Remover máscara, manter apenas números
 
-          cnpjs.forEach(cnpj => cnpjSet.add(cnpj));
+          cnpjs.forEach(cnpj => {
+            if (cnpj.length === 14) { // Validar se tem 14 dígitos
+              cnpjSet.add(cnpj);
+            }
+          });
         }
       });
 
       // Preparar dados para criptografia conforme documentação
       const originalData = {
-        CNPJ: Array.from(cnpjSet),
+        CNPJ: Array.from(cnpjSet).join(','), // Juntar CNPJs com vírgula
         QuantidadeLicenca: totalLicenses,
         Modulo1: hasModulo1 ? "Y" : "N",
         Modulo2: hasModulo2 ? "Y" : "N",
