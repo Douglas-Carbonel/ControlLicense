@@ -563,11 +563,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { encryptedData, iv } = encryptData(dataToEncrypt);
 
       const response = {
-        message: "Informações de licença encontradas",
-        encrypted: true,
         data: encryptedData,
-        iv: iv,
-        hint: "Use a chave de descriptografia para acessar os dados"
+        iv: iv
       };
 
       // Log da consulta criptografada com todos os parâmetros
