@@ -103,7 +103,7 @@ export const hardwareLicenseQuerySchema = z.object({
   hardwareKey: z.string().min(1, "Hardware key é obrigatório"),
   systemNumber: z.string().min(1, "System number é obrigatório"),
   installNumber: z.string().min(1, "Install number é obrigatório"),
-  database: z.string().min(1, "Nome do banco de dados é obrigatório"),
+  database: z.string(), // Permitir string vazia
 });
 
 export type HardwareLicenseQuery = z.infer<typeof hardwareLicenseQuerySchema>;
@@ -112,17 +112,8 @@ export type HardwareLicenseQuery = z.infer<typeof hardwareLicenseQuerySchema>;
 export type HardwareLicenseResponse = {
   success: boolean;
   data?: {
-    totalLicenses: number;
-    cnpjList: string[];
-    licenses: Array<{
-      id: number;
-      code: string;
-      nomeCliente: string;
-      qtLicencas: number;
-      qtLicencasAdicionais: number;
-      listaCnpj: string;
-      ativo: boolean;
-    }>;
+    quantidadeLicencas: number;
+    cnpjs: string; // CNPJs separados por asteriscos
   };
   message?: string;
 };

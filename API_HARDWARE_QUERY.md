@@ -35,22 +35,8 @@ curl -X POST http://localhost:5000/api/licenses/hardware-query \
 {
   "success": true,
   "data": {
-    "totalLicenses": 15,
-    "cnpjList": [
-      "12.345.678/0001-90",
-      "98.765.432/0001-10"
-    ],
-    "licenses": [
-      {
-        "id": 123,
-        "code": "C0001234",
-        "nomeCliente": "Empresa ABC Ltda",
-        "qtLicencas": 10,
-        "qtLicencasAdicionais": 5,
-        "listaCnpj": "12.345.678/0001-90; 98.765.432/0001-10",
-        "ativo": true
-      }
-    ]
+    "quantidadeLicencas": 15,
+    "cnpjs": "12.345.678/0001-90*98.765.432/0001-10"
   }
 }
 ```

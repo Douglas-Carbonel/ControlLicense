@@ -472,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let totalLicenses = 0;
       const cnpjSet = new Set<string>();
       
-      const processedLicenses = matchingLicenses.map(license => {
+      matchingLicenses.forEach(license => {
         // Somar licenças principais e adicionais
         const qtPrincipal = license.qtLicencas || 0;
         const qtAdicionais = license.qtLicencasAdicionais || 0;
@@ -487,24 +487,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           cnpjs.forEach(cnpj => cnpjSet.add(cnpj));
         }
-        
-        return {
-          id: license.id,
-          code: license.code,
-          nomeCliente: license.nomeCliente,
-          qtLicencas: qtPrincipal,
-          qtLicencasAdicionais: qtAdicionais,
-          listaCnpj: license.listaCnpj || "",
-          ativo: license.ativo
-        };
       });
+      
+      // Concatenar CNPJs com asteriscos
+      const cnpjsString = Array.from(cnpjSet).join('*');
       
       const response: HardwareLicenseResponse = {
         success: true,
         data: {
-          totalLicenses,
-          cnpjList: Array.from(cnpjSet),
-          licenses: processedLicenses
+          quantidadeLicencas: totalLicenses,
+          cnpjs: cnpjsString
         }
       };
       
