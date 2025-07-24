@@ -21,6 +21,11 @@ export const licenses = pgTable("licenses", {
   qtLicencasAdicionais: integer("qt_licencas_adicionais").default(0), // Qt. Lic. Adicionais
   versaoSap: text("versao_sap"), // Versão SAP
   observacao: text("observacao").default(""), // Observação
+  modulo1: boolean("modulo1").default(false), // Módulo 1
+  modulo2: boolean("modulo2").default(false), // Módulo 2
+  modulo3: boolean("modulo3").default(false), // Módulo 3
+  modulo4: boolean("modulo4").default(false), // Módulo 4
+  modulo5: boolean("modulo5").default(false), // Módulo 5
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -93,6 +98,11 @@ export const licenseSchema = z.object({
   qtLicencasAdicionais: z.number().optional(),
   versaoSap: z.string().optional(),
   observacao: z.string().optional(),
+  modulo1: z.boolean().optional(),
+  modulo2: z.boolean().optional(),
+  modulo3: z.boolean().optional(),
+  modulo4: z.boolean().optional(),
+  modulo5: z.boolean().optional(),
   codCliente: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
