@@ -74,24 +74,39 @@ export default function ActivityHistory() {
 
   const formatActivityDescription = (activity: any) => {
     if (activity.action === "QUERY" || activity.action === "QUERY_ENCRYPTED") {
-      // Extrair informações da descrição original
+      // Extrair informações da descrição original com novo formato
       const description = activity.description || "";
-      const hardwareMatch = description.match(/hardware: ([A-Z0-9]+)/);
-      const countMatch = description.match(/(\d+) licenças encontradas/);
       
-      const title = activity.action === "QUERY_ENCRYPTED" ? "Requisição de licença (Criptografada)" : "Requisição de licença";
-      const hardware = hardwareMatch ? hardwareMatch[1] : "Hardware não identificado";
+      // Novo formato com pipe separador
+      const hardwareMatch = description.match(/Hardware: ([A-Z0-9]+)/);
+      const systemMatch = description.match(/System: ([A-Z0-9]+)/);
+      const installMatch = description.match(/Install: ([A-Z0-9]+)/);
+      const databaseMatch = description.match(/Database: "([^"]*?)"/);
+      const countMatch = description.match(/(\d+) licenças encontradas/);
+      const isError = description.includes("(ERRO)");
+      
+      let title = activity.action === "QUERY_ENCRYPTED" ? "Requisição de licença (Criptografada)" : "Requisição de licença";
+      if (isError) {
+        title += " - ERRO";
+      }
+      
+      const hardware = hardwareMatch ? hardwareMatch[1] : "N/A";
+      const system = systemMatch ? systemMatch[1] : "N/A";
+      const install = installMatch ? installMatch[1] : "N/A";
+      const database = databaseMatch ? (databaseMatch[1] || "vazio") : "N/A";
       const count = countMatch ? countMatch[1] : "0";
       
       return {
         title,
-        details: `Hardware: ${hardware} • ${count} licenças encontradas`
+        details: `Hardware: ${hardware} • System: ${system} • Install: ${install} • Database: ${database} • Resultado: ${count} licenças encontradas`,
+        isError
       };
     }
     
     return {
       title: activity.description || "Sem descrição",
-      details: null
+      details: null,
+      isError: false
     };
   };
 
@@ -157,9 +172,9 @@ export default function ActivityHistory() {
                             const formatted = formatActivityDescription(activity);
                             return (
                               <div>
-                                <p className="font-medium">{formatted.title}</p>
+                                <p className={`font-medium ${formatted.isError ? 'text-red-600' : ''}`}>{formatted.title}</p>
                                 {formatted.details && (
-                                  <p className="text-xs text-gray-600 mt-1">{formatted.details}</p>
+                                  <p className={`text-xs mt-1 ${formatted.isError ? 'text-red-500' : 'text-gray-600'}`}>{formatted.details}</p>
                                 )}
                               </div>
                             );

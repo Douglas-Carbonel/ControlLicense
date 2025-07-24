@@ -492,6 +492,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matchingLicenses = await storage.getLicensesByHardware(validatedQuery);
       
       if (matchingLicenses.length === 0) {
+        // Log da consulta sem resultado com todos os parâmetros para monitoramento
+        await storage.createActivity({
+          userId: "system",
+          userName: "Sistema Externo (Sem Resultado)",
+          action: "QUERY_ENCRYPTED",
+          resourceType: "license",
+          resourceId: null,
+          description: `Hardware: ${validatedQuery.hardwareKey} | System: ${validatedQuery.systemNumber} | Install: ${validatedQuery.installNumber} | Database: "${validatedQuery.database || 'vazio'}" | Resultado: 0 licenças encontradas (ERRO)`,
+        });
+        
         return res.status(404).json({
           message: "Nenhuma licença encontrada para os dados fornecidos",
           encrypted: false
@@ -538,14 +548,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hint: "Use a chave de descriptografia para acessar os dados"
       };
       
-      // Log da consulta criptografada
+      // Log da consulta criptografada com todos os parâmetros
       await storage.createActivity({
         userId: "system",
         userName: "Sistema Externo (Criptografado)",
         action: "QUERY_ENCRYPTED",
         resourceType: "license",
         resourceId: null,
-        description: `Consulta criptografada por hardware: ${validatedQuery.hardwareKey} - ${matchingLicenses.length} licenças encontradas`,
+        description: `Hardware: ${validatedQuery.hardwareKey} | System: ${validatedQuery.systemNumber} | Install: ${validatedQuery.installNumber} | Database: "${validatedQuery.database || 'vazio'}" | Resultado: ${matchingLicenses.length} licenças encontradas`,
       });
       
       res.json(response);
