@@ -615,10 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const decryptedJson = decryptData(encryptedData, iv);
       const decryptedData = JSON.parse(decryptedJson);
 
-      res.json({
-        message: "Dados descriptografados com sucesso",
-        decryptedData: decryptedData
-      });
+      res.json(decryptedData);
 
     } catch (error) {
       console.error("Erro na descriptografia:", error);
