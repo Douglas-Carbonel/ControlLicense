@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import { readFileSync } from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 // Extend Request interface to include multer file and user info
 interface MulterRequest extends Request {
@@ -26,6 +27,36 @@ interface AuthRequest extends Request {
 
 const upload = multer({ dest: "uploads/" });
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "32-character-secret-encryption-key!";
+
+// Função de criptografia AES-256-CBC
+function encryptData(data: string): { encryptedData: string; iv: string } {
+  const algorithm = 'aes-256-cbc';
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const iv = crypto.randomBytes(16);
+  
+  const cipher = crypto.createCipheriv(algorithm, key, iv);
+  let encrypted = cipher.update(data, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  
+  return {
+    encryptedData: encrypted,
+    iv: iv.toString('hex')
+  };
+}
+
+// Função de descriptografia AES-256-CBC
+function decryptData(encryptedData: string, ivHex: string): string {
+  const algorithm = 'aes-256-cbc';
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const iv = Buffer.from(ivHex, 'hex');
+  
+  const decipher = crypto.createDecipheriv(algorithm, key, iv);
+  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  
+  return decrypted;
+}
 
 // Middleware para verificar autenticação
 function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
@@ -451,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Hardware license query endpoint (endpoint público para sistemas externos)
+  // Hardware license query endpoint com criptografia (endpoint público para sistemas externos)
   app.post("/api/licenses/hardware-query", async (req: Request, res: Response) => {
     try {
       // Validar dados recebidos
@@ -461,11 +492,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const matchingLicenses = await storage.getLicensesByHardware(validatedQuery);
       
       if (matchingLicenses.length === 0) {
-        const response: HardwareLicenseResponse = {
-          success: false,
-          message: "Nenhuma licença encontrada para os dados fornecidos"
-        };
-        return res.status(404).json(response);
+        return res.status(404).json({
+          message: "Nenhuma licença encontrada para os dados fornecidos",
+          encrypted: false
+        });
       }
       
       // Calcular total de licenças e extrair CNPJs
@@ -478,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const qtAdicionais = license.qtLicencasAdicionais || 0;
         totalLicenses += qtPrincipal + qtAdicionais;
         
-        // Extrair CNPJs da string (assumindo que podem estar separados por vírgula, ponto e vírgula ou quebra de linha)
+        // Extrair CNPJs da string
         if (license.listaCnpj) {
           const cnpjs = license.listaCnpj
             .split(/[,;\n\r]/)
@@ -489,45 +519,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Concatenar CNPJs com asteriscos
-      const cnpjsString = Array.from(cnpjSet).join('*');
-      
-      const response: HardwareLicenseResponse = {
-        success: true,
-        data: {
-          quantidadeLicencas: totalLicenses,
-          cnpjs: cnpjsString
-        }
+      // Preparar dados para criptografia conforme documentação
+      const originalData = {
+        cnpjList: Array.from(cnpjSet),
+        totalLicenses: totalLicenses,
+        foundLicenses: matchingLicenses.length
       };
       
-      // Log da consulta (sem autenticação, então não temos req.user)
+      // Criptografar os dados
+      const dataToEncrypt = JSON.stringify(originalData);
+      const { encryptedData, iv } = encryptData(dataToEncrypt);
+      
+      const response = {
+        message: "Informações de licença encontradas",
+        encrypted: true,
+        data: encryptedData,
+        iv: iv,
+        hint: "Use a chave de descriptografia para acessar os dados"
+      };
+      
+      // Log da consulta criptografada
       await storage.createActivity({
         userId: "system",
-        userName: "Sistema Externo",
-        action: "QUERY",
+        userName: "Sistema Externo (Criptografado)",
+        action: "QUERY_ENCRYPTED",
         resourceType: "license",
         resourceId: null,
-        description: `Consulta externa por hardware: ${validatedQuery.hardwareKey} - ${matchingLicenses.length} licenças encontradas`,
+        description: `Consulta criptografada por hardware: ${validatedQuery.hardwareKey} - ${matchingLicenses.length} licenças encontradas`,
       });
       
       res.json(response);
       
     } catch (error) {
-      console.error("Erro na consulta de licenças por hardware:", error);
+      console.error("Erro na consulta criptografada de licenças:", error);
       
       if (error instanceof z.ZodError) {
-        const response: HardwareLicenseResponse = {
-          success: false,
-          message: "Dados inválidos: " + error.errors.map(e => e.message).join(", ")
-        };
-        return res.status(400).json(response);
+        return res.status(400).json({
+          message: "Dados inválidos: " + error.errors.map(e => e.message).join(", "),
+          encrypted: false
+        });
       }
       
-      const response: HardwareLicenseResponse = {
-        success: false,
-        message: "Erro interno do servidor"
-      };
-      res.status(500).json(response);
+      res.status(500).json({
+        message: "Erro interno do servidor",
+        encrypted: false
+      });
+    }
+  });
+
+
+
+  // Endpoint de descriptografia para testes
+  app.post("/api/decrypt", async (req: Request, res: Response) => {
+    try {
+      const { encryptedData, iv } = req.body;
+      
+      if (!encryptedData || !iv) {
+        return res.status(400).json({
+          message: "encryptedData e iv são obrigatórios"
+        });
+      }
+      
+      const decryptedJson = decryptData(encryptedData, iv);
+      const decryptedData = JSON.parse(decryptedJson);
+      
+      res.json({
+        message: "Dados descriptografados com sucesso",
+        decryptedData: decryptedData
+      });
+      
+    } catch (error) {
+      console.error("Erro na descriptografia:", error);
+      res.status(400).json({
+        message: "Erro ao descriptografar dados. Verifique se encryptedData e iv estão corretos."
+      });
     }
   });
 

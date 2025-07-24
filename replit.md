@@ -70,6 +70,13 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Endpoint recebe hardwareKey, systemNumber, installNumber e database como parâmetros
 ✓ Retorna quantidade total de licenças e lista de CNPJs para sistemas externos
 ✓ Implementado com validação Zod e logging de atividades para auditoria
+✓ **CRIPTOGRAFIA IMPLEMENTADA**: Endpoint /api/licenses/hardware-query agora usa criptografia AES-256-CBC
+✓ Dados sensíveis (CNPJs e quantidades) protegidos com criptografia militar
+✓ Implementadas funções encryptData() e decryptData() com algoritmo scrypt
+✓ Criado endpoint POST /api/decrypt para testes de descriptografia
+✓ Documentação completa em DESCRIPTOGRAFIA_EXEMPLOS.md com códigos para Node.js, Python, Java e C#
+✓ Configuração via variável ENCRYPTION_KEY com chave padrão de 32 caracteres
+✓ IV único por requisição garantindo segurança total das comunicações
 
 ## Configuração Padrão do Supabase
 
