@@ -235,40 +235,46 @@ export default function Mensagens() {
               <span>Nova Mensagem</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader className="space-y-3 pb-6 border-b border-gray-100">
+          <DialogContent className="sm:max-w-[600px] border-blue-200 shadow-xl">
+            <DialogHeader className="space-y-4 pb-6 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 -m-6 p-6 mb-6">
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
                   <MessageSquare className="w-5 h-5" />
                 </div>
                 <div>
-                  <DialogTitle className="text-xl font-semibold text-gray-900">Nova Mensagem</DialogTitle>
-                  <DialogDescription className="text-sm text-gray-600 mt-1">
+                  <DialogTitle className="text-xl font-semibold text-blue-900">Nova Mensagem</DialogTitle>
+                  <DialogDescription className="text-sm text-blue-700 mt-1">
                     Crie uma nova mensagem para envio aos clientes do sistema
                   </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
             <div className="space-y-6 pt-4">
-              <div>
-                <Label htmlFor="mensagem">Mensagem <span className="text-red-500">*</span></Label>
+              <div className="space-y-2">
+                <Label htmlFor="mensagem" className="text-blue-900 font-medium">
+                  Mensagem <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="mensagem"
                   value={formData.mensagem}
                   onChange={(e) => handleFieldChange('mensagem', e.target.value)}
                   placeholder="Digite a mensagem..."
                   rows={4}
+                  className="border-blue-200 focus:border-blue-400 focus:ring-blue-200"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="base">Base <span className="text-red-500">*</span></Label>
+                <div className="space-y-2">
+                  <Label htmlFor="base" className="text-blue-900 font-medium">
+                    Base <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="base"
                     value={formData.base}
                     onChange={(e) => handleFieldChange('base', e.target.value)}
                     placeholder="Digite o nome da base (ex: SBO_DEMO)"
                     list="bases-list"
+                    className="border-blue-200 focus:border-blue-400 focus:ring-blue-200"
                   />
                   <datalist id="bases-list">
                     {availableBases.map((base) => (
@@ -276,36 +282,45 @@ export default function Mensagens() {
                     ))}
                   </datalist>
                 </div>
-                <div>
-                  <Label htmlFor="emailUsuario">Email do Usuário</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="emailUsuario" className="text-blue-900 font-medium">
+                    Email do Usuário
+                  </Label>
                   <Input
                     id="emailUsuario"
                     type="email"
                     value={formData.emailUsuario}
                     onChange={(e) => handleFieldChange('emailUsuario', e.target.value)}
                     placeholder="usuario@exemplo.com (opcional)"
+                    className="border-blue-200 focus:border-blue-400 focus:ring-blue-200"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="dataValidade">Data de Validade <span className="text-red-500">*</span></Label>
+                <div className="space-y-2">
+                  <Label htmlFor="dataValidade" className="text-blue-900 font-medium">
+                    Data de Validade <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="dataValidade"
                     type="datetime-local"
                     value={formData.dataValidade}
                     onChange={(e) => handleFieldChange('dataValidade', e.target.value)}
+                    className="border-blue-200 focus:border-blue-400 focus:ring-blue-200"
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="hardwareKey">Hardware Key <span className="text-red-500">*</span></Label>
+                <div className="space-y-2">
+                  <Label htmlFor="hardwareKey" className="text-blue-900 font-medium">
+                    Hardware Key <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="hardwareKey"
                     value={formData.hardwareKey}
                     onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
                     placeholder="Digite o hardware key (ex: D0950733748)"
                     list="hardware-keys-list"
+                    className="border-blue-200 focus:border-blue-400 focus:ring-blue-200"
                   />
                   <datalist id="hardware-keys-list">
                     {availableHardwareKeys.map((hwKey) => (
@@ -342,18 +357,18 @@ export default function Mensagens() {
               )}
               
 
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+              <div className="flex justify-end space-x-3 pt-6 border-t border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 -mx-6 -mb-6 px-6 pb-6 mt-8">
                 <Button 
                   variant="outline" 
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-6 py-2"
+                  className="px-6 py-2 border-blue-300 text-blue-700 hover:bg-blue-50"
                 >
                   Cancelar
                 </Button>
                 <Button 
                   onClick={handleCreate}
                   disabled={createMutation.isPending || validationStatus.valid === false || !formData.mensagem || !formData.base || !formData.dataValidade || !formData.hardwareKey}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   {createMutation.isPending ? (
                     <>
