@@ -70,14 +70,14 @@ export default function ActivityHistory() {
     }
 
     // Filtro por usuário
-    if (selectedUser) {
+    if (selectedUser && selectedUser !== "all") {
       filtered = filtered.filter((activity: any) => 
         activity.userName === selectedUser
       );
     }
 
     // Filtro por ação
-    if (selectedAction) {
+    if (selectedAction && selectedAction !== "all") {
       filtered = filtered.filter((activity: any) => 
         activity.action === selectedAction
       );
@@ -124,14 +124,14 @@ export default function ActivityHistory() {
 
   const clearFilters = () => {
     setSearchText("");
-    setSelectedUser("");
-    setSelectedAction("");
+    setSelectedUser("all");
+    setSelectedAction("all");
     setDateFrom(undefined);
     setDateTo(undefined);
     setShowOnlyErrors(false);
   };
 
-  const hasActiveFilters = searchText || selectedUser || selectedAction || dateFrom || dateTo || showOnlyErrors;
+  const hasActiveFilters = searchText || (selectedUser && selectedUser !== "all") || (selectedAction && selectedAction !== "all") || dateFrom || dateTo || showOnlyErrors;
 
   const getActivityIcon = (action: string) => {
     switch (action) {
@@ -292,7 +292,7 @@ export default function ActivityHistory() {
                   <SelectValue placeholder="Todos os usuários" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os usuários</SelectItem>
+                  <SelectItem value="all">Todos os usuários</SelectItem>
                   {uniqueUsers.map((user) => (
                     <SelectItem key={user} value={user}>{user}</SelectItem>
                   ))}
@@ -308,7 +308,7 @@ export default function ActivityHistory() {
                   <SelectValue placeholder="Todas as ações" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as ações</SelectItem>
+                  <SelectItem value="all">Todas as ações</SelectItem>
                   {uniqueActions.map((action) => (
                     <SelectItem key={action} value={action}>{getActionText(action)}</SelectItem>
                   ))}
