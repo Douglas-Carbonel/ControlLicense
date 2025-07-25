@@ -857,7 +857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           nomeCliente: (record["Nome Cliente"] || record.nomeCliente || record.nome_cliente || "").toString(),
           dadosEmpresa: (record["Dados da empresa"] || record.dadosEmpresa || record.dados_empresa || "").toString(),
           hardwareKey: (record["Hardware key"] || record.hardwareKey || record.hardware_key || "").toString(),
-          installNumber: (record["Install number"] || record.installNumber ||`record.install_number || "").toString(),
+          installNumber: (record["Install number"] || record.installNumber || record.install_number || "").toString(),
           systemNumber: (record["System number"] || record.systemNumber || record.system_number || "").toString(),
           nomeDb: (record["Nome DB"] || record.nomeDb || record.nome_db || "").toString(),
           descDb: (record["Desc. DB"] || record.descDb || record.desc_db || "").toString(),
