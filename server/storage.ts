@@ -358,6 +358,58 @@ export class DbStorage implements IStorage {
       .where(eq(mensagemSistema.hardwareKey, hardwareKey))
       .orderBy(desc(mensagemSistema.createdAt));
   }
+    // Função para buscar mensagens com dados da licença relacionada
+    async getMensagensWithLicense() {
+        try {
+            const result = await db
+                .select({
+                    id: mensagemSistema.id,
+                    mensagem: mensagemSistema.mensagem,
+                    base: mensagemSistema.base,
+                    emailUsuario: mensagemSistema.emailUsuario,
+                    dataValidade: mensagemSistema.dataValidade,
+                    hardwareKey: mensagemSistema.hardwareKey,
+                    createdAt: mensagemSistema.createdAt,
+                    updatedAt: mensagemSistema.updatedAt,
+                    // Dados da licença relacionada
+                    licenseId: licenses.id,
+                    code: licenses.code,
+                    linha: licenses.linha,
+                    nomeCliente: licenses.nomeCliente,
+                    ativo: licenses.ativo,
+                })
+                .from(mensagemSistema)
+                .leftJoin(
+                    licenses,
+                    and(
+                        eq(mensagemSistema.base, licenses.nomeDb),
+                        eq(mensagemSistema.hardwareKey, licenses.hardwareKey)
+                    )
+                )
+                .orderBy(desc(mensagemSistema.createdAt));
+
+            return result;
+        } catch (error) {
+            console.error("Erro ao buscar mensagens com licenças:", error);
+            throw error;
+        }
+    }
+
+    // Função para validar se base e hardware_key existem em licenses
+    async validateMensagemLicenseReference(base: string, hardwareKey: string): Promise<boolean> {
+        try {
+            const result = await db
+                .select({ id: licenses.id })
+                .from(licenses)
+                .where(and(eq(licenses.nomeDb, base), eq(licenses.hardwareKey, hardwareKey)))
+                .limit(1);
+
+            return result.length > 0;
+        } catch (error) {
+            console.error("Erro ao validar referência de licença:", error);
+            return false;
+        }
+    }
 }
 
 export const storage = new DbStorage();

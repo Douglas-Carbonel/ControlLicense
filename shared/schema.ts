@@ -59,13 +59,16 @@ export const activities = pgTable("activities", {
 export const mensagemSistema = pgTable("mensagem_sistema", {
   id: serial("id").primaryKey(),
   mensagem: text("mensagem").notNull(),
-  base: text("base").notNull(),
+  base: text("base").notNull(), // Referencias licenses.nome_db
   emailUsuario: text("email_usuario").notNull(),
   dataValidade: timestamp("data_validade").notNull(),
-  hardwareKey: text("hardware_key").notNull(),
+  hardwareKey: text("hardware_key").notNull(), // Referencias licenses.hardware_key
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Índice composto para relacionamento com licenses
+  basehardwareIdx: uniqueIndex("idx_mensagem_base_hardware").on(table.base, table.hardwareKey),
+}));
 
 export const insertLicenseSchema = createInsertSchema(licenses).omit({
   id: true,

@@ -19,6 +19,16 @@ CREATE INDEX IF NOT EXISTS idx_mensagem_sistema_hardware_key ON mensagem_sistema
 CREATE INDEX IF NOT EXISTS idx_mensagem_sistema_data_validade ON mensagem_sistema(data_validade);
 CREATE INDEX IF NOT EXISTS idx_mensagem_sistema_email_usuario ON mensagem_sistema(email_usuario);
 
+-- Criar índice composto para relacionamento com licenses
+CREATE INDEX IF NOT EXISTS idx_mensagem_sistema_base_hardware ON mensagem_sistema(base, hardware_key);
+
+-- Adicionar constraint para garantir que base e hardware_key existam na tabela licenses
+-- Nota: Este constraint será criado após verificar se os dados são consistentes
+-- ALTER TABLE mensagem_sistema 
+-- ADD CONSTRAINT fk_mensagem_sistema_licenses 
+-- FOREIGN KEY (base, hardware_key) 
+-- REFERENCES licenses (nome_db, hardware_key);
+
 -- Comentários nas colunas
 COMMENT ON TABLE mensagem_sistema IS 'Tabela para armazenar mensagens do sistema por base e hardware';
 COMMENT ON COLUMN mensagem_sistema.mensagem IS 'Conteúdo da mensagem';
