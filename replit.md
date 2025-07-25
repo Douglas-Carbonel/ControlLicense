@@ -80,6 +80,11 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Removidos todos os confirm() nativos do navegador por AlertDialogs personalizados
 ✓ Interface consistente entre páginas de mensagens e licenças
 ✓ Detalhamento específico dos riscos de exclusão de licenças para o cliente
+✓ **GERAÇÃO AUTOMÁTICA DE IDENTIFIERS**: Campo "linha" agora é gerado automaticamente (Jan 2025)
+✓ Removido campo "linha" do modal de criação de licenças
+✓ Implementada lógica no backend para gerar próximo número único sequencial
+✓ Campo "linha" garantido como identificador único e não editável pelo usuário
+✓ Sistema previne conflitos e garante unicidade dos identificadores de licenças
 ✓ **VALIDAÇÃO AVANÇADA DE MENSAGENS**: Sistema robusto de validação implementado (Jan 2025)
 ✓ Validação no backend verifica se combinação base + hardware_key existe nas licenças
 ✓ Endpoints para autocomplete de bases disponíveis e hardware keys por base

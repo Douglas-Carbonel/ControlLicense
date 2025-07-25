@@ -72,6 +72,7 @@ export const mensagemSistema = pgTable("mensagem_sistema", {
 
 export const insertLicenseSchema = createInsertSchema(licenses).omit({
   id: true,
+  linha: true, // O campo linha será gerado automaticamente
   createdAt: true,
   updatedAt: true,
 });

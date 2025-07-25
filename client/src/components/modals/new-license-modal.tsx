@@ -29,7 +29,6 @@ export default function NewLicenseModal() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: "",
-      linha: 1,
       ativo: true,
       codCliente: "",
       nomeCliente: "",
@@ -234,25 +233,7 @@ export default function NewLicenseModal() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="linha"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-[#0c151f] font-medium">Linha</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="1" 
-                                {...field} 
-                                onChange={(e) => field.onChange(parseInt(e.target.value))} 
-                                className="border-[#e0e0e0] focus:border-[#0095da]"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+
                       <FormField
                         control={form.control}
                         name="qtLicencas"

@@ -159,7 +159,20 @@ export class DbStorage implements IStorage {
   }
 
   async createLicense(license: InsertLicense): Promise<License> {
-    const result = await db.insert(licenses).values(license).returning();
+    // Buscar o maior valor de linha existente e incrementar
+    const maxLinha = await db
+      .select({ maxLinha: sql<number>`MAX(${licenses.linha})` })
+      .from(licenses);
+    
+    const nextLinha = (maxLinha[0]?.maxLinha || 0) + 1;
+    
+    // Adicionar o campo linha automaticamente
+    const licenseWithLinha = {
+      ...license,
+      linha: nextLinha
+    };
+    
+    const result = await db.insert(licenses).values(licenseWithLinha).returning();
     return result[0];
   }
 
