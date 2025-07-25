@@ -483,72 +483,117 @@ export default function Mensagens() {
 
       {/* Modal de Edição */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Editar Mensagem</DialogTitle>
+        <DialogContent className="sm:max-w-[600px] border-blue-200 shadow-xl">
+          <DialogHeader className="space-y-4 pb-6 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 -m-6 p-6 mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
+                <Edit className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-blue-900">Editar Mensagem</DialogTitle>
+                <p className="text-sm text-blue-600 mt-1">Modifique os dados da mensagem do sistema</p>
+              </div>
+            </div>
           </DialogHeader>
           {editingMensagem && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-mensagem">Mensagem</Label>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="edit-mensagem" className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                  <MessageSquare className="w-4 h-4 text-blue-600" />
+                  <span>Mensagem do Sistema</span>
+                </Label>
                 <Textarea
                   id="edit-mensagem"
                   value={editingMensagem.mensagem}
                   onChange={(e) => handleEditFieldChange('mensagem', e.target.value)}
-                  placeholder="Digite a mensagem..."
+                  placeholder="Digite a mensagem que será exibida..."
                   rows={4}
+                  className="resize-none border-gray-300 focus:border-blue-400 focus:ring-blue-400"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-base">Base</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="edit-base" className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <Database className="w-4 h-4 text-blue-600" />
+                    <span>Base de Dados</span>
+                  </Label>
                   <Input
                     id="edit-base"
                     value={editingMensagem.base}
                     onChange={(e) => handleEditFieldChange('base', e.target.value)}
-                    placeholder="Nome da base"
+                    placeholder="Ex: SBODEMOPROD"
+                    className="border-gray-300 focus:border-blue-400 focus:ring-blue-400"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="edit-emailUsuario">Email do Usuário</Label>
+                
+                <div className="space-y-3">
+                  <Label htmlFor="edit-emailUsuario" className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <span>Email do Usuário (Opcional)</span>
+                  </Label>
                   <Input
                     id="edit-emailUsuario"
                     type="email"
-                    value={editingMensagem.emailUsuario}
+                    value={editingMensagem.emailUsuario || ""}
                     onChange={(e) => handleEditFieldChange('emailUsuario', e.target.value)}
                     placeholder="usuario@exemplo.com"
+                    className="border-gray-300 focus:border-blue-400 focus:ring-blue-400"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-dataValidade">Data de Validade</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="edit-dataValidade" className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <span>Data de Validade</span>
+                  </Label>
                   <Input
                     id="edit-dataValidade"
                     type="datetime-local"
                     value={editingMensagem.dataValidade ? new Date(editingMensagem.dataValidade).toISOString().slice(0, 16) : ''}
                     onChange={(e) => handleEditFieldChange('dataValidade', e.target.value)}
+                    className="border-gray-300 focus:border-blue-400 focus:ring-blue-400"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="edit-hardwareKey">Hardware Key</Label>
+                
+                <div className="space-y-3">
+                  <Label htmlFor="edit-hardwareKey" className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <Hash className="w-4 h-4 text-blue-600" />
+                    <span>Hardware Key</span>
+                  </Label>
                   <Input
                     id="edit-hardwareKey"
                     value={editingMensagem.hardwareKey}
                     onChange={(e) => handleEditFieldChange('hardwareKey', e.target.value)}
-                    placeholder="Hardware key"
+                    placeholder="Ex: C0758938208"
+                    className="border-gray-300 focus:border-blue-400 focus:ring-blue-400"
                   />
                 </div>
               </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
                   Cancelar
                 </Button>
                 <Button 
                   onClick={handleUpdate}
                   disabled={updateMutation.isPending}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+                  {updateMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    "Salvar Alterações"
+                  )}
                 </Button>
               </div>
             </div>

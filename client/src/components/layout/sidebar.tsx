@@ -56,16 +56,16 @@ function Sidebar() {
           description: "Gerenciar licenças"
         },
         { 
-          href: "/activities", 
-          label: "Atividades", 
-          icon: Activity,
-          description: "Histórico de ações"
-        },
-                { 
           href: "/mensagens", 
           label: "Mensagens", 
           icon: MessageSquare,
-          description: "Gerenciar Mensagens"
+          description: "Gerenciar mensagens do sistema"
+        },
+        { 
+          href: "/activities", 
+          label: "Logs", 
+          icon: Activity,
+          description: "Logs e histórico de ações"
         }
       );
 

@@ -2,11 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Upload, Trash2, Globe, Shield } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Edit, Upload, Trash2, Globe, Shield, Activity, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState, useMemo } from "react";
 
 export default function ActivityHistory() {
+  const [activeTab, setActiveTab] = useState("all");
+  
   const { data: activities, isLoading } = useQuery({
     queryKey: ["/api/activities"],
     staleTime: 30 * 1000, // 30 segundos - mais frequente para atividades
@@ -14,6 +18,27 @@ export default function ActivityHistory() {
     refetchOnWindowFocus: true, // Atualizar quando focar na janela
     refetchInterval: 60 * 1000, // Atualizar a cada 1 minuto
   });
+
+  const filteredActivities = useMemo(() => {
+    if (!activities) return [];
+    
+    switch (activeTab) {
+      case "crud":
+        return activities.filter((activity: any) => 
+          ['CREATE', 'UPDATE', 'DELETE'].includes(activity.action)
+        );
+      case "queries":
+        return activities.filter((activity: any) => 
+          ['QUERY', 'QUERY_ENCRYPTED'].includes(activity.action)
+        );
+      case "imports":
+        return activities.filter((activity: any) => 
+          activity.action === 'IMPORT'
+        );
+      default:
+        return activities;
+    }
+  }, [activities, activeTab]);
 
   const getActivityIcon = (action: string) => {
     switch (action) {
@@ -111,40 +136,70 @@ export default function ActivityHistory() {
   };
 
   return (
-    <div>
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Histórico de Atividades</h2>
-            <p className="text-gray-600 mt-1">Acompanhe todas as ações realizadas no sistema</p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        <div className="p-3 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
+          <Activity className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Logs do Sistema</h1>
+          <p className="text-slate-600 mt-1">Monitore todas as ações e consultas realizadas no sistema</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Todas as Atividades</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
-              ))}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Filter className="w-5 h-5 text-gray-500" />
+              <CardTitle className="text-lg font-semibold text-slate-800">Logs por Categoria</CardTitle>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ação</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Data/Hora</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.isArray(activities) && activities.length > 0 ? (
-                  activities.map((activity: any) => {
+            <Badge variant="outline" className="text-sm">
+              {filteredActivities?.length || 0} registros
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 rounded-none border-b">
+              <TabsTrigger value="all" className="flex items-center space-x-2">
+                <Activity className="w-4 h-4" />
+                <span>Todos</span>
+              </TabsTrigger>
+              <TabsTrigger value="crud" className="flex items-center space-x-2">
+                <Edit className="w-4 h-4" />
+                <span>CRUD</span>
+              </TabsTrigger>
+              <TabsTrigger value="queries" className="flex items-center space-x-2">
+                <Globe className="w-4 h-4" />
+                <span>Consultas API</span>
+              </TabsTrigger>
+              <TabsTrigger value="imports" className="flex items-center space-x-2">
+                <Upload className="w-4 h-4" />
+                <span>Importações</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value={activeTab} className="m-0 p-6">
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ação</TableHead>
+                      <TableHead>Usuário</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Data/Hora</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Array.isArray(filteredActivities) && filteredActivities.length > 0 ? (
+                      filteredActivities.map((activity: any) => {
                     const Icon = getActivityIcon(activity.action);
                     
                     return (
@@ -187,18 +242,20 @@ export default function ActivityHistory() {
                           }
                         </TableCell>
                       </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                      {activities === null || activities === undefined ? 'Carregando atividades...' : 'Nenhuma atividade encontrada'}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                          {activities === null || activities === undefined ? 'Carregando atividades...' : 'Nenhuma atividade encontrada'}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
