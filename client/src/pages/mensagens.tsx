@@ -240,16 +240,18 @@ export default function Mensagens() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="base">Base <span className="text-red-500">*</span></Label>
-                  <Select onValueChange={(value) => handleFieldChange('base', value)} value={formData.base}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma base..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableBases.map((base) => (
-                        <SelectItem key={base} value={base}>{base}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="base"
+                    value={formData.base}
+                    onChange={(e) => handleFieldChange('base', e.target.value)}
+                    placeholder="Digite o nome da base (ex: SBO_DEMO)"
+                    list="bases-list"
+                  />
+                  <datalist id="bases-list">
+                    {availableBases.map((base) => (
+                      <option key={base} value={base} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <Label htmlFor="emailUsuario">Email do Usuário <span className="text-red-500">*</span></Label>
@@ -276,20 +278,18 @@ export default function Mensagens() {
                 </div>
                 <div>
                   <Label htmlFor="hardwareKey">Hardware Key <span className="text-red-500">*</span></Label>
-                  <Select 
-                    onValueChange={(value) => handleFieldChange('hardwareKey', value)} 
+                  <Input
+                    id="hardwareKey"
                     value={formData.hardwareKey}
-                    disabled={!formData.base}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={formData.base ? "Selecione um hardware key..." : "Primeiro selecione uma base"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableHardwareKeys.map((hwKey) => (
-                        <SelectItem key={hwKey} value={hwKey}>{hwKey}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
+                    placeholder="Digite o hardware key (ex: D0950733748)"
+                    list="hardware-keys-list"
+                  />
+                  <datalist id="hardware-keys-list">
+                    {availableHardwareKeys.map((hwKey) => (
+                      <option key={hwKey} value={hwKey} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
               
