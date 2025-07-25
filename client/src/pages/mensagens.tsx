@@ -415,66 +415,128 @@ export default function Mensagens() {
               <p>Nenhuma mensagem cadastrada ainda.</p>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-6">
               {mensagens.map((mensagem: MensagemSistema) => (
-                <div key={mensagem.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Badge variant={isExpired(mensagem.dataValidade) ? "destructive" : "default"}>
-                          {isExpired(mensagem.dataValidade) ? "Expirada" : "Ativa"}
-                        </Badge>
-                        <span className="text-sm text-gray-500">
-                          {format(new Date(mensagem.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                <Card key={mensagem.id} className={`overflow-hidden transition-all duration-200 hover:shadow-md ${
+                  isExpired(mensagem.dataValidade) 
+                    ? 'border-red-200 bg-red-50/30' 
+                    : 'border-green-200 bg-green-50/20 hover:bg-green-50/40'
+                }`}>
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${
+                          isExpired(mensagem.dataValidade) 
+                            ? 'bg-red-100 text-red-600' 
+                            : 'bg-green-100 text-green-600'
+                        }`}>
+                          <MessageSquare className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <Badge 
+                            variant={isExpired(mensagem.dataValidade) ? "destructive" : "default"}
+                            className={isExpired(mensagem.dataValidade) 
+                              ? "bg-red-500 hover:bg-red-600" 
+                              : "bg-green-500 hover:bg-green-600"
+                            }
+                          >
+                            {isExpired(mensagem.dataValidade) ? "🔴 Expirada" : "🟢 Ativa"}
+                          </Badge>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Criada em {format(new Date(mensagem.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(mensagem)}
+                          className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
+                          title="Editar mensagem"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(mensagem.id)}
+                          disabled={deleteMutation.isPending}
+                          className="p-2 hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+                          title="Excluir mensagem"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                          <MessageSquare className="w-4 h-4 mr-2 text-blue-500" />
+                          Conteúdo da Mensagem
+                        </h4>
+                        <p className="text-gray-800 leading-relaxed">{mensagem.mensagem}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Database className="w-4 h-4 text-blue-500" />
+                          <span className="text-xs font-medium text-blue-700 uppercase tracking-wide">Base</span>
+                        </div>
+                        <span className="font-semibold text-gray-800 text-sm">{mensagem.base}</span>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <User className="w-4 h-4 text-purple-500" />
+                          <span className="text-xs font-medium text-purple-700 uppercase tracking-wide">Usuário</span>
+                        </div>
+                        <span className="font-semibold text-gray-800 text-sm">
+                          {mensagem.emailUsuario || "Não especificado"}
                         </span>
                       </div>
-                      <p className="text-gray-800 mb-3">{mensagem.mensagem}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div className="flex items-center space-x-1">
-                          <Database className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">Base:</span>
-                          <span className="font-medium">{mensagem.base}</span>
+
+                      <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Calendar className="w-4 h-4 text-orange-500" />
+                          <span className="text-xs font-medium text-orange-700 uppercase tracking-wide">Validade</span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <User className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">Usuário:</span>
-                          <span className="font-medium">{mensagem.emailUsuario}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">Validade:</span>
-                          <span className="font-medium">
-                            {format(new Date(mensagem.dataValidade), "dd/MM/yyyy", { locale: ptBR })}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-1">
+                        <span className={`font-semibold text-sm ${
+                          isExpired(mensagem.dataValidade) ? 'text-red-600' : 'text-gray-800'
+                        }`}>
+                          {format(new Date(mensagem.dataValidade), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {format(new Date(mensagem.dataValidade), "HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
+                        <div className="flex items-center space-x-2 mb-1">
                           <Hash className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">Hardware:</span>
-                          <span className="font-medium text-xs">{mensagem.hardwareKey}</span>
+                          <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">Hardware</span>
                         </div>
+                        <span className="font-mono text-xs font-semibold text-gray-800 break-all">
+                          {mensagem.hardwareKey}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex space-x-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(mensagem)}
-                        className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(mensagem.id)}
-                        disabled={deleteMutation.isPending}
-                        className="p-2 hover:bg-red-50 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+
+                    {isExpired(mensagem.dataValidade) && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <XCircle className="w-4 h-4 text-red-500" />
+                          <span className="text-sm font-medium text-red-700">
+                            Esta mensagem expirou em {format(new Date(mensagem.dataValidade), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
