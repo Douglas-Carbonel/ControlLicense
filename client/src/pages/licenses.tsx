@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search, Bookmark, Save, Trash } from "lucide-react";
+import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search, Bookmark, Save, Trash, AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -234,9 +235,7 @@ export default function Licenses() {
 
 
   const handleDelete = useCallback((id: number) => {
-    if (confirm("Tem certeza que deseja excluir esta licença?")) {
-      deleteMutation.mutate(id);
-    }
+    deleteMutation.mutate(id);
   }, [deleteMutation]);
 
   const handleEdit = useCallback((license: any) => {
@@ -425,16 +424,14 @@ export default function Licenses() {
   }, [toast]);
 
   const deleteConfig = useCallback((configName: string) => {
-    if (confirm(`Tem certeza que deseja excluir a configuração "${configName}"?`)) {
-      const newConfigs = savedConfigs.filter(c => c.name !== configName);
-      setSavedConfigs(newConfigs);
-      localStorage.setItem('licenses-filter-configs', JSON.stringify(newConfigs));
-      
-      toast({
-        title: "Configuração excluída",
-        description: `"${configName}" foi removida`,
-      });
-    }
+    const newConfigs = savedConfigs.filter(c => c.name !== configName);
+    setSavedConfigs(newConfigs);
+    localStorage.setItem('licenses-filter-configs', JSON.stringify(newConfigs));
+    
+    toast({
+      title: "Configuração excluída",
+      description: `"${configName}" foi removida`,
+    });
   }, [savedConfigs, toast]);
 
   const exportToCSV = useCallback(() => {
@@ -528,16 +525,72 @@ export default function Licenses() {
             >
               <Edit className="w-3.5 h-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDelete(license.id)}
-              disabled={deleteMutation.isPending}
-              className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
-              title="Excluir"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={deleteMutation.isPending}
+                  className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
+                  title="Excluir"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="border-red-200 shadow-xl">
+                <AlertDialogHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <AlertDialogTitle className="text-lg font-semibold text-red-900">
+                        Atenção - Excluir Licença
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-sm text-red-700 mt-1">
+                        Esta ação é irreversível e pode impactar no portal do cliente
+                      </AlertDialogDescription>
+                    </div>
+                  </div>
+                </AlertDialogHeader>
+                <div className="py-4">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-red-800">
+                        <p className="font-medium mb-2">Impactos da exclusão:</p>
+                        <ul className="list-disc list-inside space-y-1 text-red-700">
+                          <li>A licença será removida permanentemente do sistema</li>
+                          <li>O cliente perderá acesso às funcionalidades licenciadas</li>
+                          <li>Esta ação não pode ser desfeita</li>
+                          <li>Pode afetar o funcionamento do portal do cliente</li>
+                          <li>A exclusão será registrada no log de atividades</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Info className="w-4 h-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-800">
+                        Licença: {license.code} - Cliente: {license.nomeCliente}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => handleDelete(license.id)}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
+                  >
+                    Confirmar Exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         );
 

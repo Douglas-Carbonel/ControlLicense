@@ -75,6 +75,11 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Interface visual com cores de alerta (laranja para edição, vermelho para exclusão)
 ✓ Confirmação obrigatória com detalhamento dos impactos de cada ação
 ✓ Integração completa com design corporativo e paleta de cores DW IT Solutions
+✓ **ALERTAS ESTENDIDOS**: Sistema de alertas aplicado também à página de licenças (Jan 2025)
+✓ Alertas de exclusão de licenças com aviso sobre impacto no portal do cliente
+✓ Removidos todos os confirm() nativos do navegador por AlertDialogs personalizados
+✓ Interface consistente entre páginas de mensagens e licenças
+✓ Detalhamento específico dos riscos de exclusão de licenças para o cliente
 ✓ **VALIDAÇÃO AVANÇADA DE MENSAGENS**: Sistema robusto de validação implementado (Jan 2025)
 ✓ Validação no backend verifica se combinação base + hardware_key existe nas licenças
 ✓ Endpoints para autocomplete de bases disponíveis e hardware keys por base
