@@ -820,9 +820,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint público para verificar mensagem por nome_db e hardware_key
-  app.get("/api/mensagens/verificaMensagem", async (req: Request, res: Response) => {
+  app.post("/api/mensagens/verificaMensagem", async (req: Request, res: Response) => {
     try {
-      const { nome_db, hardware_key } = req.query;
+      const { nome_db, hardware_key } = req.body;
 
       if (!nome_db || !hardware_key) {
         return res.status(400).json({ 
@@ -830,7 +830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const mensagem = await storage.getMensagemByBaseAndHardware(nome_db as string, hardware_key as string);
+      const mensagem = await storage.getMensagemByBaseAndHardware(nome_db, hardware_key);
       
       if (!mensagem) {
         return res.status(404).json({ 
