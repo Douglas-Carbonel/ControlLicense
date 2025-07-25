@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Plus, Calendar, User, Database, Hash } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Edit, Trash2, Plus, Calendar, User, Database, Hash, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
@@ -36,12 +38,29 @@ export default function Mensagens() {
     dataValidade: "",
     hardwareKey: ""
   });
+  const [validationStatus, setValidationStatus] = useState<{
+    valid: boolean | null;
+    licenseInfo: any;
+  }>({ valid: null, licenseInfo: null });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: mensagens = [], isLoading, error } = useQuery({
     queryKey: ["/api/mensagens"],
     staleTime: 5 * 60 * 1000,
+  });
+
+  // Query para buscar bases disponíveis
+  const { data: availableBases = [] } = useQuery({
+    queryKey: ["/api/mensagens/bases"],
+    staleTime: 10 * 60 * 1000, // Cache por 10 minutos
+  });
+
+  // Query para buscar hardware keys por base
+  const { data: availableHardwareKeys = [] } = useQuery({
+    queryKey: ["/api/mensagens/hardware-keys", formData.base],
+    enabled: !!formData.base,
+    staleTime: 10 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -58,10 +77,11 @@ export default function Mensagens() {
       setIsCreateModalOpen(false);
       resetForm();
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Erro ao criar mensagem. Tente novamente.";
       toast({
         title: "Erro",
-        description: "Erro ao criar mensagem. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -81,10 +101,11 @@ export default function Mensagens() {
       setIsEditModalOpen(false);
       setEditingMensagem(null);
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Erro ao atualizar mensagem. Tente novamente.";
       toast({
         title: "Erro",
-        description: "Erro ao atualizar mensagem. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -111,6 +132,32 @@ export default function Mensagens() {
     },
   });
 
+  // Função para validar combinação base + hardware key em tempo real
+  const validateBaseHardware = useCallback(async (base: string, hardwareKey: string) => {
+    if (base && hardwareKey) {
+      try {
+        const response = await apiRequest("GET", `/api/mensagens/validate/${encodeURIComponent(base)}/${encodeURIComponent(hardwareKey)}`);
+        setValidationStatus({
+          valid: response.valid,
+          licenseInfo: response.licenseInfo
+        });
+      } catch (error) {
+        setValidationStatus({ valid: false, licenseInfo: null });
+      }
+    } else {
+      setValidationStatus({ valid: null, licenseInfo: null });
+    }
+  }, []);
+
+  // Efeito para validar automaticamente quando base ou hardwareKey mudam
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      validateBaseHardware(formData.base, formData.hardwareKey);
+    }, 500); // Debounce de 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.base, formData.hardwareKey, validateBaseHardware]);
+
   const resetForm = useCallback(() => {
     setFormData({
       mensagem: "",
@@ -119,6 +166,7 @@ export default function Mensagens() {
       dataValidade: "",
       hardwareKey: ""
     });
+    setValidationStatus({ valid: null, licenseInfo: null });
   }, []);
 
   const handleCreate = useCallback(() => {
@@ -191,52 +239,92 @@ export default function Mensagens() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="base">Base</Label>
-                  <Input
-                    id="base"
-                    value={formData.base}
-                    onChange={(e) => handleFieldChange('base', e.target.value)}
-                    placeholder="Nome da base"
-                  />
+                  <Label htmlFor="base">Base <span className="text-red-500">*</span></Label>
+                  <Select onValueChange={(value) => handleFieldChange('base', value)} value={formData.base}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma base..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBases.map((base) => (
+                        <SelectItem key={base} value={base}>{base}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label htmlFor="emailUsuario">Email do Usuário</Label>
+                  <Label htmlFor="emailUsuario">Email do Usuário <span className="text-red-500">*</span></Label>
                   <Input
                     id="emailUsuario"
                     type="email"
                     value={formData.emailUsuario}
                     onChange={(e) => handleFieldChange('emailUsuario', e.target.value)}
                     placeholder="usuario@exemplo.com"
+                    required
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="dataValidade">Data de Validade</Label>
+                  <Label htmlFor="dataValidade">Data de Validade <span className="text-red-500">*</span></Label>
                   <Input
                     id="dataValidade"
                     type="datetime-local"
                     value={formData.dataValidade}
                     onChange={(e) => handleFieldChange('dataValidade', e.target.value)}
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="hardwareKey">Hardware Key</Label>
-                  <Input
-                    id="hardwareKey"
+                  <Label htmlFor="hardwareKey">Hardware Key <span className="text-red-500">*</span></Label>
+                  <Select 
+                    onValueChange={(value) => handleFieldChange('hardwareKey', value)} 
                     value={formData.hardwareKey}
-                    onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
-                    placeholder="Hardware key"
-                  />
+                    disabled={!formData.base}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.base ? "Selecione um hardware key..." : "Primeiro selecione uma base"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableHardwareKeys.map((hwKey) => (
+                        <SelectItem key={hwKey} value={hwKey}>{hwKey}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+              
+              {/* Validação visual */}
+              {formData.base && formData.hardwareKey && (
+                <Alert className={validationStatus.valid === true ? "border-green-200 bg-green-50" : validationStatus.valid === false ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"}>
+                  <div className="flex items-center space-x-2">
+                    {validationStatus.valid === true && <CheckCircle className="w-4 h-4 text-green-600" />}
+                    {validationStatus.valid === false && <XCircle className="w-4 h-4 text-red-600" />}
+                    <AlertDescription className={validationStatus.valid === true ? "text-green-800" : validationStatus.valid === false ? "text-red-800" : "text-yellow-800"}>
+                      {validationStatus.valid === true ? (
+                        <>
+                          <strong>✓ Combinação válida!</strong>
+                          {validationStatus.licenseInfo && (
+                            <div className="mt-1 text-sm">
+                              Cliente: {validationStatus.licenseInfo.nomeCliente} | Código: {validationStatus.licenseInfo.code}
+                            </div>
+                          )}
+                        </>
+                      ) : validationStatus.valid === false ? (
+                        <strong>✗ Combinação inválida - Esta base e hardware key não existem nas licenças</strong>
+                      ) : (
+                        <strong>Validando combinação...</strong>
+                      )}
+                    </AlertDescription>
+                  </div>
+                </Alert>
+              )}
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                   Cancelar
                 </Button>
                 <Button 
                   onClick={handleCreate}
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || validationStatus.valid === false || !formData.mensagem || !formData.base || !formData.emailUsuario || !formData.dataValidade || !formData.hardwareKey}
                 >
                   {createMutation.isPending ? "Criando..." : "Criar Mensagem"}
                 </Button>

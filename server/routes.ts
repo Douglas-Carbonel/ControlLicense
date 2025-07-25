@@ -709,6 +709,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertMensagemSistemaSchema.partial().parse(req.body);
+      
+      // Se estão sendo atualizados base ou hardware_key, validar a combinação
+      if (validatedData.base || validatedData.hardwareKey) {
+        const mensagemExistente = await storage.getMensagem(id);
+        if (!mensagemExistente) {
+          return res.status(404).json({ message: "Mensagem not found" });
+        }
+        
+        const baseToValidate = validatedData.base || mensagemExistente.base;
+        const hardwareKeyToValidate = validatedData.hardwareKey || mensagemExistente.hardwareKey;
+        
+        const isValidReference = await storage.validateMensagemLicenseReference(
+          baseToValidate, 
+          hardwareKeyToValidate
+        );
+
+        if (!isValidReference) {
+          return res.status(400).json({ 
+            message: "A combinação de base e hardware_key não existe na tabela de licenças" 
+          });
+        }
+      }
+      
       const mensagem = await storage.updateMensagem(id, validatedData);
 
       // Log activity
@@ -754,6 +777,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete mensagem" });
+    }
+  });
+
+  // Novos endpoints para validação e autocompletar em mensagens
+  app.get("/api/mensagens/validate/:base/:hardwareKey", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { base, hardwareKey } = req.params;
+      
+      const isValid = await storage.validateMensagemLicenseReference(base, hardwareKey);
+      const licenseInfo = isValid ? await storage.getLicenseInfoByBaseAndHardware(base, hardwareKey) : null;
+
+      res.json({
+        valid: isValid,
+        licenseInfo: licenseInfo
+      });
+    } catch (error) {
+      console.error("Erro ao validar combinação base/hardware:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/api/mensagens/bases", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const bases = await storage.getAvailableBases();
+      res.json(bases);
+    } catch (error) {
+      console.error("Erro ao buscar bases:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/api/mensagens/hardware-keys/:base", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { base } = req.params;
+      const hardwareKeys = await storage.getHardwareKeysByBase(base);
+      res.json(hardwareKeys);
+    } catch (error) {
+      console.error("Erro ao buscar hardware keys:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
 

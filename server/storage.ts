@@ -4,8 +4,8 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema } from "@shared/schema";
-import { eq, ilike, or, desc, and, sql, asc, count } from "drizzle-orm";
+import { licenses, users, activities, mensagemSistema, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type License, type User, type Activity, type MensagemSistema, type HardwareLicenseQuery } from "@shared/schema";
+import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 if (!connectionString) {
@@ -408,6 +408,65 @@ export class DbStorage implements IStorage {
         } catch (error) {
             console.error("Erro ao validar referência de licença:", error);
             return false;
+        }
+    }
+
+    // Função para buscar todas as bases disponíveis nas licenças
+    async getAvailableBases(): Promise<string[]> {
+        try {
+            const result = await db
+                .selectDistinct({ nomeDb: licenses.nomeDb })
+                .from(licenses)
+                .where(and(not(isNull(licenses.nomeDb)), eq(licenses.ativo, true)))
+                .orderBy(licenses.nomeDb);
+
+            return result.map(row => row.nomeDb).filter(Boolean) as string[];
+        } catch (error) {
+            console.error("Erro ao buscar bases disponíveis:", error);
+            return [];
+        }
+    }
+
+    // Função para buscar hardware keys por base
+    async getHardwareKeysByBase(base: string): Promise<string[]> {
+        try {
+            const result = await db
+                .selectDistinct({ hardwareKey: licenses.hardwareKey })
+                .from(licenses)
+                .where(and(
+                    eq(licenses.nomeDb, base),
+                    not(isNull(licenses.hardwareKey)),
+                    eq(licenses.ativo, true)
+                ))
+                .orderBy(licenses.hardwareKey);
+
+            return result.map(row => row.hardwareKey).filter(Boolean) as string[];
+        } catch (error) {
+            console.error("Erro ao buscar hardware keys por base:", error);
+            return [];
+        }
+    }
+
+    // Função para buscar informações completas de uma licença por base e hardware key
+    async getLicenseInfoByBaseAndHardware(base: string, hardwareKey: string) {
+        try {
+            const result = await db
+                .select({
+                    id: licenses.id,
+                    code: licenses.code,
+                    nomeCliente: licenses.nomeCliente,
+                    nomeDb: licenses.nomeDb,
+                    hardwareKey: licenses.hardwareKey,
+                    ativo: licenses.ativo
+                })
+                .from(licenses)
+                .where(and(eq(licenses.nomeDb, base), eq(licenses.hardwareKey, hardwareKey)))
+                .limit(1);
+
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao buscar informações da licença:", error);
+            return null;
         }
     }
 }

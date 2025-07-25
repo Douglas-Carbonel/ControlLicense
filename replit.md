@@ -65,6 +65,13 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Cache otimizado para 15 minutos com garbage collection de 30 minutos
 ✓ **SUCESSO CONFIRMADO**: Performance da busca e digitação otimizada com aprovação do usuário (Jan 2025)
 ✓ **MIGRAÇÃO COMPLETA**: Migração do Replit Agent para ambiente Replit finalizada com sucesso (Jan 2025)
+✓ **VALIDAÇÃO AVANÇADA DE MENSAGENS**: Sistema robusto de validação implementado (Jan 2025)
+✓ Validação no backend verifica se combinação base + hardware_key existe nas licenças
+✓ Endpoints para autocomplete de bases disponíveis e hardware keys por base
+✓ Validação em tempo real no frontend com feedback visual (verde/vermelho)
+✓ Interface melhorada com selects em vez de inputs para maior precisão
+✓ Mensagens de erro específicas quando combinação é inválida
+✓ Sistema previne criação de mensagens com dados inconsistentes
 ✓ Sistema funcionando perfeitamente com login, licenças, atividades e criação de usuários operacionais
 ✓ **NOVO ENDPOINT**: Criado endpoint POST /api/licenses/hardware-query para consulta externa de licenças
 ✓ Endpoint recebe hardwareKey, systemNumber, installNumber e database como parâmetros
