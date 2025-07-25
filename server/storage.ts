@@ -4,8 +4,8 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, activities, users, type License, type InsertLicense, type Activity, type InsertActivity, type User, type InsertUser, type HardwareLicenseQuery } from "@shared/schema";
-import { eq, desc, sql, and, gte, lte, count, or, ilike } from "drizzle-orm";
+import { licenses, users, activities, mensagemSistema, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema } from "@shared/schema";
+import { eq, ilike, or, desc, and, sql, asc } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 if (!connectionString) {
@@ -48,6 +48,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
+
+  // Mensagem Sistema operations
+  getMensagens(): Promise<any>;
+  getMensagem(id: number): Promise<any>;
+  createMensagem(data: InsertMensagemSistema): Promise<any>;
+  updateMensagem(id: number, data: Partial<InsertMensagemSistema>): Promise<any>;
+  deleteMensagem(id: number): Promise<void>;
+  getMensagensByHardwareKey(hardwareKey: string): Promise<any>;
 }
 
 export class DbStorage implements IStorage {
@@ -301,6 +309,54 @@ export class DbStorage implements IStorage {
 
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  // Mensagem Sistema methods
+  async getMensagens() {
+    return await db
+      .select()
+      .from(mensagemSistema)
+      .orderBy(desc(mensagemSistema.createdAt));
+  }
+
+  async getMensagem(id: number) {
+    const result = await db
+      .select()
+      .from(mensagemSistema)
+      .where(eq(mensagemSistema.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async createMensagem(data: InsertMensagemSistema) {
+    const result = await db
+      .insert(mensagemSistema)
+      .values(data)
+      .returning();
+    return result[0];
+  }
+
+  async updateMensagem(id: number, data: Partial<InsertMensagemSistema>) {
+    const result = await db
+      .update(mensagemSistema)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(mensagemSistema.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMensagem(id: number) {
+    await db
+      .delete(mensagemSistema)
+      .where(eq(mensagemSistema.id, id));
+  }
+
+  async getMensagensByHardwareKey(hardwareKey: string) {
+    return await db
+      .select()
+      .from(mensagemSistema)
+      .where(eq(mensagemSistema.hardwareKey, hardwareKey))
+      .orderBy(desc(mensagemSistema.createdAt));
   }
 }
 

@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -630,6 +630,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(activities);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch activities" });
+    }
+  });
+
+  // Mensagem Sistema routes (requer autenticação)
+  app.get("/api/mensagens", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const mensagens = await storage.getMensagens();
+      res.json(mensagens);
+    } catch (error) {
+      console.error("Error fetching mensagens:", error);
+      res.status(500).json({ message: "Failed to fetch mensagens" });
+    }
+  });
+
+  app.get("/api/mensagens/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const mensagem = await storage.getMensagem(id);
+      if (!mensagem) {
+        return res.status(404).json({ message: "Mensagem not found" });
+      }
+      res.json(mensagem);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch mensagem" });
+    }
+  });
+
+  app.post("/api/mensagens", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertMensagemSistemaSchema.parse(req.body);
+      const mensagem = await storage.createMensagem(validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "CREATE",
+        resourceType: "mensagem",
+        resourceId: mensagem.id,
+        description: `${req.user!.name} criou mensagem para base ${mensagem.base}`,
+      });
+
+      res.status(201).json(mensagem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create mensagem" });
+      }
+    }
+  });
+
+  app.put("/api/mensagens/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertMensagemSistemaSchema.partial().parse(req.body);
+      const mensagem = await storage.updateMensagem(id, validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "UPDATE",
+        resourceType: "mensagem",
+        resourceId: mensagem.id,
+        description: `${req.user!.name} atualizou mensagem para base ${mensagem.base}`,
+      });
+
+      res.json(mensagem);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to update mensagem" });
+      }
+    }
+  });
+
+  app.delete("/api/mensagens/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const mensagem = await storage.getMensagem(id);
+      if (!mensagem) {
+        return res.status(404).json({ message: "Mensagem not found" });
+      }
+
+      await storage.deleteMensagem(id);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "mensagem",
+        resourceId: id,
+        description: `${req.user!.name} excluiu mensagem da base ${mensagem.base}`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete mensagem" });
     }
   });
 

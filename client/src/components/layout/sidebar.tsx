@@ -16,7 +16,8 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
-  User
+  User,
+  MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useState, useMemo, useCallback, memo } from "react";
@@ -59,6 +60,12 @@ function Sidebar() {
           label: "Atividades", 
           icon: Activity,
           description: "Histórico de ações"
+        },
+                { 
+          href: "/mensagens", 
+          label: "Mensagens", 
+          icon: MessageSquare,
+          description: "Gerenciar Mensagens"
         }
       );
 

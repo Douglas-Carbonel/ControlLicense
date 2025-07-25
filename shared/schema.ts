@@ -56,6 +56,17 @@ export const activities = pgTable("activities", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+export const mensagemSistema = pgTable("mensagem_sistema", {
+  id: serial("id").primaryKey(),
+  mensagem: text("mensagem").notNull(),
+  base: text("base").notNull(),
+  emailUsuario: text("email_usuario").notNull(),
+  dataValidade: timestamp("data_validade").notNull(),
+  hardwareKey: text("hardware_key").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertLicenseSchema = createInsertSchema(licenses).omit({
   id: true,
   createdAt: true,
@@ -73,12 +84,20 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
+export const insertMensagemSistemaSchema = createInsertSchema(mensagemSistema).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type License = typeof licenses.$inferSelect;
 export type InsertLicense = z.infer<typeof insertLicenseSchema>;
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type MensagemSistema = typeof mensagemSistema.$inferSelect;
+export type InsertMensagemSistema = z.infer<typeof insertMensagemSistemaSchema>;
 
 export const licenseSchema = z.object({
   id: z.number().optional(),

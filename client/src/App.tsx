@@ -6,11 +6,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard";
 import Licenses from "@/pages/licenses";
-
 import ActivityHistory from "@/pages/activity-history";
 import UsersPage from "@/pages/users";
 import Login from "@/pages/login";
 import AppLayout from "@/components/layout/app-layout";
+import Mensagens from "@/pages/mensagens";
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -50,6 +50,7 @@ function Router() {
         <Route path="/licenses" component={Licenses} />
         <Route path="/activities" component={ActivityHistory} />
         <Route path="/users" component={UsersPage} />
+        <Route path="/mensagens" component={Mensagens} />
       </Switch>
     </AppLayout>
   );
