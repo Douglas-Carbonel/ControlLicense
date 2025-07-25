@@ -391,115 +391,88 @@ export default function ActivityHistory() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Activity className="w-5 h-5 text-gray-500" />
-              <CardTitle className="text-lg font-semibold text-slate-800">Logs por Categoria</CardTitle>
+              <CardTitle className="text-lg font-semibold text-slate-800">Logs do Sistema</CardTitle>
             </div>
             <Badge variant="outline" className="text-sm">
               {filteredActivities?.length || 0} registros
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 rounded-none border-b">
-              <TabsTrigger value="all" className="flex items-center space-x-2">
-                <Activity className="w-4 h-4" />
-                <span>Todos</span>
-              </TabsTrigger>
-              <TabsTrigger value="crud" className="flex items-center space-x-2">
-                <Edit className="w-4 h-4" />
-                <span>CRUD</span>
-              </TabsTrigger>
-              <TabsTrigger value="queries" className="flex items-center space-x-2">
-                <Globe className="w-4 h-4" />
-                <span>Consultas API</span>
-              </TabsTrigger>
-              <TabsTrigger value="imports" className="flex items-center space-x-2">
-                <Upload className="w-4 h-4" />
-                <span>Importações</span>
-              </TabsTrigger>
-              <TabsTrigger value="auth" className="flex items-center space-x-2">
-                <Shield className="w-4 h-4" />
-                <span>Autenticação</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value={activeTab} className="m-0 p-6">
-              {isLoading ? (
-                <div className="space-y-4">
-                  {[...Array(10)].map((_, i) => (
-                    <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
-                  ))}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ação</TableHead>
-                      <TableHead>Usuário</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Data/Hora</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Array.isArray(filteredActivities) && filteredActivities.length > 0 ? (
-                      filteredActivities.map((activity: any) => {
-                        const Icon = getActivityIcon(activity.action);
-                        const formatted = formatActivityDescription(activity);
-                        
-                        return (
-                          <TableRow key={activity.id} className={formatted.isError ? "bg-red-50" : ""}>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Icon className="h-4 w-4" />
-                                <Badge variant={getActivityColor(activity.action)}>
-                                  {getActionText(activity.action)}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                                  <span className="text-primary text-sm font-medium">
-                                    {activity.userName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
-                                  </span>
-                                </div>
-                                <span className="text-sm font-medium">{activity.userName || 'Usuário'}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className={`font-medium ${formatted.isError ? 'text-red-600' : ''}`}>
-                                  {formatted.title}
-                                </p>
-                                {formatted.details && (
-                                  <p className={`text-xs mt-1 ${formatted.isError ? 'text-red-500' : 'text-gray-600'}`}>
-                                    {formatted.details}
-                                  </p>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {activity.timestamp ? 
-                                format(new Date(activity.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) 
-                                : 'Data não disponível'
-                              }
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                          {hasActiveFilters ? 'Nenhuma atividade encontrada com os filtros aplicados' : 
-                           (activities === null || activities === undefined ? 'Carregando atividades...' : 'Nenhuma atividade encontrada')}
+        <CardContent className="p-6">
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+              ))}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ação</TableHead>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Data/Hora</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.isArray(filteredActivities) && filteredActivities.length > 0 ? (
+                  filteredActivities.map((activity: any) => {
+                    const Icon = getActivityIcon(activity.action);
+                    const formatted = formatActivityDescription(activity);
+                    
+                    return (
+                      <TableRow key={activity.id} className={formatted.isError ? "bg-red-50" : ""}>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Icon className="h-4 w-4" />
+                            <Badge variant={getActivityColor(activity.action)}>
+                              {getActionText(activity.action)}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-primary text-sm font-medium">
+                                {activity.userName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                              </span>
+                            </div>
+                            <span className="text-sm font-medium">{activity.userName || 'Usuário'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className={`font-medium ${formatted.isError ? 'text-red-600' : ''}`}>
+                              {formatted.title}
+                            </p>
+                            {formatted.details && (
+                              <p className={`text-xs mt-1 ${formatted.isError ? 'text-red-500' : 'text-gray-600'}`}>
+                                {formatted.details}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {activity.timestamp ? 
+                            format(new Date(activity.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) 
+                            : 'Data não disponível'
+                          }
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </TabsContent>
-          </Tabs>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                      {hasActiveFilters ? 'Nenhuma atividade encontrada com os filtros aplicados' : 
+                       (activities === null || activities === undefined ? 'Carregando atividades...' : 'Nenhuma atividade encontrada')}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
