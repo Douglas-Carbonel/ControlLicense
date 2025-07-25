@@ -136,12 +136,23 @@ export default function Mensagens() {
   const validateBaseHardware = useCallback(async (base: string, hardwareKey: string) => {
     if (base && hardwareKey) {
       try {
-        const response = await apiRequest("GET", `/api/mensagens/validate/${encodeURIComponent(base)}/${encodeURIComponent(hardwareKey)}`);
-        console.log("Validation response:", response); // Debug
-        setValidationStatus({
-          valid: response.valid,
-          licenseInfo: response.licenseInfo
+        const response = await fetch(`/api/mensagens/validate/${encodeURIComponent(base)}/${encodeURIComponent(hardwareKey)}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
         });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Validation response:", data); // Debug
+          setValidationStatus({
+            valid: data.valid,
+            licenseInfo: data.licenseInfo
+          });
+        } else {
+          setValidationStatus({ valid: false, licenseInfo: null });
+        }
       } catch (error) {
         console.error("Validation error:", error); // Debug
         setValidationStatus({ valid: false, licenseInfo: null });
