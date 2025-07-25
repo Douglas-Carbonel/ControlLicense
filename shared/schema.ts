@@ -60,7 +60,7 @@ export const mensagemSistema = pgTable("mensagem_sistema", {
   id: serial("id").primaryKey(),
   mensagem: text("mensagem").notNull(),
   base: text("base").notNull(), // Referencias licenses.nome_db
-  emailUsuario: text("email_usuario").notNull(),
+  emailUsuario: text("email_usuario"),
   dataValidade: timestamp("data_validade").notNull(),
   hardwareKey: text("hardware_key").notNull(), // Referencias licenses.hardware_key
   createdAt: timestamp("created_at").defaultNow().notNull(),

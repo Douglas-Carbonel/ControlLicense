@@ -183,7 +183,13 @@ export default function Mensagens() {
   }, []);
 
   const handleCreate = useCallback(() => {
-    createMutation.mutate(formData);
+    console.log('Sending data:', formData); // Debug
+    const dataToSend = {
+      ...formData,
+      emailUsuario: formData.emailUsuario || null // Garantir que seja null se vazio
+    };
+    console.log('Final data:', dataToSend); // Debug
+    createMutation.mutate(dataToSend);
   }, [formData, createMutation]);
 
   const handleEdit = useCallback((mensagem: MensagemSistema) => {
