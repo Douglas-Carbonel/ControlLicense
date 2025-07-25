@@ -428,6 +428,7 @@ export class DbStorage implements IStorage {
     // Função para buscar todas as bases disponíveis nas licenças
     async getAvailableBases(): Promise<string[]> {
         try {
+            console.log("Fetching available bases...");
             const result = await db
                 .selectDistinct({ nomeDb: licenses.nomeDb })
                 .from(licenses)
@@ -437,16 +438,20 @@ export class DbStorage implements IStorage {
                 ))
                 .orderBy(asc(licenses.nomeDb));
 
-            return result.map(row => row.nomeDb).filter(Boolean) as string[];
+            console.log("Raw bases result:", result);
+            const bases = result.map(row => row.nomeDb).filter(Boolean) as string[];
+            console.log("Filtered bases:", bases);
+            return bases;
         } catch (error) {
             console.error("Erro ao buscar bases disponíveis:", error);
-            return [];
+            throw error; // Re-throw to see the actual error
         }
     }
 
     // Função para buscar hardware keys por base
     async getHardwareKeysByBase(base: string): Promise<string[]> {
         try {
+            console.log("Fetching hardware keys for base:", base);
             const result = await db
                 .selectDistinct({ hardwareKey: licenses.hardwareKey })
                 .from(licenses)
@@ -457,10 +462,13 @@ export class DbStorage implements IStorage {
                 ))
                 .orderBy(asc(licenses.hardwareKey));
 
-            return result.map(row => row.hardwareKey).filter(Boolean) as string[];
+            console.log("Raw hardware keys result:", result);
+            const keys = result.map(row => row.hardwareKey).filter(Boolean) as string[];
+            console.log("Filtered hardware keys:", keys);
+            return keys;
         } catch (error) {
             console.error("Erro ao buscar hardware keys por base:", error);
-            return [];
+            throw error; // Re-throw to see the actual error
         }
     }
 

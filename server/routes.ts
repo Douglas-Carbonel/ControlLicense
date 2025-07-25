@@ -669,7 +669,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/mensagens", authenticateToken, async (req: AuthRequest, res) => {
     try {
+      console.log("Received data:", req.body);
+      
       const validatedData = insertMensagemSistemaSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
 
       // Validar se base e hardware_key existem na tabela licenses
       const isValidReference = await storage.validateMensagemLicenseReference(
@@ -697,7 +700,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(mensagem);
     } catch (error) {
+      console.error("Error creating mensagem:", error);
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
         res.status(500).json({ message: "Failed to create mensagem" });
@@ -804,7 +809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(bases);
     } catch (error) {
       console.error("Erro ao buscar bases:", error);
-      res.status(500).json({ message: "Erro interno do servidor" });
+      res.status(500).json({ message: "Failed to fetch mensagem" });
     }
   });
 
@@ -815,7 +820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(hardwareKeys);
     } catch (error) {
       console.error("Erro ao buscar hardware keys:", error);
-      res.status(500).json({ message: "Erro interno do servidor" });
+      res.status(500).json({ message: "Failed to fetch mensagem" });
     }
   });
 
