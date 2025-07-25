@@ -91,6 +91,14 @@ export const insertMensagemSistemaSchema = createInsertSchema(mensagemSistema).o
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dataValidade: z.union([z.string(), z.date()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  emailUsuario: z.string().optional().nullable(),
 });
 
 export type License = typeof licenses.$inferSelect;

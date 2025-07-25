@@ -187,7 +187,7 @@ export default function Mensagens() {
     const dataToSend = {
       ...formData,
       emailUsuario: formData.emailUsuario || null, // Garantir que seja null se vazio
-      dataValidade: new Date(formData.dataValidade) // Converter string para Date
+      // Manter como string, o schema vai transformar
     };
     console.log('Final data:', dataToSend); // Debug
     createMutation.mutate(dataToSend);
