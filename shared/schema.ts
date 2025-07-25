@@ -98,7 +98,10 @@ export const insertMensagemSistemaSchema = createInsertSchema(mensagemSistema).o
     }
     return val;
   }),
-  emailUsuario: z.string().optional().nullable(),
+  emailUsuario: z.string().optional().nullable().or(z.literal('')).transform((val) => {
+    if (val === '' || val === undefined) return null;
+    return val;
+  })able(),
 });
 
 export type License = typeof licenses.$inferSelect;

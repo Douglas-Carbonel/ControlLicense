@@ -369,7 +369,7 @@ export class DbStorage implements IStorage {
       ))
       .orderBy(desc(mensagemSistema.createdAt))
       .limit(1);
-    
+
     return result[0];
   }
     // Função para buscar mensagens com dados da licença relacionada
