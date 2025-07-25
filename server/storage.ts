@@ -358,6 +358,20 @@ export class DbStorage implements IStorage {
       .where(eq(mensagemSistema.hardwareKey, hardwareKey))
       .orderBy(desc(mensagemSistema.createdAt));
   }
+
+  async getMensagemByBaseAndHardware(base: string, hardwareKey: string) {
+    const result = await db
+      .select()
+      .from(mensagemSistema)
+      .where(and(
+        eq(mensagemSistema.base, base),
+        eq(mensagemSistema.hardwareKey, hardwareKey)
+      ))
+      .orderBy(desc(mensagemSistema.createdAt))
+      .limit(1);
+    
+    return result[0];
+  }
     // Função para buscar mensagens com dados da licença relacionada
     async getMensagensWithLicense() {
         try {

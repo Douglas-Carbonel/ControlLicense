@@ -819,6 +819,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint público para buscar mensagem por nome_db e hardware_key
+  app.get("/api/mensagens/query/:nome_db/:hardware_key", async (req: Request, res: Response) => {
+    try {
+      const { nome_db, hardware_key } = req.params;
+
+      if (!nome_db || !hardware_key) {
+        return res.status(400).json({ 
+          message: "nome_db e hardware_key são obrigatórios" 
+        });
+      }
+
+      const mensagem = await storage.getMensagemByBaseAndHardware(nome_db, hardware_key);
+      
+      if (!mensagem) {
+        return res.status(404).json({ 
+          message: "Nenhuma mensagem encontrada para os dados fornecidos" 
+        });
+      }
+
+      // Log da consulta para monitoramento
+      await storage.createActivity({
+        userId: "system",
+        userName: "Sistema Externo (Consulta Mensagem)",
+        action: "QUERY_MESSAGE",
+        resourceType: "mensagem",
+        resourceId: mensagem.id,
+        description: `Consulta mensagem: Base ${nome_db} | Hardware ${hardware_key}`,
+      });
+
+      res.json({
+        mensagem: mensagem.mensagem
+      });
+
+    } catch (error) {
+      console.error("Erro na consulta de mensagem:", error);
+      res.status(500).json({
+        message: "Erro interno do servidor"
+      });
+    }
+  });
+
   // Import route (apenas admin)
   app.post("/api/import", authenticateToken, requireAdmin, upload.single("file"), async (req: MulterRequest & AuthRequest, res) => {
     try {
