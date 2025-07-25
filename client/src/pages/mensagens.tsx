@@ -137,11 +137,13 @@ export default function Mensagens() {
     if (base && hardwareKey) {
       try {
         const response = await apiRequest("GET", `/api/mensagens/validate/${encodeURIComponent(base)}/${encodeURIComponent(hardwareKey)}`);
+        console.log("Validation response:", response); // Debug
         setValidationStatus({
           valid: response.valid,
           licenseInfo: response.licenseInfo
         });
       } catch (error) {
+        console.error("Validation error:", error); // Debug
         setValidationStatus({ valid: false, licenseInfo: null });
       }
     } else {
@@ -318,6 +320,11 @@ export default function Mensagens() {
                   </div>
                 </Alert>
               )}
+              
+              {/* Dica para teste */}
+              <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded">
+                💡 <strong>Para testar:</strong> Use base "SBODemoBR_Feula_A" com hardware key "D0950733748"
+              </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                   Cancelar
