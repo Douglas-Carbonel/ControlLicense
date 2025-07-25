@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Edit, Trash2, Plus, Calendar, User, Database, Hash, CheckCircle, XCircle } from "lucide-react";
+import { Edit, Trash2, Plus, Calendar, User, Database, Hash, CheckCircle, XCircle, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
@@ -236,12 +236,22 @@ export default function Mensagens() {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Criar Nova Mensagem</DialogTitle>
+            <DialogHeader className="space-y-3 pb-6 border-b border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-semibold text-gray-900">Nova Mensagem</DialogTitle>
+                  <DialogDescription className="text-sm text-gray-600 mt-1">
+                    Crie uma nova mensagem para envio aos clientes do sistema
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-6 pt-4">
               <div>
-                <Label htmlFor="mensagem">Mensagem</Label>
+                <Label htmlFor="mensagem">Mensagem <span className="text-red-500">*</span></Label>
                 <Textarea
                   id="mensagem"
                   value={formData.mensagem}
@@ -267,14 +277,13 @@ export default function Mensagens() {
                   </datalist>
                 </div>
                 <div>
-                  <Label htmlFor="emailUsuario">Email do Usuário <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="emailUsuario">Email do Usuário</Label>
                   <Input
                     id="emailUsuario"
                     type="email"
                     value={formData.emailUsuario}
                     onChange={(e) => handleFieldChange('emailUsuario', e.target.value)}
-                    placeholder="usuario@exemplo.com"
-                    required
+                    placeholder="usuario@exemplo.com (opcional)"
                   />
                 </div>
               </div>
@@ -332,19 +341,28 @@ export default function Mensagens() {
                 </Alert>
               )}
               
-              {/* Dica para teste */}
-              <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded">
-                💡 <strong>Para testar:</strong> Use base "SBODemoBR_Feula_A" com hardware key "D0950733748"
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-6 py-2"
+                >
                   Cancelar
                 </Button>
                 <Button 
                   onClick={handleCreate}
-                  disabled={createMutation.isPending || validationStatus.valid === false || !formData.mensagem || !formData.base || !formData.emailUsuario || !formData.dataValidade || !formData.hardwareKey}
+                  disabled={createMutation.isPending || validationStatus.valid === false || !formData.mensagem || !formData.base || !formData.dataValidade || !formData.hardwareKey}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  {createMutation.isPending ? "Criando..." : "Criar Mensagem"}
+                  {createMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Criando...
+                    </>
+                  ) : (
+                    "Criar Mensagem"
+                  )}
                 </Button>
               </div>
             </div>
