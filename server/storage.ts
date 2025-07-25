@@ -431,8 +431,11 @@ export class DbStorage implements IStorage {
             const result = await db
                 .selectDistinct({ nomeDb: licenses.nomeDb })
                 .from(licenses)
-                .where(and(not(isNull(licenses.nomeDb)), eq(licenses.ativo, true)))
-                .orderBy(licenses.nomeDb);
+                .where(and(
+                    not(isNull(licenses.nomeDb)), 
+                    eq(licenses.ativo, true)
+                ))
+                .orderBy(asc(licenses.nomeDb));
 
             return result.map(row => row.nomeDb).filter(Boolean) as string[];
         } catch (error) {
@@ -452,7 +455,7 @@ export class DbStorage implements IStorage {
                     not(isNull(licenses.hardwareKey)),
                     eq(licenses.ativo, true)
                 ))
-                .orderBy(licenses.hardwareKey);
+                .orderBy(asc(licenses.hardwareKey));
 
             return result.map(row => row.hardwareKey).filter(Boolean) as string[];
         } catch (error) {
