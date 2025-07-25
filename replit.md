@@ -72,6 +72,10 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Interface melhorada com selects em vez de inputs para maior precisão
 ✓ Mensagens de erro específicas quando combinação é inválida
 ✓ Sistema previne criação de mensagens com dados inconsistentes
+✓ **CORREÇÃO DE BUGS**: Corrigido erro de validação na criação de mensagens (Jan 2025)
+✓ Campo emailUsuario agora é opcional no schema do banco
+✓ Conversão correta de dataValidade de string para Date object
+✓ Sistema de criação de mensagens funcionando perfeitamente
 ✓ Sistema funcionando perfeitamente com login, licenças, atividades e criação de usuários operacionais
 ✓ **NOVO ENDPOINT**: Criado endpoint POST /api/licenses/hardware-query para consulta externa de licenças
 ✓ Endpoint recebe hardwareKey, systemNumber, installNumber e database como parâmetros

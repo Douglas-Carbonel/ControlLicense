@@ -186,7 +186,8 @@ export default function Mensagens() {
     console.log('Sending data:', formData); // Debug
     const dataToSend = {
       ...formData,
-      emailUsuario: formData.emailUsuario || null // Garantir que seja null se vazio
+      emailUsuario: formData.emailUsuario || null, // Garantir que seja null se vazio
+      dataValidade: new Date(formData.dataValidade) // Converter string para Date
     };
     console.log('Final data:', dataToSend); // Debug
     createMutation.mutate(dataToSend);
