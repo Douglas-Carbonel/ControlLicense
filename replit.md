@@ -70,6 +70,11 @@ This is a full-stack license management system built with React (frontend) and E
 ✓ Design corporativo consistente com gradientes azuis e paleta DW IT Solutions
 ✓ Campos agrupados logicamente para melhor experiência do usuário
 ✓ Correção do bug no campo email_usuario opcional para criação de mensagens
+✓ **ALERTAS DE SEGURANÇA**: Implementados avisos obrigatórios para edição/exclusão de mensagens (Jan 2025)
+✓ Alertas informam sobre impacto no portal do cliente antes de qualquer alteração
+✓ Interface visual com cores de alerta (laranja para edição, vermelho para exclusão)
+✓ Confirmação obrigatória com detalhamento dos impactos de cada ação
+✓ Integração completa com design corporativo e paleta de cores DW IT Solutions
 ✓ **VALIDAÇÃO AVANÇADA DE MENSAGENS**: Sistema robusto de validação implementado (Jan 2025)
 ✓ Validação no backend verifica se combinação base + hardware_key existe nas licenças
 ✓ Endpoints para autocomplete de bases disponíveis e hardware keys por base

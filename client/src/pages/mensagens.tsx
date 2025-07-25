@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Edit, Trash2, Plus, Calendar, User, Database, Hash, CheckCircle, XCircle, MessageSquare } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Edit, Trash2, Plus, Calendar, User, Database, Hash, CheckCircle, XCircle, MessageSquare, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest } from "@/lib/queryClient";
@@ -208,9 +209,7 @@ export default function Mensagens() {
   }, [editingMensagem, updateMutation]);
 
   const handleDelete = useCallback((id: number) => {
-    if (confirm("Tem certeza que deseja excluir esta mensagem?")) {
-      deleteMutation.mutate(id);
-    }
+    deleteMutation.mutate(id);
   }, [deleteMutation]);
 
   const handleFieldChange = useCallback((field: string, value: any) => {
@@ -448,25 +447,119 @@ export default function Mensagens() {
                         </div>
                       </div>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(mensagem)}
-                          className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
-                          title="Editar mensagem"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(mensagem.id)}
-                          disabled={deleteMutation.isPending}
-                          className="p-2 hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
-                          title="Excluir mensagem"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
+                              title="Editar mensagem"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="border-orange-200 shadow-xl">
+                            <AlertDialogHeader>
+                              <div className="flex items-center space-x-3">
+                                <div className="p-2.5 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg">
+                                  <AlertTriangle className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <AlertDialogTitle className="text-lg font-semibold text-orange-900">
+                                    Atenção - Editar Mensagem
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-sm text-orange-700 mt-1">
+                                    Esta ação pode impactar no portal do cliente
+                                  </AlertDialogDescription>
+                                </div>
+                              </div>
+                            </AlertDialogHeader>
+                            <div className="py-4">
+                              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                <div className="flex items-start space-x-3">
+                                  <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                                  <div className="text-sm text-orange-800">
+                                    <p className="font-medium mb-2">Impactos da edição:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-orange-700">
+                                      <li>A mensagem será atualizada imediatamente no portal do cliente</li>
+                                      <li>Usuários conectados verão a nova versão da mensagem</li>
+                                      <li>Esta ação será registrada no log de atividades</li>
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                                Cancelar
+                              </AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleEdit(mensagem)}
+                                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium"
+                              >
+                                Continuar Edição
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={deleteMutation.isPending}
+                              className="p-2 hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+                              title="Excluir mensagem"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="border-red-200 shadow-xl">
+                            <AlertDialogHeader>
+                              <div className="flex items-center space-x-3">
+                                <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg">
+                                  <AlertTriangle className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <AlertDialogTitle className="text-lg font-semibold text-red-900">
+                                    Atenção - Excluir Mensagem
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-sm text-red-700 mt-1">
+                                    Esta ação é irreversível e pode impactar no portal do cliente
+                                  </AlertDialogDescription>
+                                </div>
+                              </div>
+                            </AlertDialogHeader>
+                            <div className="py-4">
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div className="flex items-start space-x-3">
+                                  <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                                  <div className="text-sm text-red-800">
+                                    <p className="font-medium mb-2">Impactos da exclusão:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-red-700">
+                                      <li>A mensagem será removida permanentemente do sistema</li>
+                                      <li>Não estará mais disponível no portal do cliente</li>
+                                      <li>Esta ação não pode ser desfeita</li>
+                                      <li>A exclusão será registrada no log de atividades</li>
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                                Cancelar
+                              </AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(mensagem.id)}
+                                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
+                              >
+                                Confirmar Exclusão
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
 
