@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search, Bookmark, Save, Trash, AlertTriangle } from "lucide-react";
+import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search, Bookmark, Save, Trash, AlertTriangle, User, Code, Database } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -1114,193 +1114,278 @@ export default function Licenses() {
         </CardContent>
       </Card>
 
-      {/* Modal de Edição Otimizado */}
+      {/* Modal de Edição Modernizado */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent 
-          className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-white border border-[#e0e0e0] shadow-lg"
+          className="sm:max-w-[800px] bg-gradient-to-br from-[#f4f4f4] via-white to-[#f8f9fa] border border-[#e0e0e0] shadow-xl"
           aria-describedby="edit-dialog-description"
         >
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Editar Licença</DialogTitle>
-            <p id="edit-dialog-description" className="text-sm text-[#3a3a3c] mt-2">Atualize as informações da licença</p>
+          <DialogHeader className="pb-4 border-b border-[#e0e0e0]">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white shadow-md">
+                <Edit className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-[#0c151f] flex items-center gap-2">
+                  Editar Licença
+                  <div className="px-2 py-1 bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white text-xs rounded-full font-medium shadow-sm">
+                    {editingLicense?.code || 'N/A'}
+                  </div>
+                </DialogTitle>
+                <p id="edit-dialog-description" className="text-sm text-[#3a3a3c] mt-1">
+                  Atualize as informações da licença
+                </p>
+              </div>
+            </div>
           </DialogHeader>
           
           {editingLicense && (
             <Tabs defaultValue="cliente" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-[#f4f4f4] border border-[#e0e0e0]">
-                <TabsTrigger value="cliente" className="text-[#3a3a3c] data-[state=active]:bg-[#0095da] data-[state=active]:text-white">Dados do Cliente</TabsTrigger>
-                <TabsTrigger value="ambiente" className="text-[#3a3a3c] data-[state=active]:bg-[#0095da] data-[state=active]:text-white">Dados do Ambiente</TabsTrigger>
-                <TabsTrigger value="licenca" className="text-[#3a3a3c] data-[state=active]:bg-[#0095da] data-[state=active]:text-white">Dados da Licença</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4 bg-[#f4f4f4] border border-[#e0e0e0] rounded-lg p-1">
+                <TabsTrigger 
+                  value="cliente" 
+                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+                >
+                  <User className="h-4 w-4" />
+                  Cliente
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="licenca" 
+                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+                >
+                  <Code className="h-4 w-4" />
+                  Licença
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="sistema" 
+                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+                >
+                  <Database className="h-4 w-4" />
+                  Sistema
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="config" 
+                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+                >
+                  <Settings className="h-4 w-4" />
+                  Config
+                </TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="cliente" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-codCliente">Código do Cliente</Label>
-                    <OptimizedInput
-                      id="edit-codCliente"
-                      value={editingLicense.codCliente || ''}
-                      onChange={(e) => handleFieldChange('codCliente', e.target.value)}
-                      placeholder="C0001"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-nomeCliente">Nome do Cliente</Label>
-                    <OptimizedInput
-                      id="edit-nomeCliente"
-                      value={editingLicense.nomeCliente || ''}
-                      onChange={(e) => handleFieldChange('nomeCliente', e.target.value)}
-                      placeholder="Nome da empresa"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="edit-dadosEmpresa">Dados da Empresa</Label>
-                  <OptimizedTextarea
-                    id="edit-dadosEmpresa"
-                    value={editingLicense.dadosEmpresa || ''}
-                    onChange={(e) => handleFieldChange('dadosEmpresa', e.target.value)}
-                    placeholder="Informações da empresa..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-listaCnpj">Lista de CNPJ</Label>
-                  <OptimizedInput
-                    id="edit-listaCnpj"
-                    value={editingLicense.listaCnpj || ''}
-                    onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
-                    placeholder="12.345.678/0001-90"
-                  />
-                </div>
+
+              <TabsContent value="cliente" className="mt-6">
+                <Card className="border border-[#e0e0e0] shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-codCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
+                        <OptimizedInput
+                          id="edit-codCliente"
+                          value={editingLicense.codCliente || ''}
+                          onChange={(e) => handleFieldChange('codCliente', e.target.value)}
+                          placeholder="C0001"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-nomeCliente" className="text-[#0c151f] font-medium">Nome do Cliente</Label>
+                        <OptimizedInput
+                          id="edit-nomeCliente"
+                          value={editingLicense.nomeCliente || ''}
+                          onChange={(e) => handleFieldChange('nomeCliente', e.target.value)}
+                          placeholder="Nome da empresa"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-listaCnpj" className="text-[#0c151f] font-medium">Lista de CNPJ</Label>
+                        <OptimizedInput
+                          id="edit-listaCnpj"
+                          value={editingLicense.listaCnpj || ''}
+                          onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
+                          placeholder="12.345.678/0001-90"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Label htmlFor="edit-dadosEmpresa" className="text-[#0c151f] font-medium">Dados da Empresa</Label>
+                      <OptimizedTextarea
+                        id="edit-dadosEmpresa"
+                        value={editingLicense.dadosEmpresa || ''}
+                        onChange={(e) => handleFieldChange('dadosEmpresa', e.target.value)}
+                        placeholder="Informações da empresa..."
+                        rows={3}
+                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="licenca" className="mt-6">
+                <Card className="border border-[#e0e0e0] shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-code" className="text-[#0c151f] font-medium">Código</Label>
+                        <OptimizedInput
+                          id="edit-code"
+                          value={editingLicense.code || ''}
+                          onChange={(e) => handleFieldChange('code', e.target.value)}
+                          placeholder="C0001"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-qtLicencas" className="text-[#0c151f] font-medium">Quantidade de Licenças</Label>
+                        <OptimizedInput
+                          id="edit-qtLicencas"
+                          type="number"
+                          value={editingLicense.qtLicencas || ''}
+                          onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
+                          placeholder="1"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-versaoSap" className="text-[#0c151f] font-medium">Versão SAP</Label>
+                        <OptimizedInput
+                          id="edit-versaoSap"
+                          value={editingLicense.versaoSap || ''}
+                          onChange={(e) => handleFieldChange('versaoSap', e.target.value)}
+                          placeholder="1000230"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 mt-4">
+                        <Switch
+                          id="edit-ativo"
+                          checked={editingLicense.ativo || false}
+                          onCheckedChange={(checked) => handleFieldChange('ativo', checked)}
+                        />
+                        <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#0c151f]">
+                          Licença Ativa
+                        </Label>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="sistema" className="mt-6">
+                <Card className="border border-[#e0e0e0] shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-hardwareKey" className="text-[#0c151f] font-medium">Hardware Key</Label>
+                        <OptimizedInput
+                          id="edit-hardwareKey"
+                          value={editingLicense.hardwareKey || ''}
+                          onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
+                          placeholder="E0546917180"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-installNumber" className="text-[#0c151f] font-medium">Install Number</Label>
+                        <OptimizedInput
+                          id="edit-installNumber"
+                          value={editingLicense.installNumber || ''}
+                          onChange={(e) => handleFieldChange('installNumber', e.target.value)}
+                          placeholder="0020798655"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-systemNumber" className="text-[#0c151f] font-medium">System Number</Label>
+                        <OptimizedInput
+                          id="edit-systemNumber"
+                          value={editingLicense.systemNumber || ''}
+                          onChange={(e) => handleFieldChange('systemNumber', e.target.value)}
+                          placeholder="000000000312513489"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-nomeDb" className="text-[#0c151f] font-medium">Nome do Database</Label>
+                        <OptimizedInput
+                          id="edit-nomeDb"
+                          value={editingLicense.nomeDb || ''}
+                          onChange={(e) => handleFieldChange('nomeDb', e.target.value)}
+                          placeholder="SBO_EMPRESA"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="config" className="mt-6">
+                <Card className="border border-[#e0e0e0] shadow-sm">
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-endApi" className="text-[#0c151f] font-medium">Endereço da API</Label>
+                        <OptimizedInput
+                          id="edit-endApi"
+                          value={editingLicense.endApi || ''}
+                          onChange={(e) => handleFieldChange('endApi', e.target.value)}
+                          placeholder="http://servidor:8090/SBO_DB/DWUAPI"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-qtLicencasAdicionais" className="text-[#0c151f] font-medium">Licenças Adicionais</Label>
+                        <OptimizedInput
+                          id="edit-qtLicencasAdicionais"
+                          type="number"
+                          value={editingLicense.qtLicencasAdicionais || ''}
+                          onChange={(e) => handleFieldChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
+                          placeholder="0"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Label htmlFor="edit-descDb" className="text-[#0c151f] font-medium">Descrição do Database</Label>
+                      <OptimizedTextarea
+                        id="edit-descDb"
+                        value={editingLicense.descDb || ''}
+                        onChange={(e) => handleFieldChange('descDb', e.target.value)}
+                        placeholder="Base de produção..."
+                        rows={2}
+                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <Label htmlFor="edit-observacao" className="text-[#0c151f] font-medium">Observações</Label>
+                      <OptimizedTextarea
+                        id="edit-observacao"
+                        value={editingLicense.observacao || ''}
+                        onChange={(e) => handleFieldChange('observacao', e.target.value)}
+                        placeholder="Observações adicionais..."
+                        rows={3}
+                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
               
-              <TabsContent value="ambiente" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-nomeDb">Nome do Banco</Label>
-                    <OptimizedInput
-                      id="edit-nomeDb"
-                      value={editingLicense.nomeDb || ''}
-                      onChange={(e) => handleFieldChange('nomeDb', e.target.value)}
-                      placeholder="SBODemo_BR"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-descDb">Descrição do Banco</Label>
-                    <OptimizedInput
-                      id="edit-descDb"
-                      value={editingLicense.descDb || ''}
-                      onChange={(e) => handleFieldChange('descDb', e.target.value)}
-                      placeholder="Base de Teste"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="edit-endApi">Endpoint da API</Label>
-                  <OptimizedInput
-                    id="edit-endApi"
-                    value={editingLicense.endApi || ''}
-                    onChange={(e) => handleFieldChange('endApi', e.target.value)}
-                    placeholder="http://api.exemplo.com:8099/Database/API"
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="licenca" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-hardwareKey">Hardware Key</Label>
-                    <OptimizedInput
-                      id="edit-hardwareKey"
-                      value={editingLicense.hardwareKey || ''}
-                      onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
-                      placeholder="D0950733748"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-installNumber">Install Number</Label>
-                    <OptimizedInput
-                      id="edit-installNumber"
-                      value={editingLicense.installNumber || ''}
-                      onChange={(e) => handleFieldChange('installNumber', e.target.value)}
-                      placeholder="0090289858"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-systemNumber">System Number</Label>
-                    <OptimizedInput
-                      id="edit-systemNumber"
-                      value={editingLicense.systemNumber || ''}
-                      onChange={(e) => handleFieldChange('systemNumber', e.target.value)}
-                      placeholder="000000000850521388"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-versaoSap">Versão SAP</Label>
-                    <OptimizedInput
-                      id="edit-versaoSap"
-                      value={editingLicense.versaoSap || ''}
-                      onChange={(e) => handleFieldChange('versaoSap', e.target.value)}
-                      placeholder="9.3"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-qtLicencas">Quantidade de Licenças</Label>
-                    <OptimizedInput
-                      id="edit-qtLicencas"
-                      type="number"
-                      value={editingLicense.qtLicencas || ''}
-                      onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
-                      placeholder="1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-qtLicencasAdicionais">Licenças Adicionais</Label>
-                    <OptimizedInput
-                      id="edit-qtLicencasAdicionais"
-                      type="number"
-                      value={editingLicense.qtLicencasAdicionais || ''}
-                      onChange={(e) => handleFieldChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="edit-observacao">Observações</Label>
-                  <OptimizedTextarea
-                    id="edit-observacao"
-                    value={editingLicense.observacao || ''}
-                    onChange={(e) => handleFieldChange('observacao', e.target.value)}
-                    placeholder="Observações sobre a licença..."
-                    rows={3}
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="edit-ativo"
-                    checked={editingLicense.ativo || false}
-                    onChange={(e) => handleFieldChange('ativo', e.target.checked)}
-                    className="w-4 h-4 text-[#0095da] bg-gray-100 border-gray-300 rounded focus:ring-[#0095da] focus:ring-2"
-                  />
-                  <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#3a3a3c]">
-                    Licença Ativa
-                  </Label>
-                </div>
-              </TabsContent>
-              
-              <div className="flex justify-end space-x-3 pt-6 border-t border-[#e0e0e0]">
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              <div className="flex justify-end space-x-3 pt-6 border-t border-[#e0e0e0] mt-6">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="border-[#e0e0e0] text-[#3a3a3c] hover:bg-[#f4f4f4]"
+                >
                   Cancelar
                 </Button>
                 <Button 
                   onClick={handleUpdateLicense}
                   disabled={updateMutation.isPending}
+                  className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white font-medium shadow-md transition-all duration-200"
                 >
                   {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
                 </Button>
