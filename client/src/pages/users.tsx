@@ -209,7 +209,14 @@ export default function UsersPage() {
 
   const getRoleBadge = (role: string) => {
     return (
-      <Badge variant={role === "admin" ? "default" : "secondary"} className="flex items-center gap-1">
+      <Badge 
+        variant={role === "admin" ? "default" : "secondary"} 
+        className={`flex items-center gap-1 ${
+          role === "admin" 
+            ? "bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white" 
+            : "bg-gray-100 text-gray-700"
+        }`}
+      >
         {getRoleIcon(role)}
         {role === "admin" ? "Administrador" : "Técnico"}
       </Badge>
@@ -219,8 +226,8 @@ export default function UsersPage() {
   if (currentUser?.role !== "admin") {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Alert>
-          <AlertDescription>
+        <Alert className="border-red-200 bg-red-50">
+          <AlertDescription className="text-red-700">
             Apenas administradores podem acessar esta página.
           </AlertDescription>
         </Alert>
@@ -229,97 +236,107 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Gerenciar Usuários</h1>
-          <p className="text-slate-600 mt-2">
+          <h1 className="text-2xl font-bold text-slate-800">Gerenciar Usuários</h1>
+          <p className="text-slate-600 mt-1">
             Administre usuários do sistema e suas permissões
           </p>
         </div>
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white font-medium shadow-md transition-all duration-200 flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Novo Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-white border border-[#e0e0e0] shadow-lg">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Criar Novo Usuário</DialogTitle>
-              <p className="text-sm text-[#3a3a3c] mt-2">Preencha os dados para criar um novo usuário</p>
+          <DialogContent className="bg-white border border-[#e0e0e0] shadow-2xl max-w-md">
+            <DialogHeader className="pb-4 border-b border-[#e0e0e0]">
+              <DialogTitle className="text-xl font-bold text-[#0c151f]">Criar Novo Usuário</DialogTitle>
+              <p className="text-sm text-[#3a3a3c] mt-2">Preencha os dados para criar um novo usuário no sistema</p>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="username">Nome de Usuário</Label>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-[#0c151f] font-medium">Nome de Usuário</Label>
                 <Input
                   id="username"
                   value={newUser.username}
                   onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
                   placeholder="Digite o nome de usuário"
+                  className="border-[#e0e0e0] focus:border-[#0095da] focus:ring-1 focus:ring-[#0095da]"
                 />
               </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-[#0c151f] font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                   placeholder="Digite o email"
+                  className="border-[#e0e0e0] focus:border-[#0095da] focus:ring-1 focus:ring-[#0095da]"
                 />
               </div>
-              <div>
-                <Label htmlFor="name">Nome Completo</Label>
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-[#0c151f] font-medium">Nome Completo</Label>
                 <Input
                   id="name"
                   value={newUser.name}
                   onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                   placeholder="Digite o nome completo"
+                  className="border-[#e0e0e0] focus:border-[#0095da] focus:ring-1 focus:ring-[#0095da]"
                 />
               </div>
-              <div>
-                <Label htmlFor="password">Senha</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-[#0c151f] font-medium">Senha</Label>
                 <Input
                   id="password"
                   type="password"
                   value={newUser.passwordHash}
                   onChange={(e) => setNewUser({ ...newUser, passwordHash: e.target.value })}
                   placeholder="Digite a senha"
+                  className="border-[#e0e0e0] focus:border-[#0095da] focus:ring-1 focus:ring-[#0095da]"
                 />
               </div>
-              <div>
-                <Label htmlFor="role">Função</Label>
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-[#0c151f] font-medium">Função</Label>
                 <Select
                   value={newUser.role}
                   onValueChange={(value) => setNewUser({ ...newUser, role: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border-[#e0e0e0]">
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="support">Técnico</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 pt-2">
                 <Switch
                   id="active"
                   checked={newUser.active}
                   onCheckedChange={(checked) => setNewUser({ ...newUser, active: checked })}
+                  className="data-[state=checked]:bg-[#0095da]"
                 />
-                <Label htmlFor="active">Usuário Ativo</Label>
+                <Label htmlFor="active" className="text-[#0c151f] font-medium">Usuário Ativo</Label>
               </div>
-              <div className="flex gap-2 pt-4 border-t border-[#e0e0e0]">
+              <div className="flex gap-3 pt-6 border-t border-[#e0e0e0]">
                 <Button 
                   onClick={handleCreateUser} 
                   disabled={createUserMutation.isPending}
+                  className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white font-medium flex-1"
                 >
                   {createUserMutation.isPending ? "Criando..." : "Criar Usuário"}
                 </Button>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  className="border-[#e0e0e0] text-[#3a3a3c] hover:bg-[#f4f4f4]"
+                >
                   Cancelar
                 </Button>
               </div>
@@ -328,134 +345,167 @@ export default function UsersPage() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+            <Users className="h-5 w-5 text-[#0095da]" />
             Lista de Usuários
           </CardTitle>
+          <p className="text-sm text-gray-500 mt-1">
+            {users?.length || 0} usuários cadastrados no sistema
+          </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoadingUsers ? (
-            <div className="text-center py-8">Carregando usuários...</div>
+            <div className="text-center py-12">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-5 h-5 border-2 border-[#0095da] border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-600">Carregando usuários...</span>
+              </div>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Função</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criado em</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.map((user: User) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.active ? "default" : "destructive"}>
-                        {user.active ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditUser(user)}
+            <div className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <TableHead className="font-semibold text-gray-700 py-4">Nome</TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-4">Usuário</TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-4">Email</TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-4">Função</TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-4">Status</TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-4">Criado em</TableHead>
+                    <TableHead className="font-semibold text-gray-700 py-4 text-center">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users?.map((user: User) => (
+                    <TableRow 
+                      key={user.id} 
+                      className="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100"
+                    >
+                      <TableCell className="font-medium text-gray-900 py-4">{user.name}</TableCell>
+                      <TableCell className="text-gray-700 py-4">{user.username}</TableCell>
+                      <TableCell className="text-gray-700 py-4">{user.email}</TableCell>
+                      <TableCell className="py-4">{getRoleBadge(user.role)}</TableCell>
+                      <TableCell className="py-4">
+                        <Badge 
+                          variant={user.active ? "default" : "destructive"} 
+                          className={user.active ? 
+                            "bg-green-100 text-green-800 border-green-200" : 
+                            "bg-red-100 text-red-800 border-red-200"
+                          }
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {currentUser?.id !== user.id && (
+                          {user.active ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-600 py-4">
+                        {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex gap-2 justify-center">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleEditUser(user)}
+                            className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          {currentUser?.id !== user.id && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Dialog de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-white border border-[#e0e0e0] shadow-lg">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#3a3a3c]">Editar Usuário</DialogTitle>
+        <DialogContent className="bg-white border border-[#e0e0e0] shadow-2xl max-w-md">
+          <DialogHeader className="pb-4 border-b border-[#e0e0e0]">
+            <DialogTitle className="text-xl font-bold text-[#0c151f]">Editar Usuário</DialogTitle>
             <p className="text-sm text-[#3a3a3c] mt-2">Atualize as informações do usuário</p>
           </DialogHeader>
           {editingUser && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-username">Nome de Usuário</Label>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-username" className="text-[#0c151f] font-medium">Nome de Usuário</Label>
                 <Input
                   id="edit-username"
                   value={editingUser.username}
                   onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                  className="border-[#e0e0e0] focus:border-[#0095da] focus:ring-1 focus:ring-[#0095da]"
                 />
               </div>
-              <div>
-                <Label htmlFor="edit-email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email" className="text-[#0c151f] font-medium">Email</Label>
                 <Input
                   id="edit-email"
                   type="email"
                   value={editingUser.email}
                   onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  className="border-[#e0e0e0] focus:border-[#0095da] focus:ring-1 focus:ring-[#0095da]"
                 />
               </div>
-              <div>
-                <Label htmlFor="edit-name">Nome Completo</Label>
+              <div className="space-y-2">
+                <Label htmlFor="edit-name" className="text-[#0c151f] font-medium">Nome Completo</Label>
                 <Input
                   id="edit-name"
                   value={editingUser.name}
                   onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  className="border-[#e0e0e0] focus:border-[#0095da] focus:ring-1 focus:ring-[#0095da]"
                 />
               </div>
-              <div>
-                <Label htmlFor="edit-role">Função</Label>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role" className="text-[#0c151f] font-medium">Função</Label>
                 <Select
                   value={editingUser.role}
                   onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border-[#e0e0e0]">
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="support">Técnico</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 pt-2">
                 <Switch
                   id="edit-active"
                   checked={editingUser.active}
                   onCheckedChange={(checked) => setEditingUser({ ...editingUser, active: checked })}
+                  className="data-[state=checked]:bg-[#0095da]"
                 />
-                <Label htmlFor="edit-active">Usuário Ativo</Label>
+                <Label htmlFor="edit-active" className="text-[#0c151f] font-medium">Usuário Ativo</Label>
               </div>
-              <div className="flex gap-2 pt-4 border-t border-[#e0e0e0]">
-                <Button onClick={handleUpdateUser} disabled={updateUserMutation.isPending}>
+              <div className="flex gap-3 pt-6 border-t border-[#e0e0e0]">
+                <Button 
+                  onClick={handleUpdateUser} 
+                  disabled={updateUserMutation.isPending}
+                  className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white font-medium flex-1"
+                >
                   {updateUserMutation.isPending ? "Salvando..." : "Salvar Alterações"}
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="border-[#e0e0e0] text-[#3a3a3c] hover:bg-[#f4f4f4]"
+                >
                   Cancelar
                 </Button>
               </div>
