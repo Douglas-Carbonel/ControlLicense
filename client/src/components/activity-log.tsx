@@ -56,13 +56,13 @@ export default function ActivityLog() {
       case "UPDATE":
         return "bg-[#313d5a]";
       case "DELETE":
-        return "bg-red-500";
+        return "bg-[#3a3a3c]";
       case "IMPORT":
-        return "bg-emerald-500";
+        return "bg-[#0095da]";
       case "QUERY":
-        return "bg-blue-500";
+        return "bg-[#313d5a]";
       case "QUERY_ENCRYPTED":
-        return "bg-purple-600";
+        return "bg-[#3a3a3c]";
       default:
         return "bg-[#3a3a3c]";
     }

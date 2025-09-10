@@ -547,24 +547,24 @@ body {
 }
 
 .status-active {
-  background: rgba(34, 197, 94, 0.1);
-  color: #16a34a;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
+  background: rgba(0, 149, 218, 0.1);
+  color: #0095da;
+  border: 1px solid rgba(0, 149, 218, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 149, 218, 0.1);
 }
 
 .status-inactive {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+  background: rgba(49, 61, 90, 0.1);
+  color: #313d5a;
+  border: 1px solid rgba(49, 61, 90, 0.3);
+  box-shadow: 0 2px 4px rgba(49, 61, 90, 0.1);
 }
 
 .status-warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #d97706;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.1);
+  background: rgba(58, 58, 60, 0.1);
+  color: #3a3a3c;
+  border: 1px solid rgba(58, 58, 60, 0.3);
+  box-shadow: 0 2px 4px rgba(58, 58, 60, 0.1);
 }
 
 /* Copy button enhancements */

@@ -159,13 +159,13 @@ export default function ActivityHistory() {
       case "UPDATE":
         return "secondary";
       case "DELETE":
-        return "destructive";
-      case "IMPORT":
         return "outline";
-      case "QUERY":
+      case "IMPORT":
         return "default";
-      case "QUERY_ENCRYPTED":
+      case "QUERY":
         return "secondary";
+      case "QUERY_ENCRYPTED":
+        return "outline";
       case "LOGIN":
         return "default";
       case "LOGOUT":
