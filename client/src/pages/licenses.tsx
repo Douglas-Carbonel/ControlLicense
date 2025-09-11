@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search, Bookmark, Save, Trash, AlertTriangle, User, Code, Database } from "lucide-react";
+import { Edit, Trash2, Plus, Copy, Download, Settings, Info, GripVertical, FileDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns, Search, Bookmark, Save, Trash, AlertTriangle, User, Code, Database, Grid3x3, Table2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,6 +100,7 @@ export default function Licenses() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25); // Reduzido para 25 para melhor performance
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -501,6 +502,167 @@ export default function Licenses() {
     });
   }, [filteredLicenses, getVisibleColumnsInOrder, toast]);
 
+  // Card view component
+  const LicenseCard = memo(({ license }: { license: any }) => (
+    <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white shadow-sm">
+              <Code className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-semibold text-slate-800">
+                {license.code}
+              </CardTitle>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Linha {license.linha}
+              </p>
+            </div>
+          </div>
+          <Badge variant={getStatusVariant(license.ativo)} className="text-xs">
+            {getStatusText(license.ativo)}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-1">Cliente</p>
+            <p className="text-xs text-gray-600 truncate" title={license.nomeCliente}>
+              {license.nomeCliente || 'N/A'}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Cód: {license.codCliente || 'N/A'}
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs font-medium text-slate-700 mb-1">Hardware Key</p>
+              <div className="flex items-center space-x-1">
+                <p className="text-xs text-gray-600 truncate flex-1" title={license.hardwareKey}>
+                  {license.hardwareKey || 'N/A'}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 h-5 w-5 hover:bg-gray-100"
+                  onClick={() => copyToClipboard(license.hardwareKey || '', 'Hardware Key')}
+                >
+                  <Copy className="w-3 h-3 text-gray-500" />
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <p className="text-xs font-medium text-slate-700 mb-1">Licenças</p>
+              <p className="text-xs text-gray-600">
+                {license.qtLicencas || 0}
+                {license.qtLicencasAdicionais ? ` (+${license.qtLicencasAdicionais})` : ''}
+              </p>
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-xs font-medium text-slate-700 mb-1">Database</p>
+            <p className="text-xs text-gray-600 truncate" title={license.nomeDb}>
+              {license.nomeDb || 'N/A'}
+            </p>
+            {license.descDb && (
+              <p className="text-xs text-gray-500 truncate" title={license.descDb}>
+                {license.descDb}
+              </p>
+            )}
+          </div>
+          
+          {license.versaoSap && (
+            <div>
+              <p className="text-xs font-medium text-slate-700 mb-1">Versão SAP</p>
+              <p className="text-xs text-gray-600">{license.versaoSap}</p>
+            </div>
+          )}
+          
+          <div className="flex justify-end space-x-1 pt-2 border-t border-gray-100">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(license)}
+              className="p-1 h-7 w-7 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
+              title="Editar"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={deleteMutation.isPending}
+                  className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
+                  title="Excluir"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="border-red-200 shadow-xl">
+                <AlertDialogHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <AlertDialogTitle className="text-lg font-semibold text-red-900">
+                        Atenção - Excluir Licença
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-sm text-red-700 mt-1">
+                        Esta ação é irreversível e pode impactar no portal do cliente
+                      </AlertDialogDescription>
+                    </div>
+                  </div>
+                </AlertDialogHeader>
+                <div className="py-4">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-red-800">
+                        <p className="font-medium mb-2">Impactos da exclusão:</p>
+                        <ul className="list-disc list-inside space-y-1 text-red-700">
+                          <li>A licença será removida permanentemente do sistema</li>
+                          <li>O cliente perderá acesso às funcionalidades licenciadas</li>
+                          <li>Esta ação não pode ser desfeita</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Info className="w-4 h-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-800">
+                        Licença: {license.code} - Cliente: {license.nomeCliente}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => handleDelete(license.id)}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
+                  >
+                    Confirmar Exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ));
+
   // Optimized cell content rendering
   const renderCellContent = useCallback((license: any, column: any) => {
     const value = license[column.id];
@@ -637,9 +799,31 @@ export default function Licenses() {
                 {(Object.values(columnFilters).some(filter => filter !== "")) && 
                   ` (página ${pagination.page} de ${pagination.totalPages})`
                 }
+                {viewMode === 'cards' && ' - Vista em Cards'}
               </p>
             </div>
             <div className="flex items-center space-x-2">
+              <div className="flex items-center border border-gray-300 rounded-lg p-1 bg-white">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="p-2 h-8 w-8"
+                  title="Vista em Tabela"
+                >
+                  <Table2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="p-2 h-8 w-8"
+                  title="Vista em Cards"
+                >
+                  <Grid3x3 className="h-4 w-4" />
+                </Button>
+              </div>
+              
               <Dialog open={isSaveConfigOpen} onOpenChange={setIsSaveConfigOpen}>
                 <DialogTrigger asChild>
                   <Button 
@@ -963,6 +1147,20 @@ export default function Licenses() {
               >
                 Recarregar
               </Button>
+            </div>
+          ) : viewMode === 'cards' ? (
+            <div className="w-full relative">
+              {licenses.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Nenhuma licença encontrada.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+                  {licenses.map((license: any) => (
+                    <LicenseCard key={license.id} license={license} />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="w-full relative">
