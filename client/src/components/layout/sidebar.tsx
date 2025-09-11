@@ -1,10 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { 
-  Home, 
-  FileText, 
-  Upload, 
-  Activity, 
-  Users, 
+import {
+  Home,
+  FileText,
+  Upload,
+  Activity,
+  Users,
   Settings,
   BarChart3,
   Shield,
@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronUp,
   User,
-  MessageSquare
+  MessageSquare,
+  ClipboardList,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useState, useMemo, useCallback, memo } from "react";
@@ -34,36 +35,42 @@ function Sidebar() {
 
   // Usuários técnicos só podem ver licenças
     if (user?.role === 'support') {
-      items.push({ 
-        href: "/licenses", 
-        label: "Licenças", 
+      items.push({
+        href: "/licenses",
+        label: "Licenças",
         icon: FileText,
         description: "Gerenciar licenças"
       });
     } else {
       // Administradores podem ver tudo
       items.push(
-        { 
-          href: "/", 
-          label: "Painel", 
+        {
+          href: "/",
+          label: "Painel",
           icon: Home,
           description: "Visão geral do sistema"
         },
-        { 
-          href: "/licenses", 
-          label: "Licenças", 
+        {
+          href: "/licenses",
+          label: "Licenças",
           icon: FileText,
           description: "Gerenciar licenças"
         },
-        { 
-          href: "/mensagens", 
-          label: "Mensagens", 
+        {
+          href: "/mensagens",
           icon: MessageSquare,
-          description: "Gerenciar mensagens do sistema"
+          label: "Mensagens",
+          description: "Sistema de mensagens"
         },
-        { 
-          href: "/activities", 
-          label: "Logs", 
+        {
+          href: "/formularios-cliente",
+          icon: ClipboardList,
+          label: "Formulários",
+          description: "Onboarding de clientes"
+        },
+        {
+          href: "/activities",
+          label: "Logs",
           icon: Activity,
           description: "Logs e histórico de ações"
         }
@@ -123,8 +130,8 @@ function Sidebar() {
 
               {/* Modern DWU text */}
               <div className="relative z-10 flex items-center justify-center">
-                <span className={`text-white font-black ${isCollapsed ? 'text-sm' : 'text-lg'} tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300`} 
-                      style={{ 
+                <span className={`text-white font-black ${isCollapsed ? 'text-sm' : 'text-lg'} tracking-[-0.05em] drop-shadow-2xl transform group-hover:scale-105 transition-transform duration-300`}
+                      style={{
                         fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
                         textShadow: '0 4px 12px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
                         letterSpacing: '-1px'
@@ -163,20 +170,20 @@ function Sidebar() {
             const isActive = location === item.href;
 
             return (
-              <Link 
-                key={item.href} 
-                href={item.href} 
+              <Link
+                key={item.href}
+                href={item.href}
                 className={`group flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3.5 text-sm font-medium rounded-xl transition-all duration-300 ease-out relative overflow-hidden ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-[#0095da] to-[#0075b0] text-white shadow-lg shadow-blue-500/25 scale-[1.02]' 
+                  isActive
+                    ? 'bg-gradient-to-r from-[#0095da] to-[#0075b0] text-white shadow-lg shadow-blue-500/25 scale-[1.02]'
                     : 'text-[#a1b3d3] hover:bg-[#3a3a3c]/40 hover:text-white hover:shadow-md hover:scale-[1.01]'
                 }`}
                 title={isCollapsed ? item.label : ''}
               >
                 <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
                   <div className={`p-2 rounded-lg transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-white/20 shadow-inner' 
+                    isActive
+                      ? 'bg-white/20 shadow-inner'
                       : 'group-hover:bg-[#0095da]/20'
                   }`}>
                     <Icon className="w-5 h-5 flex-shrink-0" />
@@ -239,9 +246,9 @@ function Sidebar() {
                   <Settings className="w-4 h-4 text-[#a1b3d3] group-hover:text-white transition-colors duration-300" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                side="top" 
-                align="start" 
+              <DropdownMenuContent
+                side="top"
+                align="start"
                 className="w-60 bg-gradient-to-b from-[#2a3548] to-[#313d5a] backdrop-blur-md border border-[#3a3a3c]/60 shadow-2xl shadow-black/40 mb-2 rounded-2xl text-white"
                 sideOffset={8}
               >

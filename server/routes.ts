@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertFormularioClienteSchema, insertRespostaFormularioSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -862,6 +862,227 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         message: "Erro interno do servidor"
       });
+    }
+  });
+
+  // Formulários de Cliente routes
+  app.get("/api/formularios-cliente", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const formularios = await storage.getFormulariosCliente();
+      res.json(formularios);
+    } catch (error) {
+      console.error("Error fetching formulários:", error);
+      res.status(500).json({ message: "Failed to fetch formulários" });
+    }
+  });
+
+  app.get("/api/formularios-cliente/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const formulario = await storage.getFormularioClienteById(id);
+      if (!formulario) {
+        return res.status(404).json({ message: "Formulário not found" });
+      }
+      res.json(formulario);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch formulário" });
+    }
+  });
+
+  app.post("/api/formularios-cliente", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertFormularioClienteSchema.parse(req.body);
+      const formulario = await storage.createFormularioCliente({
+        ...validatedData,
+        criadoPor: req.user!.name,
+        criadoPorId: req.user!.id
+      });
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "CREATE",
+        resourceType: "formulario",
+        resourceId: formulario.id,
+        description: `${req.user!.name} criou formulário para cliente ${formulario.nomeCliente}`,
+      });
+
+      res.status(201).json(formulario);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create formulário" });
+      }
+    }
+  });
+
+  app.put("/api/formularios-cliente/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertFormularioClienteSchema.partial().parse(req.body);
+      const formulario = await storage.updateFormularioCliente(id, validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "UPDATE",
+        resourceType: "formulario",
+        resourceId: formulario.id,
+        description: `${req.user!.name} atualizou formulário para cliente ${formulario.nomeCliente}`,
+      });
+
+      res.json(formulario);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to update formulário" });
+      }
+    }
+  });
+
+  app.delete("/api/formularios-cliente/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const formulario = await storage.getFormularioClienteById(id);
+      if (!formulario) {
+        return res.status(404).json({ message: "Formulário not found" });
+      }
+
+      await storage.deleteFormularioCliente(id);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "formulario",
+        resourceId: id,
+        description: `${req.user!.name} excluiu formulário do cliente ${formulario.nomeCliente}`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete formulário" });
+    }
+  });
+
+  // Endpoint público para visualizar formulário
+  app.get("/api/formulario-publico/:url", async (req: Request, res: Response) => {
+    try {
+      const { url } = req.params;
+      const formulario = await storage.getFormularioClienteByUrl(url);
+      
+      if (!formulario) {
+        return res.status(404).json({ message: "Formulário não encontrado" });
+      }
+
+      // Verificar se expirou
+      if (formulario.dataExpiracao && new Date() > new Date(formulario.dataExpiracao)) {
+        return res.status(410).json({ message: "Formulário expirado" });
+      }
+
+      // Verificar se já foi preenchido
+      if (formulario.status === 'preenchido') {
+        return res.status(410).json({ message: "Formulário já foi preenchido" });
+      }
+
+      res.json(formulario);
+    } catch (error) {
+      console.error("Error fetching formulário público:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Endpoint público para submeter resposta
+  app.post("/api/formulario-publico/:url/resposta", async (req: Request, res: Response) => {
+    try {
+      const { url } = req.params;
+      const formulario = await storage.getFormularioClienteByUrl(url);
+      
+      if (!formulario) {
+        return res.status(404).json({ message: "Formulário não encontrado" });
+      }
+
+      // Verificar se expirou
+      if (formulario.dataExpiracao && new Date() > new Date(formulario.dataExpiracao)) {
+        return res.status(410).json({ message: "Formulário expirado" });
+      }
+
+      // Verificar se já foi preenchido
+      if (formulario.status === 'preenchido') {
+        return res.status(410).json({ message: "Formulário já foi preenchido" });
+      }
+
+      const validatedData = insertRespostaFormularioSchema.parse({
+        ...req.body,
+        formularioId: formulario.id,
+        ipOrigem: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent']
+      });
+
+      const resposta = await storage.createRespostaFormulario(validatedData);
+
+      // Atualizar status do formulário
+      await storage.updateFormularioCliente(formulario.id, { status: 'preenchido' });
+
+      // Log activity
+      await storage.createActivity({
+        userId: "system",
+        userName: "Cliente Externo",
+        action: "SUBMIT",
+        resourceType: "formulario",
+        resourceId: formulario.id,
+        description: `Cliente ${validatedData.nomeContato} (${validatedData.empresa}) preencheu formulário para ${formulario.nomeCliente}`,
+      });
+
+      res.status(201).json({ 
+        message: "Formulário preenchido com sucesso!",
+        id: resposta.id 
+      });
+    } catch (error) {
+      console.error("Error submitting formulário:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Erro interno do servidor" });
+      }
+    }
+  });
+
+  // Respostas de formulários
+  app.get("/api/formularios-cliente/:id/respostas", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const respostas = await storage.getRespostasByFormularioId(id);
+      res.json(respostas);
+    } catch (error) {
+      console.error("Error fetching respostas:", error);
+      res.status(500).json({ message: "Failed to fetch respostas" });
+    }
+  });
+
+  app.get("/api/formularios-com-respostas", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const dados = await storage.getFormulariosComRespostas();
+      res.json(dados);
+    } catch (error) {
+      console.error("Error fetching formulários com respostas:", error);
+      res.status(500).json({ message: "Failed to fetch data" });
+    }
+  });
+
+  app.get("/api/formularios-cliente/cliente/:codCliente", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const { codCliente } = req.params;
+      const formularios = await storage.getFormulariosByCliente(codCliente);
+      res.json(formularios);
+    } catch (error) {
+      console.error("Error fetching formulários by cliente:", error);
+      res.status(500).json({ message: "Failed to fetch formulários" });
     }
   });
 
