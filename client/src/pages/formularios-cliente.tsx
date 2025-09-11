@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,13 +31,117 @@ export default function FormulariosCliente() {
     descricao: "",
     codCliente: "",
     nomeCliente: "",
-    premissas: "",
+    premissas: `# **Premissas de instalação CRM One**
+
+## **Introdução**
+Este documento tem como objetivo apontar as premissas necessárias para a instalação do CRM One no ambiente.
+
+---
+
+## **Lista de premissas:**
+
+### **1. Informações de Licença**
+Por favor, forneça as seguintes informações para que possamos gerar a licença do CRM One:
+*(As informações devem ser fornecidas no formato de texto)*
+
+- **Chave de Hardware (Hardware Key)**
+- **Número de Instalação (Install Number)**  
+- **Número do Sistema (System Number)**
+- **Nome da base de dados de produção**
+- **Nome da base de dados de teste/homologação**
+
+**Nota Importante:** Após a instalação do CRM One, não será possível renomear o nome das bases de dados.
+
+### **2. Instalação do Add-on do CRM One**
+Instale e execute o add-on do CRM One, tanto na base PRD quanto na TST.
+
+### **3. DI-Server** 
+O serviço deve ser instalado no servidor onde ficará o IIS (Servidor WEB)
+
+### **4. Licenças DI-Server**
+Importar no mínimo 10 licenças para a DI Server. Lembrando que as licenças devem ser importadas dentro do SAP.
+
+### **5. Usuário SAP (CRM One)**
+Deverá ser criado, dentro do SAP, um usuário com as seguintes características:
+- **Nome:** CRMOne
+- **E-mail:** CRMOne  
+- **Senha:** SAPB1Admin
+
+**Observação:** Esse usuário não precisará possuir nenhum tipo de licença ou cadastro de colaborador/vendedor vinculado ao cadastro de usuário. Todavia, é necessário que ele esteja de acordo com as características informadas anteriormente, seguindo exatamente os dados indicados.
+
+### **6. Acesso à internet**
+O servidor WEB terá permissões de acesso externo à internet para utilizar recursos online, como validação de licença, busca de dados de CNPJ, busca de dados de CEP, consulta a APIs externas e downloads de atualizações e outras aplicações necessárias online.
+
+### **7. Liberação de portas (serviços e acessos externos)**
+Deverá ser solicitado ao time de Infraestrutura a liberação das seguintes portas:
+- **8099:** Portal web - Produção
+- **8098:** Portal web - Teste/Homologação
+- **8052:** API Service – Produção  
+- **8053:** API Service - Homologação
+
+### **8. Driver Hana 32 bits**
+Em ambientes que operam em Hana, deve ser instalado no servidor WEB, o driver Hana 32 bits.
+
+### **9. Usuário Administrador – IIS**
+Durante o acesso para instalação do CRM One, o responsável que acompanhará o acesso deverá possuir os dados de um usuário administrador do local/AD para que possamos vincular aos pools do IIS.
+
+### **10. B1SiteUser**
+Durante o acesso para instalação do CRM One, o responsável que acompanhará o acesso também deverá possuir os dados do B1SiteUser para que possamos conectar no Servertools.
+
+### **11. Usuário TS**
+O usuário que estiver logado no servidor WEB deverá possuir permissões a nível de **ADMINISTRADOR** para instalação dos módulos e afins.
+
+### **12. Usuário - banco de dados**
+Durante o acesso para instalação do CRM One, o responsável que acompanhará o acesso deverá conter a senha do usuário Administrador do banco de dados.
+
+### **13. Dados de envio (SMTP-Serviço de e-mail)**
+É importante que sejam disponibilizados os seguintes dados:
+- **Usuário:**
+- **Senha:**
+- **SMTP:**
+- **Porta:**
+
+Caso haja dúvida, por favor, ler a documentação: https://www.dwu.com.br/manuais/motor-de-e-mails/configuracao-e-uso-do-servico-de-envio-de-emails/
+
+---
+
+## **Suporte**
+Em caso de dúvidas, seguem dados para contatar com o suporte:
+- **Telefone de suporte:** (51) 3023.8393
+- **E-mail:** suporte@dwu.com.br
+- **Portal de suporte:** www.dwu.com.br/suporte
+
+---
+
+**DWU IT Solutions** - www.dwu.com.br`,
     campos: JSON.stringify([
-      { id: "empresa", label: "Nome da Empresa", tipo: "text", obrigatorio: true },
-      { id: "cnpj", label: "CNPJ", tipo: "text", obrigatorio: true },
-      { id: "contato", label: "Pessoa de Contato", tipo: "text", obrigatorio: true },
-      { id: "email", label: "Email", tipo: "email", obrigatorio: true },
-      { id: "telefone", label: "Telefone", tipo: "tel", obrigatorio: false }
+      // Informações de Licença
+      { id: "hardware_key", label: "Chave de Hardware (Hardware Key)", tipo: "text", obrigatorio: true },
+      { id: "install_number", label: "Número de Instalação (Install Number)", tipo: "text", obrigatorio: true },
+      { id: "system_number", label: "Número do Sistema (System Number)", tipo: "text", obrigatorio: true },
+      { id: "nome_base_producao", label: "Nome da Base de Dados de Produção", tipo: "text", obrigatorio: true },
+      { id: "nome_base_teste", label: "Nome da Base de Dados de Teste/Homologação", tipo: "text", obrigatorio: true },
+
+      // Configurações de Servidor
+      { id: "servidor_web_ip", label: "IP do Servidor Web", tipo: "text", obrigatorio: true },
+      { id: "possui_hana", label: "Possui Hana?", tipo: "select", options: ["Sim", "Não"], obrigatorio: true },
+      { id: "versao_sap", label: "Versão do SAP", tipo: "text", obrigatorio: false },
+
+      // Usuários e Acessos
+      { id: "usuario_administrador_local", label: "Usuário Administrador Local/AD", tipo: "text", obrigatorio: true },
+      { id: "b1site_user", label: "B1SiteUser", tipo: "text", obrigatorio: true },
+      { id: "usuario_admin_bd", label: "Senha do Administrador do Banco de Dados", tipo: "password", obrigatorio: true },
+
+      // Configurações SMTP
+      { id: "smtp_usuario", label: "Usuário SMTP", tipo: "text", obrigatorio: true },
+      { id: "smtp_servidor", label: "Servidor SMTP", tipo: "text", obrigatorio: true },
+      { id: "smtp_porta", label: "Porta SMTP", tipo: "text", obrigatorio: true },
+
+      // Informações Adicionais
+      { id: "observacoes_infraestrutura", label: "Observações de Infraestrutura", tipo: "textarea", obrigatorio: false },
+      { id: "data_instalacao_desejada", label: "Data de Instalação Desejada", tipo: "date", obrigatorio: false },
+      { id: "responsavel_tecnico", label: "Responsável Técnico", tipo: "text", obrigatorio: false },
+      { id: "telefone_responsavel", label: "Telefone do Responsável Técnico", tipo: "tel", obrigatorio: false }
     ], null, 2),
     dataExpiracao: ""
   });
@@ -65,13 +168,108 @@ export default function FormulariosCliente() {
         descricao: "",
         codCliente: "",
         nomeCliente: "",
-        premissas: "",
+        premissas: `# **Premissas de instalação CRM One**
+
+## **Introdução**
+Este documento tem como objetivo apontar as premissas necessárias para a instalação do CRM One no ambiente.
+
+---
+
+## **Lista de premissas:**
+
+### **1. Informações de Licença**
+Por favor, forneça as seguintes informações para que possamos gerar a licença do CRM One:
+*(As informações devem ser fornecidas no formato de texto)*
+
+- **Chave de Hardware (Hardware Key)**
+- **Número de Instalação (Install Number)**  
+- **Número do Sistema (System Number)**
+- **Nome da base de dados de produção**
+- **Nome da base de dados de teste/homologação**
+
+**Nota Importante:** Após a instalação do CRM One, não será possível renomear o nome das bases de dados.
+
+### **2. Instalação do Add-on do CRM One**
+Instale e execute o add-on do CRM One, tanto na base PRD quanto na TST.
+
+### **3. DI-Server** 
+O serviço deve ser instalado no servidor onde ficará o IIS (Servidor WEB)
+
+### **4. Licenças DI-Server**
+Importar no mínimo 10 licenças para a DI Server. Lembrando que as licenças devem ser importadas dentro do SAP.
+
+### **5. Usuário SAP (CRM One)**
+Deverá ser criado, dentro do SAP, um usuário com as seguintes características:
+- **Nome:** CRMOne
+- **E-mail:** CRMOne  
+- **Senha:** SAPB1Admin
+
+**Observação:** Esse usuário não precisará possuir nenhum tipo de licença ou cadastro de colaborador/vendedor vinculado ao cadastro de usuário. Todavia, é necessário que ele esteja de acordo com as características informadas anteriormente, seguindo exatamente os dados indicados.
+
+### **6. Acesso à internet**
+O servidor WEB terá permissões de acesso externo à internet para utilizar recursos online, como validação de licença, busca de dados de CNPJ, busca de dados de CEP, consulta a APIs externas e downloads de atualizações e outras aplicações necessárias online.
+
+### **7. Liberação de portas (serviços e acessos externos)**
+Deverá ser solicitado ao time de Infraestrutura a liberação das seguintes portas:
+- **8099:** Portal web - Produção
+- **8098:** Portal web - Teste/Homologação
+- **8052:** API Service – Produção  
+- **8053:** API Service - Homologação
+
+### **8. Driver Hana 32 bits**
+Em ambientes que operam em Hana, deve ser instalado no servidor WEB, o driver Hana 32 bits.
+
+### **9. Usuário Administrador – IIS**
+Durante o acesso para instalação do CRM One, o responsável que acompanhará o acesso deverá possuir os dados de um usuário administrador do local/AD para que possamos vincular aos pools do IIS.
+
+### **10. B1SiteUser**
+Durante o acesso para instalação do CRM One, o responsável que acompanhará o acesso também deverá possuir os dados do B1SiteUser para que possamos conectar no Servertools.
+
+### **11. Usuário TS**
+O usuário que estiver logado no servidor WEB deverá possuir permissões a nível de **ADMINISTRADOR** para instalação dos módulos e afins.
+
+### **12. Usuário - banco de dados**
+Durante o acesso para instalação do CRM One, o responsável que acompanhará o acesso deverá conter a senha do usuário Administrador do banco de dados.
+
+### **13. Dados de envio (SMTP-Serviço de e-mail)**
+É importante que sejam disponibilizados os seguintes dados:
+- **Usuário:**
+- **Senha:**
+- **SMTP:**
+- **Porta:**
+
+Caso haja dúvida, por favor, ler a documentação: https://www.dwu.com.br/manuais/motor-de-e-mails/configuracao-e-uso-do-servico-de-envio-de-emails/
+
+---
+
+## **Suporte**
+Em caso de dúvidas, seguem dados para contatar com o suporte:
+- **Telefone de suporte:** (51) 3023.8393
+- **E-mail:** suporte@dwu.com.br
+- **Portal de suporte:** www.dwu.com.br/suporte
+
+---
+
+**DWU IT Solutions** - www.dwu.com.br`,
         campos: JSON.stringify([
-          { id: "empresa", label: "Nome da Empresa", tipo: "text", obrigatorio: true },
-          { id: "cnpj", label: "CNPJ", tipo: "text", obrigatorio: true },
-          { id: "contato", label: "Pessoa de Contato", tipo: "text", obrigatorio: true },
-          { id: "email", label: "Email", tipo: "email", obrigatorio: true },
-          { id: "telefone", label: "Telefone", tipo: "tel", obrigatorio: false }
+          { id: "hardware_key", label: "Chave de Hardware (Hardware Key)", tipo: "text", obrigatorio: true },
+          { id: "install_number", label: "Número de Instalação (Install Number)", tipo: "text", obrigatorio: true },
+          { id: "system_number", label: "Número do Sistema (System Number)", tipo: "text", obrigatorio: true },
+          { id: "nome_base_producao", label: "Nome da Base de Dados de Produção", tipo: "text", obrigatorio: true },
+          { id: "nome_base_teste", label: "Nome da Base de Dados de Teste/Homologação", tipo: "text", obrigatorio: true },
+          { id: "servidor_web_ip", label: "IP do Servidor Web", tipo: "text", obrigatorio: true },
+          { id: "possui_hana", label: "Possui Hana?", tipo: "select", options: ["Sim", "Não"], obrigatorio: true },
+          { id: "versao_sap", label: "Versão do SAP", tipo: "text", obrigatorio: false },
+          { id: "usuario_administrador_local", label: "Usuário Administrador Local/AD", tipo: "text", obrigatorio: true },
+          { id: "b1site_user", label: "B1SiteUser", tipo: "text", obrigatorio: true },
+          { id: "usuario_admin_bd", label: "Senha do Administrador do Banco de Dados", tipo: "password", obrigatorio: true },
+          { id: "smtp_usuario", label: "Usuário SMTP", tipo: "text", obrigatorio: true },
+          { id: "smtp_servidor", label: "Servidor SMTP", tipo: "text", obrigatorio: true },
+          { id: "smtp_porta", label: "Porta SMTP", tipo: "text", obrigatorio: true },
+          { id: "observacoes_infraestrutura", label: "Observações de Infraestrutura", tipo: "textarea", obrigatorio: false },
+          { id: "data_instalacao_desejada", label: "Data de Instalação Desejada", tipo: "date", obrigatorio: false },
+          { id: "responsavel_tecnico", label: "Responsável Técnico", tipo: "text", obrigatorio: false },
+          { id: "telefone_responsavel", label: "Telefone do Responsável Técnico", tipo: "tel", obrigatorio: false }
         ], null, 2),
         dataExpiracao: ""
       });
@@ -110,12 +308,12 @@ export default function FormulariosCliente() {
     try {
       // Validar JSON dos campos
       JSON.parse(newForm.campos);
-      
+
       const formData = {
         ...newForm,
         dataExpiracao: newForm.dataExpiracao ? new Date(newForm.dataExpiracao) : null
       };
-      
+
       createMutation.mutate(formData);
     } catch (error) {
       toast({
@@ -371,7 +569,7 @@ export default function FormulariosCliente() {
                           </p>
                         </div>
                       </div>
-                      
+
                       {formulario.dataExpiracao && (
                         <div>
                           <p className="text-xs font-medium text-slate-700 mb-1">Expira em</p>
@@ -380,7 +578,7 @@ export default function FormulariosCliente() {
                           </p>
                         </div>
                       )}
-                      
+
                       <div>
                         <p className="text-xs font-medium text-slate-700 mb-1">URL Pública</p>
                         <div className="flex items-center space-x-1 bg-gray-50 p-2 rounded border">
@@ -397,7 +595,7 @@ export default function FormulariosCliente() {
                           </Button>
                         </div>
                       </div>
-                      
+
                       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                         <p className="text-xs text-gray-500">
                           Por: {formulario.criadoPor}
