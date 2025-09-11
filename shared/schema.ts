@@ -74,15 +74,15 @@ export const formularioCliente = pgTable("formulario_cliente", {
   id: serial("id").primaryKey(),
   titulo: text("titulo").notNull(),
   descricao: text("descricao"),
-  codCliente: text("cod_cliente").notNull(), // Código do cliente
-  nomeCliente: text("nome_cliente").notNull(), // Nome do cliente
-  premissas: text("premissas"), // JSON com as premissas
-  campos: text("campos").notNull(), // JSON com os campos do formulário
-  status: text("status").notNull().default("pendente"), // pendente, preenchido, expirado
-  urlPublica: text("url_publica").notNull().unique(), // URL única para o cliente
+  codCliente: text("cod_cliente").notNull(),
+  nomeCliente: text("nome_cliente").notNull(),
+  premissas: text("premissas"),
+  campos: text("campos").notNull(),
+  status: text("status").notNull().default("pendente"),
+  urlPublica: text("url_publica").notNull().unique(),
   dataExpiracao: timestamp("data_expiracao"),
-  criadoPor: text("criado_por").notNull(), // Nome do usuário que criou
-  criadoPorId: integer("criado_por_id").notNull(), // ID do usuário que criou
+  criadoPor: text("criado_por").notNull(),
+  criadoPorId: integer("criado_por_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -90,7 +90,7 @@ export const formularioCliente = pgTable("formulario_cliente", {
 export const respostaFormulario = pgTable("resposta_formulario", {
   id: serial("id").primaryKey(),
   formularioId: integer("formulario_id").notNull().references(() => formularioCliente.id, { onDelete: "cascade" }),
-  respostas: text("respostas").notNull(), // JSON com as respostas
+  respostas: text("respostas").notNull(),
   nomeContato: text("nome_contato").notNull(),
   emailContato: text("email_contato").notNull(),
   telefoneContato: text("telefone_contato"),

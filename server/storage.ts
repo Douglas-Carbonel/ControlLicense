@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, formularioCliente, respostaFormulario, type InsertLicense, type InsertActivity, type InsertUser, type InsertMensagemSistema, type License, type User, type Activity, type MensagemSistema, type HardwareLicenseQuery, type InsertFormularioCliente, type InsertRespostaFormulario } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, formularioCliente, respostaFormulario, type InsertLicense, type Activity, type User, type MensagemSistema, type HardwareLicenseQuery, type InsertFormularioCliente, type InsertRespostaFormulario } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 import crypto from "crypto";
 
