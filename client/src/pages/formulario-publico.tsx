@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,9 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 
 export default function FormularioPublico() {
-  const { url } = useParams();
-  const navigate = useNavigate();
+  const [match, params] = useRoute("/formulario-publico/:url");
+  const [location, setLocation] = useLocation();
+  const url = params?.url;
   const { toast } = useToast();
   const [formulario, setFormulario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -133,7 +134,7 @@ export default function FormularioPublico() {
             <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Formulário Não Disponível</h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => navigate("/")} variant="outline">
+            <Button onClick={() => setLocation("/")} variant="outline">
               Voltar ao Início
             </Button>
           </CardContent>
