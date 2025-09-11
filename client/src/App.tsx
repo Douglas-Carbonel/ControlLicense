@@ -51,12 +51,12 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/licenses" component={Licenses} />
         <Route path="/mensagens" component={Mensagens} />
-        <Route path="/formularios-cliente" element={<FormulariosCliente />} />
+        <Route path="/formularios-cliente" component={FormulariosCliente} />
         <Route path="/activity-history" component={ActivityHistory} />
         <Route path="/users" component={UsersPage} />
       </Switch>
       {/* Rota pública para formulários */}
-      <Route path="/formulario/:url" element={<FormularioPublico />} />
+      <Route path="/formulario/:url" component={FormularioPublico} />
     </AppLayout>
   );
 }
