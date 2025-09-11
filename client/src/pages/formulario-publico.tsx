@@ -27,7 +27,7 @@ export default function FormularioPublico() {
     telefoneContato: "",
     empresa: "",
     observacoes: "",
-    respostas: {}
+    respostas: {} as Record<string, string>
   });
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function FormularioPublico() {
 
         // Inicializar respostas vazias
         const campos = JSON.parse(data.campos || "[]");
-        const respostasIniciais = {};
+        const respostasIniciais: Record<string, string> = {};
         campos.forEach((campo: any) => {
           respostasIniciais[campo.id] = "";
         });
@@ -94,9 +94,10 @@ export default function FormularioPublico() {
 
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao enviar formulário. Tente novamente.";
       toast({
         title: "Erro",
-        description: error.message || "Erro ao enviar formulário. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
