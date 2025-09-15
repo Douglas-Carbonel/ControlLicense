@@ -11,8 +11,6 @@ import UsersPage from "@/pages/users";
 import Login from "@/pages/login";
 import AppLayout from "@/components/layout/app-layout";
 import Mensagens from "@/pages/mensagens";
-import FormulariosCliente from "@/pages/formularios-cliente";
-import FormularioPublico from "@/pages/formulario-publico";
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -50,13 +48,10 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/licenses" component={Licenses} />
-        <Route path="/mensagens" component={Mensagens} />
-        <Route path="/formularios-cliente" component={FormulariosCliente} />
-        <Route path="/activity-history" component={ActivityHistory} />
+        <Route path="/activities" component={ActivityHistory} />
         <Route path="/users" component={UsersPage} />
+        <Route path="/mensagens" component={Mensagens} />
       </Switch>
-      {/* Rota pública para formulários */}
-      <Route path="/formulario/:url" component={FormularioPublico} />
     </AppLayout>
   );
 }

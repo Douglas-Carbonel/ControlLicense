@@ -70,37 +70,6 @@ export const mensagemSistema = pgTable("mensagem_sistema", {
   basehardwareIdx: uniqueIndex("idx_mensagem_base_hardware").on(table.base, table.hardwareKey),
 }));
 
-export const formularioCliente = pgTable("formulario_cliente", {
-  id: serial("id").primaryKey(),
-  titulo: text("titulo").notNull(),
-  descricao: text("descricao"),
-  codCliente: text("cod_cliente").notNull(),
-  nomeCliente: text("nome_cliente").notNull(),
-  premissas: text("premissas"),
-  campos: text("campos").notNull(),
-  status: text("status").notNull().default("pendente"),
-  urlPublica: text("url_publica").notNull().unique(),
-  dataExpiracao: timestamp("data_expiracao"),
-  criadoPor: text("criado_por").notNull(),
-  criadoPorId: integer("criado_por_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const respostaFormulario = pgTable("resposta_formulario", {
-  id: serial("id").primaryKey(),
-  formularioId: integer("formulario_id").notNull().references(() => formularioCliente.id, { onDelete: "cascade" }),
-  respostas: text("respostas").notNull(),
-  nomeContato: text("nome_contato").notNull(),
-  emailContato: text("email_contato").notNull(),
-  telefoneContato: text("telefone_contato"),
-  empresa: text("empresa").notNull(),
-  observacoes: text("observacoes"),
-  ipOrigem: text("ip_origem"),
-  userAgent: text("user_agent"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 export const insertLicenseSchema = createInsertSchema(licenses).omit({
   id: true,
   linha: true, // O campo linha será gerado automaticamente
@@ -136,33 +105,6 @@ export const insertMensagemSistemaSchema = createInsertSchema(mensagemSistema).o
   }),
 });
 
-export const insertFormularioClienteSchema = createInsertSchema(formularioCliente).omit({
-  id: true,
-  urlPublica: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  dataExpiracao: z.union([z.string(), z.date()]).optional().transform((val) => {
-    if (typeof val === 'string') {
-      return new Date(val);
-    }
-    return val;
-  }),
-  premissas: z.string().optional(),
-  campos: z.string(),
-});
-
-export const insertRespostaFormularioSchema = createInsertSchema(respostaFormulario).omit({
-  id: true,
-  createdAt: true,
-}).extend({
-  respostas: z.string(),
-  telefoneContato: z.string().optional(),
-  observacoes: z.string().optional(),
-  ipOrigem: z.string().optional(),
-  userAgent: z.string().optional(),
-});
-
 export type License = typeof licenses.$inferSelect;
 export type InsertLicense = z.infer<typeof insertLicenseSchema>;
 export type Activity = typeof activities.$inferSelect;
@@ -171,10 +113,6 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type MensagemSistema = typeof mensagemSistema.$inferSelect;
 export type InsertMensagemSistema = z.infer<typeof insertMensagemSistemaSchema>;
-export type FormularioCliente = typeof formularioCliente.$inferSelect;
-export type InsertFormularioCliente = z.infer<typeof insertFormularioClienteSchema>;
-export type RespostaFormulario = typeof respostaFormulario.$inferSelect;
-export type InsertRespostaFormulario = z.infer<typeof insertRespostaFormularioSchema>;
 
 export const licenseSchema = z.object({
   id: z.number().optional(),
