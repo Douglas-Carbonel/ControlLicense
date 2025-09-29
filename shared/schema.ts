@@ -124,13 +124,13 @@ export const clienteHistorico = pgTable("cliente_historico", {
   solucoes: text("solucoes"), // Soluções aplicadas
   // Campos para anexos
   anexos: text("anexos").array(), // Array de URLs/caminhos dos anexos (prints)
+  // Campos para anexos
+  anexos: text("anexos").array(), // Array de URLs/caminhos dos anexos (prints)
   // Campos para checklist de instalação
   checklistInstalacao: text("checklist_instalacao"), // JSON string do checklist
   // Campos para checklist de atualização
   checklistAtualizacao: text("checklist_atualizacao"), // JSON string do checklist
   // Observações do checklist
-  observacoesChecklist: text("observacoes_checklist"), // Observações específicas do checklista checklist de atualização
-  checklistAtualizacao: text("checklist_atualizacao"), // JSON string do checklist
   observacoesChecklist: text("observacoes_checklist"), // Observações gerais do checklist
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
