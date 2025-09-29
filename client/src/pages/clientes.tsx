@@ -46,11 +46,13 @@ interface Cliente {
   nomeCliente: string;
 }
 
-const TIPOS_ATUALIZACAO = [
+const TIPOS_ACAO = [
+  { value: 'ATUALIZACAO_MOBILE', label: 'Atualização Mobile/App' },
+  { value: 'ATUALIZACAO_PORTAL', label: 'Atualização Portal' },
   { value: 'INSTALACAO', label: 'Instalação' },
-  { value: 'ATUALIZACAO', label: 'Atualização' },
-  { value: 'MANUTENCAO', label: 'Manutenção' },
-  { value: 'ACESSO', label: 'Acesso/Suporte' },
+  { value: 'ACESSO_REMOTO', label: 'Acesso remoto - Padrão' },
+  { value: 'ATENDIMENTO_WHATSAPP', label: 'Atendimento WhatsApp' },
+  { value: 'REUNIAO_CLIENTE', label: 'Reunião com cliente' },
 ];
 
 const STATUS_OPTIONS = [
@@ -61,6 +63,7 @@ const STATUS_OPTIONS = [
 
 export default function Clientes() {
   const [selectedCliente, setSelectedCliente] = useState<string>("");
+  const [clienteSearchTerm, setClienteSearchTerm] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingHistorico, setEditingHistorico] = useState<ClienteHistorico | null>(null);
@@ -76,6 +79,17 @@ export default function Clientes() {
     queryKey: ["/api/clientes/lista"],
     staleTime: 5 * 60 * 1000,
   });
+
+  // Filtrar clientes baseado na busca
+  const filteredClientes = useMemo(() => {
+    if (!clientes) return [];
+    if (!clienteSearchTerm) return clientes;
+
+    return clientes.filter((cliente: Cliente) => 
+      cliente.code.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
+      cliente.nomeCliente.toLowerCase().includes(clienteSearchTerm.toLowerCase())
+    );
+  }, [clientes, clienteSearchTerm]);
 
   // Buscar histórico do cliente selecionado
   const { data: historico, isLoading, error, refetch } = useQuery({
@@ -287,8 +301,8 @@ export default function Clientes() {
     }
   };
 
-  const getTipoAtualizacaoLabel = (tipo: string) => {
-    const tipoObj = TIPOS_ATUALIZACAO.find(t => t.value === tipo);
+  const getTipoAcaoLabel = (tipo: string) => {
+    const tipoObj = TIPOS_ACAO.find(t => t.value === tipo);
     return tipoObj?.label || tipo;
   };
 
@@ -300,7 +314,7 @@ export default function Clientes() {
       ambiente: initialData?.ambiente || "",
       versaoInstalada: initialData?.versaoInstalada || "",
       versaoAnterior: initialData?.versaoAnterior || "",
-      tipoAtualizacao: initialData?.tipoAtualizacao || "ATUALIZACAO",
+      tipoAtualizacao: initialData?.tipoAtualizacao || "ATUALIZACAO_MOBILE",
       observacoes: initialData?.observacoes || "",
       responsavel: initialData?.responsavel || "",
       dataUltimoAcesso: initialData?.dataUltimoAcesso || "",
@@ -343,7 +357,7 @@ export default function Clientes() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o cliente" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px]">
                     {clientes?.map((cliente: Cliente) => (
                       <SelectItem key={cliente.code} value={cliente.code}>
                         {cliente.code} - {cliente.nomeCliente}
@@ -373,7 +387,7 @@ export default function Clientes() {
               </div>
 
               <div>
-                <Label htmlFor="tipoAtualizacao">Tipo de Atualização</Label>
+                <Label htmlFor="tipoAtualizacao">Tipo de Ação</Label>
                 <Select
                   value={formData.tipoAtualizacao}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, tipoAtualizacao: value }))}
@@ -382,7 +396,7 @@ export default function Clientes() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TIPOS_ATUALIZACAO.map((tipo) => (
+                    {TIPOS_ACAO.map((tipo) => (
                       <SelectItem key={tipo.value} value={tipo.value}>
                         {tipo.label}
                       </SelectItem>
@@ -545,21 +559,48 @@ export default function Clientes() {
           <CardTitle className="text-lg font-semibold text-slate-800">Selecionar Cliente</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um cliente para ver seu histórico" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes?.map((cliente: Cliente) => (
-                    <SelectItem key={cliente.code} value={cliente.code}>
-                      {cliente.code} - {cliente.nomeCliente}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <Label htmlFor="clienteSearch" className="text-sm font-medium text-slate-700 mb-2 block">
+                  Buscar Cliente
+                </Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="clienteSearch"
+                    placeholder="Digite o código ou nome do cliente..."
+                    value={clienteSearchTerm}
+                    onChange={(e) => setClienteSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
             </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <Label htmlFor="clienteSelect" className="text-sm font-medium text-slate-700 mb-2 block">
+                  Selecionar Cliente
+                </Label>
+                <Select value={selectedCliente} onValueChange={setSelectedCliente}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione um cliente para ver seu histórico" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {filteredClientes?.map((cliente: Cliente) => (
+                      <SelectItem key={cliente.code} value={cliente.code}>
+                        {cliente.code} - {cliente.nomeCliente}
+                      </SelectItem>
+                    ))}
+                    {filteredClientes?.length === 0 && (
+                      <div className="p-2 text-sm text-gray-500 text-center">
+                        Nenhum cliente encontrado
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             {selectedCliente && (
               <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogTrigger asChild>
@@ -579,6 +620,7 @@ export default function Clientes() {
                 </DialogContent>
               </Dialog>
             )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -620,7 +662,7 @@ export default function Clientes() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos Tipos</SelectItem>
-                    {TIPOS_ATUALIZACAO.map((tipo) => (
+                    {TIPOS_ACAO.map((tipo) => (
                       <SelectItem key={tipo.value} value={tipo.value}>
                         {tipo.label}
                       </SelectItem>
@@ -653,7 +695,7 @@ export default function Clientes() {
                             {getStatusIcon(item.statusAtual)}
                             <div>
                               <h3 className="font-semibold text-slate-800">
-                                {getTipoAtualizacaoLabel(item.tipoAtualizacao)}
+                                {getTipoAcaoLabel(item.tipoAtualizacao)}
                                 {item.ambiente && ` - ${item.ambiente}`}
                               </h3>
                               <div className="flex items-center space-x-4 text-sm text-gray-600">

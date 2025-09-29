@@ -113,7 +113,7 @@ export const clienteHistorico = pgTable("cliente_historico", {
   ambiente: text("ambiente"), // Nome do banco/ambiente atualizado
   versaoInstalada: text("versao_instalada"), // Versão que foi instalada
   versaoAnterior: text("versao_anterior"), // Versão que estava antes
-  tipoAtualizacao: text("tipo_atualizacao").notNull(), // 'INSTALACAO', 'ATUALIZACAO', 'MANUTENCAO', 'ACESSO'
+  tipoAtualizacao: text("tipo_atualizacao").notNull(), // 'ATUALIZACAO_MOBILE', 'ATUALIZACAO_PORTAL', 'INSTALACAO', 'ACESSO_REMOTO', 'ATENDIMENTO_WHATSAPP', 'REUNIAO_CLIENTE'
   observacoes: text("observacoes"), // Observações detalhadas
   responsavel: text("responsavel").notNull(), // Quem fez a atualização/acesso
   dataUltimoAcesso: timestamp("data_ultimo_acesso"), // Último acesso ao sistema
