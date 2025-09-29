@@ -874,13 +874,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "codigoCliente é obrigatório" });
       }
       
+      console.log(`Fetching historico for cliente: ${codigoCliente}`);
       const historico = await storage.getClienteHistorico(codigoCliente);
       
       // Garantir que sempre enviamos um array
       const result = Array.isArray(historico) ? historico : [];
       console.log(`Cliente histórico for ${codigoCliente}:`, result.length, 'records found');
+      console.log(`Sending response:`, result);
       
-      res.json(result);
+      // Fazer o set do header para garantir que é JSON
+      res.setHeader('Content-Type', 'application/json');
+      res.status(200).json(result);
     } catch (error) {
       console.error("Error fetching cliente histórico:", error);
       res.status(500).json({ message: "Failed to fetch cliente histórico" });

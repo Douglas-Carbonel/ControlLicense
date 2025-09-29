@@ -78,12 +78,15 @@ export default function Clientes() {
   });
 
   // Buscar histórico do cliente selecionado
-  const { data: historico, isLoading, error } = useQuery({
+  const { data: historico, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/clientes-historico", selectedCliente],
     queryFn: async () => {
       try {
+        console.log(`Making API request for cliente: ${selectedCliente}`);
         const result = await apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`);
-        console.log("API Response for historico:", result, "Type:", typeof result, "IsArray:", Array.isArray(result));
+        console.log("Raw API Response:", result);
+        console.log("API Response type:", typeof result);
+        console.log("API Response isArray:", Array.isArray(result));
         
         // Verificações múltiplas para garantir que sempre temos um array
         if (result === null || result === undefined) {
@@ -93,6 +96,7 @@ export default function Clientes() {
         
         if (Array.isArray(result)) {
           console.log("Result is array with", result.length, "items");
+          console.log("First item:", result[0]);
           return result;
         }
         
@@ -102,7 +106,13 @@ export default function Clientes() {
           return result.data;
         }
         
-        console.warn("Result is not an array, converting:", result);
+        // Se result for um objeto vazio, retornar array vazio
+        if (typeof result === 'object' && Object.keys(result).length === 0) {
+          console.log("Result is empty object, returning empty array");
+          return [];
+        }
+        
+        console.warn("Result is not an array, type:", typeof result, "value:", result);
         return [];
       } catch (error) {
         console.error("Error in queryFn:", error);
@@ -111,6 +121,7 @@ export default function Clientes() {
     },
     enabled: !!selectedCliente,
     staleTime: 30 * 1000,
+    retry: 1,
   });
 
   // Buscar ambientes do cliente selecionado

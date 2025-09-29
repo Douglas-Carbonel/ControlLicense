@@ -530,9 +530,12 @@ export class DbStorage implements IStorage {
             
             const result = await query.orderBy(desc(clienteHistorico.createdAt));
             console.log(`Resultado da busca: ${result.length} registros encontrados`);
+            console.log(`Dados do resultado:`, JSON.stringify(result, null, 2));
             
             // Garantir que sempre retorna um array
-            return Array.isArray(result) ? result : [];
+            const finalResult = Array.isArray(result) ? result : [];
+            console.log(`Retornando array final:`, finalResult.length, 'items');
+            return finalResult;
         } catch (error) {
             console.error("Erro ao buscar histórico de clientes:", error);
             // Em caso de erro, retornar array vazio em vez de lançar exceção
