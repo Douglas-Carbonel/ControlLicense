@@ -122,6 +122,13 @@ export const clienteHistorico = pgTable("cliente_historico", {
   tempoGasto: integer("tempo_gasto"), // Tempo em minutos
   problemas: text("problemas"), // Problemas encontrados
   solucoes: text("solucoes"), // Soluções aplicadas
+  // Campos para anexos
+  anexos: text("anexos").array(), // Array de URLs/caminhos dos anexos (prints)
+  // Campos para checklist de instalação
+  checklistInstalacao: text("checklist_instalacao"), // JSON string do checklist
+  // Campos para checklist de atualização
+  checklistAtualizacao: text("checklist_atualizacao"), // JSON string do checklist
+  observacoesChecklist: text("observacoes_checklist"), // Observações gerais do checklist
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -146,6 +153,10 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
     }
     return val;
   }),
+  anexos: z.array(z.string()).optional().nullable(),
+  checklistInstalacao: z.string().optional().nullable(),
+  checklistAtualizacao: z.string().optional().nullable(),
+  observacoesChecklist: z.string().optional().nullable(),
 });
 
 export type License = typeof licenses.$inferSelect;
