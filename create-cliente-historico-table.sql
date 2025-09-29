@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS cliente_historico (
     tempo_gasto INTEGER,
     problemas TEXT,
     solucoes TEXT,
+    anexos TEXT[], -- Array de URLs/caminhos dos anexos
+    checklist_instalacao TEXT, -- JSON string do checklist de instalação
+    checklist_atualizacao TEXT, -- JSON string do checklist de atualização
+    observacoes_checklist TEXT, -- Observações específicas do checklist
     created_at TIMESTAMP DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
@@ -29,6 +33,9 @@ CREATE INDEX IF NOT EXISTS idx_cliente_historico_created ON cliente_historico(cr
 -- Comentários da tabela
 COMMENT ON TABLE cliente_historico IS 'Histórico de atualizações, acessos e suporte aos clientes';
 COMMENT ON COLUMN cliente_historico.codigo_cliente IS 'Código do cliente (referência ao licenses.code)';
-COMMENT ON COLUMN cliente_historico.tipo_atualizacao IS 'Tipo: INSTALACAO, ATUALIZACAO, MANUTENCAO, ACESSO';
+COMMENT ON COLUMN cliente_historico.tipo_atualizacao IS 'Tipo: INSTALACAO, ATUALIZACAO_MOBILE, ATUALIZACAO_PORTAL, ACESSO_REMOTO, ATENDIMENTO_WHATSAPP, REUNIAO_CLIENTE';
 COMMENT ON COLUMN cliente_historico.status_atual IS 'Status: EM_ANDAMENTO, CONCLUIDO, PENDENTE';
 COMMENT ON COLUMN cliente_historico.tempo_gasto IS 'Tempo gasto em minutos';
+COMMENT ON COLUMN cliente_historico.anexos IS 'Array de URLs/links para prints e documentos';
+COMMENT ON COLUMN cliente_historico.checklist_instalacao IS 'JSON com checklist de instalação';
+COMMENT ON COLUMN cliente_historico.checklist_atualizacao IS 'JSON com checklist de atualização';
