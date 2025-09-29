@@ -81,10 +81,33 @@ export default function Clientes() {
   const { data: historico, isLoading, error } = useQuery({
     queryKey: ["/api/clientes-historico", selectedCliente],
     queryFn: async () => {
-      const result = await apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`);
-      console.log("API Response for historico:", result);
-      // Garantir que sempre retorna um array
-      return Array.isArray(result) ? result : [];
+      try {
+        const result = await apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`);
+        console.log("API Response for historico:", result, "Type:", typeof result, "IsArray:", Array.isArray(result));
+        
+        // Verificações múltiplas para garantir que sempre temos um array
+        if (result === null || result === undefined) {
+          console.log("Result is null/undefined, returning empty array");
+          return [];
+        }
+        
+        if (Array.isArray(result)) {
+          console.log("Result is array with", result.length, "items");
+          return result;
+        }
+        
+        // Se não for array, tentar extrair dados se for um wrapper
+        if (typeof result === 'object' && result.data && Array.isArray(result.data)) {
+          console.log("Result has data property, extracting array");
+          return result.data;
+        }
+        
+        console.warn("Result is not an array, converting:", result);
+        return [];
+      } catch (error) {
+        console.error("Error in queryFn:", error);
+        return [];
+      }
     },
     enabled: !!selectedCliente,
     staleTime: 30 * 1000,
@@ -106,6 +129,7 @@ export default function Clientes() {
       length: historico?.length 
     });
     
+    // Verificações múltiplas de segurança
     if (!historico) {
       console.log("No historico data");
       return [];
@@ -116,20 +140,35 @@ export default function Clientes() {
       return [];
     }
 
-    const filtered = historico.filter((item: ClienteHistorico) => {
-      const matchesStatus = filterStatus === "all" || item.statusAtual === filterStatus;
-      const matchesTipo = filterTipo === "all" || item.tipoAtualizacao === filterTipo;
-      const matchesSearch = !searchTerm || 
-        item.ambiente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.versaoInstalada?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.observacoes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.responsavel.toLowerCase().includes(searchTerm.toLowerCase());
+    if (historico.length === 0) {
+      console.log("Historico is empty array");
+      return [];
+    }
 
-      return matchesStatus && matchesTipo && matchesSearch;
-    });
+    try {
+      const filtered = historico.filter((item: ClienteHistorico) => {
+        if (!item || typeof item !== 'object') {
+          console.warn("Invalid item in historico:", item);
+          return false;
+        }
+        
+        const matchesStatus = filterStatus === "all" || item.statusAtual === filterStatus;
+        const matchesTipo = filterTipo === "all" || item.tipoAtualizacao === filterTipo;
+        const matchesSearch = !searchTerm || 
+          item.ambiente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.versaoInstalada?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.observacoes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    console.log("Filtered historico result:", filtered.length, "items");
-    return filtered;
+        return matchesStatus && matchesTipo && matchesSearch;
+      });
+
+      console.log("Filtered historico result:", filtered.length, "items");
+      return filtered;
+    } catch (error) {
+      console.error("Error filtering historico:", error);
+      return [];
+    }
   }, [historico, filterStatus, filterTipo, searchTerm]);
 
   // Mutations

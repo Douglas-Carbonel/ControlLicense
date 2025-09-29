@@ -520,16 +520,23 @@ export class DbStorage implements IStorage {
     // Cliente Histórico methods
     async getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]> {
         try {
+            console.log(`Buscando histórico para cliente: ${codigoCliente}`);
+            
             let query = db.select().from(clienteHistorico);
             
             if (codigoCliente) {
                 query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente));
             }
             
-            return await query.orderBy(desc(clienteHistorico.createdAt));
+            const result = await query.orderBy(desc(clienteHistorico.createdAt));
+            console.log(`Resultado da busca: ${result.length} registros encontrados`);
+            
+            // Garantir que sempre retorna um array
+            return Array.isArray(result) ? result : [];
         } catch (error) {
             console.error("Erro ao buscar histórico de clientes:", error);
-            throw error;
+            // Em caso de erro, retornar array vazio em vez de lançar exceção
+            return [];
         }
     }
 
