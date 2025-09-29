@@ -66,7 +66,13 @@ function Sidebar() {
           label: "Clientes", 
           icon: Building2,
           description: "Histórico e suporte aos clientes"
-        },</old_str>
+        },
+        { 
+          href: "/activities", 
+          label: "Logs", 
+          icon: Activity,
+          description: "Logs e histórico de ações"
+        }</old_str>
         { 
           href: "/activities", 
           label: "Logs", 
