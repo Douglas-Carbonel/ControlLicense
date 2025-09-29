@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Plus, Edit, Trash2, Clock, AlertTriangle, CheckCircle, XCircle, Calendar as CalendarIcon, User, Database, History, Settings, Filter, Search, Paperclip, Upload, FileImage, CheckSquare } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Clock, AlertTriangle, CheckCircle, XCircle, Calendar as CalendarIcon, User, Database, History, Filter, Search, Paperclip, Upload, FileImage, CheckSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -1000,64 +1001,54 @@ export default function Clientes() {
         </div>
       </div>
 
-      {/* Seleção de Cliente - Layout Melhorado */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-md">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-bold text-slate-800 flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Search className="w-5 h-5 text-blue-600" />
-            </div>
+      {/* Seleção de Cliente */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Building2 className="w-5 h-5" />
             <span>Selecionar Cliente</span>
           </CardTitle>
-          <p className="text-sm text-slate-600 mt-1">
-            Busque e selecione um cliente para visualizar e gerenciar seu histórico de atualizações
+          <p className="text-sm text-slate-600">
+            Selecione um cliente para visualizar e gerenciar seu histórico
           </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Busca Aprimorada */}
+            {/* Busca */}
             <div className="space-y-2">
-              <Label htmlFor="clienteSearch" className="text-sm font-semibold text-slate-700">
-                🔍 Buscar Cliente
+              <Label htmlFor="clienteSearch" className="text-sm font-medium text-slate-700">
+                Buscar Cliente
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   id="clienteSearch"
-                  placeholder="Digite o código (ex: C001) ou nome do cliente..."
+                  placeholder="Digite o código ou nome do cliente..."
                   value={clienteSearchTerm}
                   onChange={(e) => setClienteSearchTerm(e.target.value)}
-                  className="pl-11 pr-4 py-3 border-blue-200 focus:border-blue-400 focus:ring-blue-400 bg-white shadow-sm text-base"
+                  className="pl-10 pr-4"
                 />
-                {clienteSearchTerm && (
-                  <button
-                    onClick={() => setClienteSearchTerm("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <XCircle className="w-4 h-4" />
-                  </button>
-                )}
               </div>
               {clienteSearchTerm && (
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-slate-600">
                   {filteredClientes?.length || 0} cliente(s) encontrado(s)
                 </p>
               )}
             </div>
             
-            {/* Seletor Melhorado */}
+            {/* Seletor de Cliente */}
             <div className="space-y-2">
-              <Label htmlFor="clienteSelect" className="text-sm font-semibold text-slate-700">
-                📋 Cliente Selecionado
+              <Label htmlFor="clienteSelect" className="text-sm font-medium text-slate-700">
+                Cliente Selecionado
               </Label>
               <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                <SelectTrigger className="w-full py-3 border-blue-200 focus:border-blue-400 focus:ring-blue-400 bg-white shadow-sm">
-                  <SelectValue placeholder="👆 Selecione um cliente da lista abaixo" />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um cliente da lista" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px] bg-white border-blue-200 shadow-lg">
+                <SelectContent className="max-h-[300px]">
                   {filteredClientes?.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">
-                      <Database className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <Database className="w-6 h-6 mx-auto mb-2 text-gray-300" />
                       <p className="text-sm">Nenhum cliente encontrado</p>
                       {clienteSearchTerm && (
                         <p className="text-xs text-gray-400 mt-1">
@@ -1070,17 +1061,11 @@ export default function Clientes() {
                       <SelectItem 
                         key={cliente.code} 
                         value={cliente.code}
-                        className="py-3 cursor-pointer hover:bg-blue-50"
                       >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-bold text-blue-600">
-                              {cliente.code.substring(0, 2)}
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-slate-800">{cliente.code}</div>
-                            <div className="text-sm text-slate-600">{cliente.nomeCliente}</div>
+                        <div className="flex items-center space-x-2">
+                          <div>
+                            <div className="font-medium">{cliente.code}</div>
+                            <div className="text-sm text-gray-600">{cliente.nomeCliente}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1090,25 +1075,22 @@ export default function Clientes() {
               </Select>
             </div>
 
-            {/* Cliente Selecionado - Info Card */}
+            {/* Cliente Selecionado */}
             {selectedCliente && (
-              <div className="mt-4 p-4 bg-white border border-blue-200 rounded-lg shadow-sm">
+              <div className="mt-4 p-4 bg-slate-50 border rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-white" />
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Building2 className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-800">
+                      <h3 className="font-medium text-slate-800">
                         {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : ""}
                       </h3>
                       <p className="text-sm text-slate-600">Código: {selectedCliente}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
-                      ✓ Selecionado
-                    </Badge>
                     <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                       <DialogTrigger asChild>
                         <Button className="flex items-center space-x-2">
@@ -1132,11 +1114,11 @@ export default function Clientes() {
                   <div className="mt-3 flex items-center space-x-4 text-sm text-slate-600">
                     <div className="flex items-center space-x-1">
                       <History className="w-4 h-4" />
-                      <span>{historico.length} registro(s) de histórico</span>
+                      <span>{historico.length} registros</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="w-4 h-4" />
-                      <span>Último acesso: {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}</span>
+                      <span>Último: {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}</span>
                     </div>
                   </div>
                 )}
@@ -1146,169 +1128,267 @@ export default function Clientes() {
         </CardContent>
       </Card>
 
-      {/* Filtros e Histórico */}
+      {/* Histórico do Cliente */}
       {selectedCliente && (
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-semibold text-slate-800">
-                Histórico - {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : ""}
-              </CardTitle>
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Buscar..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos Status</SelectItem>
-                    {STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filterTipo} onValueChange={setFilterTipo}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos Tipos</SelectItem>
-                    {TIPOS_ACAO.map((tipo) => (
-                      <SelectItem key={tipo.value} value={tipo.value}>
-                        {tipo.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <History className="w-5 h-5" />
+                  <span>Histórico do Cliente</span>
+                </CardTitle>
+                <p className="text-sm text-slate-600 mt-1">
+                  {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : ""}
+                </p>
               </div>
+            </div>
+            
+            {/* Filtros */}
+            <div className="flex flex-wrap items-center gap-4 mt-4 p-4 bg-slate-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Filter className="w-4 h-4 text-slate-500" />
+                <span className="text-sm font-medium text-slate-700">Filtros:</span>
+              </div>
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar no histórico..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Status</SelectItem>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={filterTipo} onValueChange={setFilterTipo}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Tipo de Ação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Tipos</SelectItem>
+                  {TIPOS_ACAO.map((tipo) => (
+                    <SelectItem key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {(searchTerm || filterStatus !== "all" || filterTipo !== "all") && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setFilterStatus("all");
+                    setFilterTipo("all");
+                  }}
+                  className="text-slate-600"
+                >
+                  Limpar Filtros
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div key={i} className="h-20 bg-gray-100 rounded animate-pulse"></div>
                 ))}
               </div>
             ) : filteredHistorico?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-12 text-gray-500">
                 <History className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>Nenhum histórico encontrado para este cliente.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum histórico encontrado</h3>
+                <p className="text-sm">
+                  {searchTerm || filterStatus !== "all" || filterTipo !== "all" 
+                    ? "Tente ajustar os filtros para encontrar registros."
+                    : "Este cliente não possui histórico de atendimentos ainda."
+                  }
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredHistorico?.map((item: ClienteHistorico) => (
-                  <Card key={item.id} className="border border-gray-200 hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-3">
-                            {getStatusIcon(item.statusAtual)}
-                            <div>
-                              <h3 className="font-semibold text-slate-800">
-                                {getTipoAcaoLabel(item.tipoAtualizacao)}
-                                {item.ambiente && ` - ${item.ambiente}`}
-                              </h3>
-                              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                <span className="flex items-center space-x-1">
-                                  <User className="w-3 h-3" />
-                                  <span>{item.responsavel}</span>
-                                </span>
-                                <span>{format(new Date(item.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
-                                {item.tempoGasto && (
-                                  <span className="flex items-center space-x-1">
-                                    <Clock className="w-3 h-3" />
-                                    <span>{item.tempoGasto} min</span>
-                                  </span>
+                <div className="text-sm text-slate-600">
+                  Mostrando {filteredHistorico?.length} de {historico?.length || 0} registros
+                </div>
+                
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Tipo de Ação</TableHead>
+                        <TableHead>Ambiente</TableHead>
+                        <TableHead>Responsável</TableHead>
+                        <TableHead>Data/Hora</TableHead>
+                        <TableHead>Tempo</TableHead>
+                        <TableHead>Versão</TableHead>
+                        <TableHead>Detalhes</TableHead>
+                        <TableHead className="w-20">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredHistorico?.map((item: ClienteHistorico) => (
+                        <TableRow key={item.id} className="hover:bg-slate-50">
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              {getStatusIcon(item.statusAtual)}
+                              <div>
+                                {getStatusBadge(item.statusAtual)}
+                                {item.casoCritico && (
+                                  <Badge variant="destructive" className="text-xs ml-1">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Crítico
+                                  </Badge>
                                 )}
                               </div>
                             </div>
-                            {item.casoCritico && (
-                              <Badge variant="destructive" className="flex items-center space-x-1">
-                                <AlertTriangle className="w-3 h-3" />
-                                <span>Crítico</span>
-                              </Badge>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <span className="font-medium text-slate-900">
+                              {getTipoAcaoLabel(item.tipoAtualizacao)}
+                            </span>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <span className="text-slate-700">
+                              {item.ambiente || '-'}
+                            </span>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <User className="w-4 h-4 text-slate-400" />
+                              <span className="text-slate-700">{item.responsavel}</span>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <CalendarIcon className="w-4 h-4 text-slate-400" />
+                              <span className="text-sm">
+                                {format(new Date(item.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                              </span>
+                            </div>
+                          </TableCell>
+                          
+                          <TableCell>
+                            {item.tempoGasto ? (
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-4 h-4 text-slate-400" />
+                                <span className="text-sm">{item.tempoGasto} min</span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">-</span>
                             )}
-                            {getStatusBadge(item.statusAtual)}
-                          </div>
+                          </TableCell>
                           
-                          {(item.versaoAnterior || item.versaoInstalada) && (
-                            <div className="mb-2 text-sm">
-                              <span className="text-gray-600">Versão: </span>
-                              {item.versaoAnterior && <span className="text-red-600">{item.versaoAnterior}</span>}
-                              {item.versaoAnterior && item.versaoInstalada && <span className="mx-2">→</span>}
-                              {item.versaoInstalada && <span className="text-green-600">{item.versaoInstalada}</span>}
+                          <TableCell>
+                            {(item.versaoAnterior || item.versaoInstalada) ? (
+                              <div className="text-sm">
+                                {item.versaoAnterior && <span className="text-red-600">{item.versaoAnterior}</span>}
+                                {item.versaoAnterior && item.versaoInstalada && <span className="mx-1 text-slate-400">→</span>}
+                                {item.versaoInstalada && <span className="text-green-600">{item.versaoInstalada}</span>}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </TableCell>
+                          
+                          <TableCell>
+                            <div className="space-y-1">
+                              {item.observacoes && (
+                                <div className="text-sm">
+                                  <span className="font-medium text-slate-700">Obs:</span>
+                                  <p className="text-slate-600 truncate max-w-xs" title={item.observacoes}>
+                                    {item.observacoes}
+                                  </p>
+                                </div>
+                              )}
+                              {item.problemas && (
+                                <div className="text-sm">
+                                  <span className="font-medium text-red-600">Problemas:</span>
+                                  <p className="text-slate-600 truncate max-w-xs" title={item.problemas}>
+                                    {item.problemas}
+                                  </p>
+                                </div>
+                              )}
+                              {item.solucoes && (
+                                <div className="text-sm">
+                                  <span className="font-medium text-green-600">Soluções:</span>
+                                  <p className="text-slate-600 truncate max-w-xs" title={item.solucoes}>
+                                    {item.solucoes}
+                                  </p>
+                                </div>
+                              )}
+                              {!item.observacoes && !item.problemas && !item.solucoes && (
+                                <span className="text-slate-400">-</span>
+                              )}
                             </div>
-                          )}
+                          </TableCell>
                           
-                          {item.observacoes && (
-                            <p className="text-sm text-gray-700 mb-2">{item.observacoes}</p>
-                          )}
-                          
-                          {item.problemas && (
-                            <div className="mb-2">
-                              <span className="text-sm font-medium text-red-600">Problemas:</span>
-                              <p className="text-sm text-gray-600 mt-1">{item.problemas}</p>
-                            </div>
-                          )}
-                          
-                          {item.solucoes && (
-                            <div>
-                              <span className="text-sm font-medium text-green-600">Soluções:</span>
-                              <p className="text-sm text-gray-600 mt-1">{item.solucoes}</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(item)}
-                            className="p-2 h-8 w-8"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="p-2 h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                                onClick={() => handleEdit(item)}
+                                className="h-8 w-8 p-0"
+                                title="Editar"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Edit className="w-4 h-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. O histórico será removido permanentemente.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(item.id)}>
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                    title="Excluir"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. O histórico será removido permanentemente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(item.id)}>
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
           </CardContent>
