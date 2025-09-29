@@ -881,6 +881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = Array.isArray(historico) ? historico : [];
       console.log(`Cliente histórico for ${codigoCliente}:`, result.length, 'records found');
       console.log(`Sending response:`, result);
+      console.log(`Response stringified:`, JSON.stringify(result));
       
       // Fazer o set do header para garantir que é JSON
       res.setHeader('Content-Type', 'application/json');

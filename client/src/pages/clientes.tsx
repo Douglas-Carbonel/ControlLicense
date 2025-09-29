@@ -83,10 +83,13 @@ export default function Clientes() {
     queryFn: async () => {
       try {
         console.log(`Making API request for cliente: ${selectedCliente}`);
+        console.log(`Full URL: /api/clientes-historico?codigoCliente=${selectedCliente}`);
+        
         const result = await apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`);
         console.log("Raw API Response:", result);
         console.log("API Response type:", typeof result);
         console.log("API Response isArray:", Array.isArray(result));
+        console.log("API Response stringified:", JSON.stringify(result));
         
         // Verificações múltiplas para garantir que sempre temos um array
         if (result === null || result === undefined) {

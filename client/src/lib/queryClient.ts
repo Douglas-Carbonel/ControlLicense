@@ -18,12 +18,12 @@ function isTokenExpiringSoon(token: string): boolean {
     const exp = payload.exp * 1000; // Converter para millisegundos
     const now = Date.now();
     const timeUntilExpiration = exp - now;
-    
+
     // Debug: Log do tempo restante apenas se próximo do vencimento
     if (timeUntilExpiration < 2 * 60 * 60 * 1000) {
       console.log('Token expira em:', Math.round(timeUntilExpiration / 1000 / 60), 'minutos');
     }
-    
+
     // Renovar se expira em menos de 2 horas (mais agressivo)
     return timeUntilExpiration < 2 * 60 * 60 * 1000;
   } catch (error) {
@@ -80,51 +80,56 @@ async function renewTokenIfNeeded() {
   return refreshPromise;
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  let token = localStorage.getItem("token");
-  
-  // Verificar se o token está próximo do vencimento e renovar preventivamente
-  if (token && isTokenExpiringSoon(token)) {
-    const newToken = await renewTokenIfNeeded();
-    if (newToken) {
-      token = newToken;
-    }
+export async function apiRequest(method: string, url: string, data?: any) {
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
-  
-  // Primeira tentativa
-  let res = await fetch(url, {
+
+  const config: RequestInit = {
     method,
-    headers: {
-      ...(data && { "Content-Type": "application/json" }),
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+    headers,
+  };
 
-  // Se got 401, tentar renovar token e repetir
-  if (res.status === 401 && token) {
-    const newToken = await renewTokenIfNeeded();
-    if (newToken) {
-      // Repetir requisição com novo token
-      res = await fetch(url, {
-        method,
-        headers: {
-          ...(data && { "Content-Type": "application/json" }),
-          Authorization: `Bearer ${newToken}`,
-        },
-        body: data ? JSON.stringify(data) : undefined,
-        credentials: "include",
-      });
-    }
+  if (data) {
+    config.body = JSON.stringify(data);
   }
 
-  await throwIfResNotOk(res);
-  return res;
+  console.log(`Making ${method} request to: ${url}`);
+
+  const response = await fetch(url, config);
+
+  if (!response.ok) {
+    console.error(`Request failed: ${response.status} ${response.statusText}`);
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+      return;
+    }
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const contentType = response.headers.get("content-type");
+  console.log(`Response content-type: ${contentType}`);
+
+  if (contentType && contentType.includes("application/json")) {
+    const jsonData = await response.json();
+    console.log(`JSON Response data:`, jsonData);
+    return jsonData;
+  } else {
+    const textData = await response.text();
+    console.log(`Text Response data:`, textData);
+    try {
+      return JSON.parse(textData);
+    } catch (e) {
+      console.warn("Could not parse response as JSON:", textData);
+      return textData;
+    }
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -134,7 +139,7 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     let token = localStorage.getItem("token");
-    
+
     // Debug: verificar se o token existe
     if (!token) {
       console.error('Token não encontrado no localStorage');
@@ -144,7 +149,7 @@ export const getQueryFn: <T>(options: {
       window.location.reload();
       return null;
     }
-    
+
     // Verificar se o token está próximo do vencimento e renovar preventivamente
     if (token && isTokenExpiringSoon(token)) {
       const newToken = await renewTokenIfNeeded();
@@ -152,7 +157,7 @@ export const getQueryFn: <T>(options: {
         token = newToken;
       }
     }
-    
+
     // Primeira tentativa
     let res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
@@ -182,7 +187,7 @@ export const getQueryFn: <T>(options: {
       if (unauthorizedBehavior === "returnNull") {
         return null;
       }
-      
+
       // Recarregar a página para forçar novo login
       window.location.reload();
       return null;
