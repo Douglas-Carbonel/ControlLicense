@@ -869,8 +869,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clientes-historico", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const codigoCliente = req.query.codigoCliente as string;
+      
+      if (!codigoCliente) {
+        return res.status(400).json({ message: "codigoCliente é obrigatório" });
+      }
+      
       const historico = await storage.getClienteHistorico(codigoCliente);
-      res.json(historico);
+      
+      // Garantir que sempre enviamos um array
+      const result = Array.isArray(historico) ? historico : [];
+      console.log(`Cliente histórico for ${codigoCliente}:`, result.length, 'records found');
+      
+      res.json(result);
     } catch (error) {
       console.error("Error fetching cliente histórico:", error);
       res.status(500).json({ message: "Failed to fetch cliente histórico" });

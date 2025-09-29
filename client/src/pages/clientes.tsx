@@ -78,9 +78,14 @@ export default function Clientes() {
   });
 
   // Buscar histórico do cliente selecionado
-  const { data: historico, isLoading } = useQuery({
+  const { data: historico, isLoading, error } = useQuery({
     queryKey: ["/api/clientes-historico", selectedCliente],
-    queryFn: () => apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`),
+    queryFn: async () => {
+      const result = await apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`);
+      console.log("API Response for historico:", result);
+      // Garantir que sempre retorna um array
+      return Array.isArray(result) ? result : [];
+    },
     enabled: !!selectedCliente,
     staleTime: 30 * 1000,
   });
@@ -94,9 +99,24 @@ export default function Clientes() {
 
   // Filtrar histórico
   const filteredHistorico = useMemo(() => {
-    if (!historico || !Array.isArray(historico)) return [];
+    console.log("Filtering historico:", { 
+      historico, 
+      isArray: Array.isArray(historico), 
+      type: typeof historico,
+      length: historico?.length 
+    });
+    
+    if (!historico) {
+      console.log("No historico data");
+      return [];
+    }
+    
+    if (!Array.isArray(historico)) {
+      console.error("Historico is not an array:", historico);
+      return [];
+    }
 
-    return historico.filter((item: ClienteHistorico) => {
+    const filtered = historico.filter((item: ClienteHistorico) => {
       const matchesStatus = filterStatus === "all" || item.statusAtual === filterStatus;
       const matchesTipo = filterTipo === "all" || item.tipoAtualizacao === filterTipo;
       const matchesSearch = !searchTerm || 
@@ -107,6 +127,9 @@ export default function Clientes() {
 
       return matchesStatus && matchesTipo && matchesSearch;
     });
+
+    console.log("Filtered historico result:", filtered.length, "items");
+    return filtered;
   }, [historico, filterStatus, filterTipo, searchTerm]);
 
   // Mutations
