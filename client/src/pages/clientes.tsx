@@ -450,23 +450,61 @@ export default function Clientes() {
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
         <Tabs defaultValue="geral" className="w-full">
-          <TabsList className={`grid w-full ${showChecklistInstalacao || showChecklistAtualizacao ? 'grid-cols-5' : 'grid-cols-4'}`}>
-            <TabsTrigger value="geral">Geral</TabsTrigger>
-            <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
-            <TabsTrigger value="anexos">Anexos</TabsTrigger>
+          <TabsList className={`grid w-full bg-[#f4f4f4] border border-[#e0e0e0] rounded-lg p-1 ${showChecklistInstalacao || showChecklistAtualizacao ? 'grid-cols-5' : 'grid-cols-4'}`}>
+            <TabsTrigger 
+              value="geral" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+            >
+              <User className="h-4 w-4" />
+              Geral
+            </TabsTrigger>
+            <TabsTrigger 
+              value="detalhes" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+            >
+              <Database className="h-4 w-4" />
+              Detalhes
+            </TabsTrigger>
+            <TabsTrigger 
+              value="anexos" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+            >
+              <Paperclip className="h-4 w-4" />
+              Anexos
+            </TabsTrigger>
             {showChecklistInstalacao && (
-              <TabsTrigger value="checklist-instalacao">Checklist Instalação</TabsTrigger>
+              <TabsTrigger 
+                value="checklist-instalacao" 
+                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+              >
+                <CheckSquare className="h-4 w-4" />
+                Checklist Instalação
+              </TabsTrigger>
             )}
             {showChecklistAtualizacao && (
-              <TabsTrigger value="checklist-atualizacao">Checklist Atualização</TabsTrigger>
+              <TabsTrigger 
+                value="checklist-atualizacao" 
+                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+              >
+                <CheckSquare className="h-4 w-4" />
+                Checklist Atualização
+              </TabsTrigger>
             )}
-            <TabsTrigger value="problemas">Problemas</TabsTrigger>
+            <TabsTrigger 
+              value="problemas" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Problemas
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="geral" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <TabsContent value="geral" className="mt-6">
+            <Card className="border border-[#e0e0e0] shadow-sm">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="codigoCliente">Código do Cliente</Label>
+                <Label htmlFor="codigoCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
                 <Select
                   value={formData.codigoCliente}
                   onValueChange={(value) => {
@@ -478,10 +516,10 @@ export default function Clientes() {
                     }));
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
                     <SelectValue placeholder="Selecione o cliente" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
+                  <SelectContent className="max-h-[200px] bg-white border-[#e0e0e0]">
                     {Array.isArray(clientes) ? clientes.map((cliente: Cliente) => (
                       <SelectItem key={cliente.code} value={cliente.code}>
                         {cliente.code} - {cliente.nomeCliente}
@@ -572,26 +610,32 @@ export default function Clientes() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Switch
-                id="casoCritico"
-                checked={formData.casoCritico}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, casoCritico: checked }))}
-              />
-              <Label htmlFor="casoCritico" className="text-sm font-medium">
-                Caso Crítico
-              </Label>
-            </div>
+                  <Switch
+                    id="casoCritico"
+                    checked={formData.casoCritico}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, casoCritico: checked }))}
+                    className="data-[state=checked]:bg-[#0095da]"
+                  />
+                  <Label htmlFor="casoCritico" className="text-sm font-medium text-[#0c151f]">
+                    Caso Crítico
+                  </Label>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="detalhes" className="space-y-4">
+          <TabsContent value="detalhes" className="mt-6">
+            <Card className="border border-[#e0e0e0] shadow-sm">
+              <CardContent className="pt-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="versaoAnterior">Versão Anterior</Label>
+                <Label htmlFor="versaoAnterior" className="text-[#0c151f] font-medium">Versão Anterior</Label>
                 <Input
                   id="versaoAnterior"
                   value={formData.versaoAnterior}
                   onChange={(e) => setFormData(prev => ({ ...prev, versaoAnterior: e.target.value }))}
                   placeholder="Ex: 1.0.0"
+                  className="border-[#e0e0e0] focus:border-[#0095da]"
                 />
               </div>
 
@@ -617,15 +661,18 @@ export default function Clientes() {
             </div>
 
             <div>
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea
-                id="observacoes"
-                value={formData.observacoes}
-                onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                placeholder="Descreva o que foi feito, configurações aplicadas, etc..."
-                rows={4}
-              />
-            </div>
+                  <Label htmlFor="observacoes" className="text-[#0c151f] font-medium">Observações</Label>
+                  <Textarea
+                    id="observacoes"
+                    value={formData.observacoes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                    placeholder="Descreva o que foi feito, configurações aplicadas, etc..."
+                    rows={4}
+                    className="border-[#e0e0e0] focus:border-[#0095da] resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="anexos" className="space-y-4">
@@ -977,11 +1024,20 @@ export default function Clientes() {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={() => isEdit ? setIsEditModalOpen(false) : setIsCreateModalOpen(false)}>
+        <div className="flex justify-end space-x-3 pt-6 border-t border-[#e0e0e0] mt-6">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => isEdit ? setIsEditModalOpen(false) : setIsCreateModalOpen(false)}
+            className="border-[#e0e0e0] text-[#3a3a3c] hover:bg-[#f4f4f4]"
+          >
             Cancelar
           </Button>
-          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+          <Button 
+            type="submit" 
+            disabled={createMutation.isPending || updateMutation.isPending}
+            className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white font-medium shadow-md transition-all duration-200"
+          >
             {isEdit ? "Atualizar" : "Criar"} Histórico
           </Button>
         </div>
@@ -1134,14 +1190,26 @@ export default function Clientes() {
                 
                 <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                   <DialogTrigger asChild>
-                    <Button size="lg" className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
+                    <Button size="lg" className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white shadow-lg hover:shadow-xl transition-all duration-200">
                       <Plus className="w-5 h-5 mr-2" />
                       Novo Histórico
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Criar Novo Histórico</DialogTitle>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gradient-to-br from-[#f4f4f4] via-white to-[#f8f9fa] border border-[#e0e0e0] shadow-xl">
+                    <DialogHeader className="pb-4 border-b border-[#e0e0e0]">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white shadow-md">
+                          <Plus className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <DialogTitle className="text-xl font-bold text-[#0c151f]">
+                            Criar Novo Histórico
+                          </DialogTitle>
+                          <p className="text-sm text-[#3a3a3c] mt-1">
+                            Registre um novo atendimento ou atividade do cliente
+                          </p>
+                        </div>
+                      </div>
                     </DialogHeader>
                     <HistoricoForm
                       ambientes={ambientes}
@@ -1436,9 +1504,21 @@ export default function Clientes() {
 
       {/* Modal de Edição */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Histórico</DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gradient-to-br from-[#f4f4f4] via-white to-[#f8f9fa] border border-[#e0e0e0] shadow-xl">
+          <DialogHeader className="pb-4 border-b border-[#e0e0e0]">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white shadow-md">
+                <Edit className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-[#0c151f]">
+                  Editar Histórico
+                </DialogTitle>
+                <p className="text-sm text-[#3a3a3c] mt-1">
+                  Atualize as informações do histórico de atendimento
+                </p>
+              </div>
+            </div>
           </DialogHeader>
           {editingHistorico && (
             <HistoricoForm
