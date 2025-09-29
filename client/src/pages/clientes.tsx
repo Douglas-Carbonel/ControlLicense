@@ -79,7 +79,8 @@ export default function Clientes() {
 
   // Buscar histórico do cliente selecionado
   const { data: historico, isLoading } = useQuery({
-    queryKey: ["/api/clientes-historico", { codigoCliente: selectedCliente }],
+    queryKey: ["/api/clientes-historico", selectedCliente],
+    queryFn: () => apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`),
     enabled: !!selectedCliente,
     staleTime: 30 * 1000,
   });
