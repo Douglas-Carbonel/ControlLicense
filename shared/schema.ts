@@ -105,6 +105,49 @@ export const insertMensagemSistemaSchema = createInsertSchema(mensagemSistema).o
   }),
 });
 
+// Tabela de histórico de clientes
+export const clienteHistorico = pgTable("cliente_historico", {
+  id: serial("id").primaryKey(),
+  codigoCliente: text("codigo_cliente").notNull(), // Referencia licenses.code
+  nomeCliente: text("nome_cliente").notNull(), // Para facilitar buscas
+  ambiente: text("ambiente"), // Nome do banco/ambiente atualizado
+  versaoInstalada: text("versao_instalada"), // Versão que foi instalada
+  versaoAnterior: text("versao_anterior"), // Versão que estava antes
+  tipoAtualizacao: text("tipo_atualizacao").notNull(), // 'INSTALACAO', 'ATUALIZACAO', 'MANUTENCAO', 'ACESSO'
+  observacoes: text("observacoes"), // Observações detalhadas
+  responsavel: text("responsavel").notNull(), // Quem fez a atualização/acesso
+  dataUltimoAcesso: timestamp("data_ultimo_acesso"), // Último acesso ao sistema
+  casoCritico: boolean("caso_critico").notNull().default(false), // Se é um caso crítico
+  statusAtual: text("status_atual").notNull().default('CONCLUIDO'), // 'EM_ANDAMENTO', 'CONCLUIDO', 'PENDENTE'
+  tempoGasto: integer("tempo_gasto"), // Tempo em minutos
+  problemas: text("problemas"), // Problemas encontrados
+  solucoes: text("solucoes"), // Soluções aplicadas
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  dataUltimoAcesso: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  tempoGasto: z.union([z.string(), z.number()]).optional().transform((val) => {
+    if (!val || val === '') return null;
+    if (typeof val === 'string') {
+      const num = parseInt(val);
+      return isNaN(num) ? null : num;
+    }
+    return val;
+  }),
+});
+
 export type License = typeof licenses.$inferSelect;
 export type InsertLicense = z.infer<typeof insertLicenseSchema>;
 export type Activity = typeof activities.$inferSelect;
@@ -113,6 +156,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type MensagemSistema = typeof mensagemSistema.$inferSelect;
 export type InsertMensagemSistema = z.infer<typeof insertMensagemSistemaSchema>;
+export type ClienteHistorico = typeof clienteHistorico.$inferSelect;
+export type InsertClienteHistorico = z.infer<typeof insertClienteHistoricoSchema>;
 
 export const licenseSchema = z.object({
   id: z.number().optional(),

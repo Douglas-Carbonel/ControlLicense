@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -862,6 +862,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         message: "Erro interno do servidor"
       });
+    }
+  });
+
+  // Cliente Histórico routes (requer autenticação)
+  app.get("/api/clientes-historico", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const codigoCliente = req.query.codigoCliente as string;
+      const historico = await storage.getClienteHistorico(codigoCliente);
+      res.json(historico);
+    } catch (error) {
+      console.error("Error fetching cliente histórico:", error);
+      res.status(500).json({ message: "Failed to fetch cliente histórico" });
+    }
+  });
+
+  app.get("/api/clientes-historico/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const historico = await storage.getClienteHistoricoById(id);
+      if (!historico) {
+        return res.status(404).json({ message: "Histórico not found" });
+      }
+      res.json(historico);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch histórico" });
+    }
+  });
+
+  app.post("/api/clientes-historico", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertClienteHistoricoSchema.parse(req.body);
+      const historico = await storage.createClienteHistorico(validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "CREATE",
+        resourceType: "cliente_historico",
+        resourceId: historico.id,
+        description: `${req.user!.name} criou histórico para cliente ${historico.codigoCliente}`,
+      });
+
+      res.status(201).json(historico);
+    } catch (error) {
+      console.error("Error creating histórico:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create histórico" });
+      }
+    }
+  });
+
+  app.put("/api/clientes-historico/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertClienteHistoricoSchema.partial().parse(req.body);
+      const historico = await storage.updateClienteHistorico(id, validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "UPDATE",
+        resourceType: "cliente_historico",
+        resourceId: historico.id,
+        description: `${req.user!.name} atualizou histórico do cliente ${historico.codigoCliente}`,
+      });
+
+      res.json(historico);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to update histórico" });
+      }
+    }
+  });
+
+  app.delete("/api/clientes-historico/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const historico = await storage.getClienteHistoricoById(id);
+      if (!historico) {
+        return res.status(404).json({ message: "Histórico not found" });
+      }
+
+      await storage.deleteClienteHistorico(id);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "cliente_historico",
+        resourceId: id,
+        description: `${req.user!.name} excluiu histórico do cliente ${historico.codigoCliente}`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete histórico" });
+    }
+  });
+
+  // Rotas auxiliares para clientes
+  app.get("/api/clientes/lista", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const clientes = await storage.getClientesList();
+      res.json(clientes);
+    } catch (error) {
+      console.error("Error fetching clientes list:", error);
+      res.status(500).json({ message: "Failed to fetch clientes" });
+    }
+  });
+
+  app.get("/api/clientes/:codigo/ambientes", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const codigo = req.params.codigo;
+      const ambientes = await storage.getAmbientesByCliente(codigo);
+      res.json(ambientes);
+    } catch (error) {
+      console.error("Error fetching ambientes:", error);
+      res.status(500).json({ message: "Failed to fetch ambientes" });
     }
   });
 

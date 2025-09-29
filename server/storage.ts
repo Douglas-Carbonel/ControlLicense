@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type License, type User, type Activity, type MensagemSistema, type HardwareLicenseQuery } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -56,6 +56,15 @@ export interface IStorage {
   updateMensagem(id: number, data: Partial<InsertMensagemSistema>): Promise<any>;
   deleteMensagem(id: number): Promise<void>;
   getMensagensByHardwareKey(hardwareKey: string): Promise<any>;
+
+  // Cliente Histórico operations
+  getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]>;
+  getClienteHistoricoById(id: number): Promise<ClienteHistorico | undefined>;
+  createClienteHistorico(data: InsertClienteHistorico): Promise<ClienteHistorico>;
+  updateClienteHistorico(id: number, data: Partial<InsertClienteHistorico>): Promise<ClienteHistorico>;
+  deleteClienteHistorico(id: number): Promise<void>;
+  getClientesList(): Promise<{code: string, nomeCliente: string}[]>;
+  getAmbientesByCliente(codigoCliente: string): Promise<string[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -505,6 +514,113 @@ export class DbStorage implements IStorage {
         } catch (error) {
             console.error("Erro ao buscar informações da licença:", error);
             return null;
+        }
+    }
+
+    // Cliente Histórico methods
+    async getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]> {
+        try {
+            let query = db.select().from(clienteHistorico);
+            
+            if (codigoCliente) {
+                query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente));
+            }
+            
+            return await query.orderBy(desc(clienteHistorico.createdAt));
+        } catch (error) {
+            console.error("Erro ao buscar histórico de clientes:", error);
+            throw error;
+        }
+    }
+
+    async getClienteHistoricoById(id: number): Promise<ClienteHistorico | undefined> {
+        try {
+            const result = await db
+                .select()
+                .from(clienteHistorico)
+                .where(eq(clienteHistorico.id, id))
+                .limit(1);
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao buscar histórico por ID:", error);
+            throw error;
+        }
+    }
+
+    async createClienteHistorico(data: InsertClienteHistorico): Promise<ClienteHistorico> {
+        try {
+            const result = await db
+                .insert(clienteHistorico)
+                .values(data)
+                .returning();
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao criar histórico do cliente:", error);
+            throw error;
+        }
+    }
+
+    async updateClienteHistorico(id: number, data: Partial<InsertClienteHistorico>): Promise<ClienteHistorico> {
+        try {
+            const result = await db
+                .update(clienteHistorico)
+                .set({ ...data, updatedAt: new Date() })
+                .where(eq(clienteHistorico.id, id))
+                .returning();
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao atualizar histórico do cliente:", error);
+            throw error;
+        }
+    }
+
+    async deleteClienteHistorico(id: number): Promise<void> {
+        try {
+            await db
+                .delete(clienteHistorico)
+                .where(eq(clienteHistorico.id, id));
+        } catch (error) {
+            console.error("Erro ao deletar histórico do cliente:", error);
+            throw error;
+        }
+    }
+
+    async getClientesList(): Promise<{code: string, nomeCliente: string}[]> {
+        try {
+            const result = await db
+                .selectDistinct({
+                    code: licenses.code,
+                    nomeCliente: licenses.nomeCliente
+                })
+                .from(licenses)
+                .where(and(
+                    not(isNull(licenses.code)),
+                    not(isNull(licenses.nomeCliente))
+                ))
+                .orderBy(asc(licenses.code));
+
+            return result.filter(item => item.code && item.nomeCliente);
+        } catch (error) {
+            console.error("Erro ao buscar lista de clientes:", error);
+            throw error;
+        }
+    }
+
+    async getAmbientesByCliente(codigoCliente: string): Promise<string[]> {
+        try {
+            const result = await db
+                .selectDistinct({ nomeDb: licenses.nomeDb })
+                .from(licenses)
+                .where(and(
+                    eq(licenses.code, codigoCliente),
+                    not(isNull(licenses.nomeDb))
+                ))
+                .orderBy(asc(licenses.nomeDb));
+
+            return result.map(row => row.nomeDb).filter(Boolean) as string[];
+        } catch (error) {
+            console.error("Erro ao buscar ambientes do cliente:", error);
+            throw error;
         }
     }
 }

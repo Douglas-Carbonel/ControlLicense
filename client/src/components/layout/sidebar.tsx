@@ -62,6 +62,12 @@ function Sidebar() {
           description: "Gerenciar mensagens do sistema"
         },
         { 
+          href: "/clientes", 
+          label: "Clientes", 
+          icon: Building2,
+          description: "Histórico e suporte aos clientes"
+        },</old_str>
+        { 
           href: "/activities", 
           label: "Logs", 
           icon: Activity,
