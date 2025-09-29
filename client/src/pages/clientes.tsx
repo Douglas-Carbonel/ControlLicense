@@ -349,11 +349,11 @@ export default function Clientes() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'CONCLUIDO':
-        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Concluído</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 font-medium">Concluído</Badge>;
       case 'EM_ANDAMENTO':
-        return <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200">Em Andamento</Badge>;
+        return <Badge variant="default" className="bg-amber-100 text-amber-800 border-amber-300 font-medium shadow-sm">Em Andamento</Badge>;
       case 'PENDENTE':
-        return <Badge variant="destructive">Pendente</Badge>;
+        return <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300 font-bold shadow-md animate-pulse">⚠️ Pendente</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -1001,127 +1001,165 @@ export default function Clientes() {
         </div>
       </div>
 
-      {/* Seleção de Cliente */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Building2 className="w-5 h-5" />
-            <span>Selecionar Cliente</span>
+      {/* Seleção de Cliente - Layout Modernizado */}
+      <Card className="professional-card">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-800">Gestão de Clientes</h2>
+                <p className="text-sm text-slate-600">Selecione um cliente para visualizar seu histórico</p>
+              </div>
+            </div>
           </CardTitle>
-          <p className="text-sm text-slate-600">
-            Selecione um cliente para visualizar e gerenciar seu histórico
-          </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Busca */}
-            <div className="space-y-2">
-              <Label htmlFor="clienteSearch" className="text-sm font-medium text-slate-700">
-                Buscar Cliente
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="clienteSearch"
-                  placeholder="Digite o código ou nome do cliente..."
-                  value={clienteSearchTerm}
-                  onChange={(e) => setClienteSearchTerm(e.target.value)}
-                  className="pl-10 pr-4"
-                />
-              </div>
-              {clienteSearchTerm && (
-                <p className="text-xs text-slate-600">
-                  {filteredClientes?.length || 0} cliente(s) encontrado(s)
-                </p>
-              )}
-            </div>
-            
-            {/* Seletor de Cliente */}
-            <div className="space-y-2">
-              <Label htmlFor="clienteSelect" className="text-sm font-medium text-slate-700">
-                Cliente Selecionado
-              </Label>
-              <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um cliente da lista" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {filteredClientes?.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      <Database className="w-6 h-6 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">Nenhum cliente encontrado</p>
-                      {clienteSearchTerm && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          Tente alterar o termo de busca
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    filteredClientes?.map((cliente: Cliente) => (
-                      <SelectItem 
-                        key={cliente.code} 
-                        value={cliente.code}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <div>
-                            <div className="font-medium">{cliente.code}</div>
-                            <div className="text-sm text-gray-600">{cliente.nomeCliente}</div>
-                          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Coluna 1 - Busca e Seleção */}
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-slate-700 flex items-center space-x-2">
+                  <Search className="w-4 h-4" />
+                  <span>Buscar e Selecionar Cliente</span>
+                </Label>
+                
+                {/* Campo de Busca Integrado */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                  <Select value={selectedCliente} onValueChange={setSelectedCliente}>
+                    <SelectTrigger className="w-full pl-10 h-12 border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 transition-all duration-200">
+                      <SelectValue placeholder="🔍 Digite para buscar ou selecionar um cliente..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[400px] w-full">
+                      {/* Campo de busca interno */}
+                      <div className="sticky top-0 bg-white p-2 border-b">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <Input
+                            placeholder="Digite o código ou nome do cliente..."
+                            value={clienteSearchTerm}
+                            onChange={(e) => setClienteSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 border-slate-300"
+                          />
                         </div>
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                        {clienteSearchTerm && (
+                          <p className="text-xs text-slate-600 mt-1 pl-2">
+                            {filteredClientes?.length || 0} resultado(s) encontrado(s)
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Lista de Clientes */}
+                      {filteredClientes?.length === 0 ? (
+                        <div className="p-6 text-center text-gray-500">
+                          <Database className="w-8 h-8 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm font-medium">Nenhum cliente encontrado</p>
+                          {clienteSearchTerm && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              Tente alterar o termo de busca
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        filteredClientes?.map((cliente: Cliente) => (
+                          <SelectItem 
+                            key={cliente.code} 
+                            value={cliente.code}
+                            className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50"
+                          >
+                            <div className="flex items-center space-x-3 w-full py-1">
+                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <Building2 className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-semibold text-slate-800">{cliente.code}</div>
+                                <div className="text-sm text-slate-600 truncate">{cliente.nomeCliente}</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
+            {/* Coluna 2 - Cliente Selecionado e Ações */}
+            <div className="space-y-4">
+
             {/* Cliente Selecionado */}
-            {selectedCliente && (
-              <div className="mt-4 p-4 bg-slate-50 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Building2 className="w-4 h-4 text-blue-600" />
+              {selectedCliente && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                      <Building2 className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-slate-800">
+                      <h3 className="font-bold text-slate-800 text-lg">
                         {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : ""}
                       </h3>
-                      <p className="text-sm text-slate-600">Código: {selectedCliente}</p>
+                      <p className="text-sm text-slate-600 font-medium">Código: {selectedCliente}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="flex items-center space-x-2">
-                          <Plus className="w-4 h-4" />
-                          <span>Novo Histórico</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Criar Novo Histórico</DialogTitle>
-                        </DialogHeader>
-                        <HistoricoForm
-                          ambientes={ambientes}
-                          onSubmit={(data: any) => createMutation.mutate(data)}
-                        />
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                  
+                  {historico && historico.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center space-x-2 text-slate-700">
+                        <History className="w-4 h-4 text-blue-600" />
+                        <span className="font-medium">{historico.length} registros</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-slate-700">
+                        <Clock className="w-4 h-4 text-blue-600" />
+                        <span className="font-medium">
+                          {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {historico && historico.length > 0 && (
-                  <div className="mt-3 flex items-center space-x-4 text-sm text-slate-600">
-                    <div className="flex items-center space-x-1">
-                      <History className="w-4 h-4" />
-                      <span>{historico.length} registros</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4" />
-                      <span>Último: {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}</span>
-                    </div>
-                  </div>
-                )}
+              )}
+            </div>
+
+            {/* Ações do Cliente */}
+            {selectedCliente && (
+              <div className="flex flex-col justify-center space-y-4">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Ações Disponíveis</h3>
+                  <p className="text-sm text-slate-600 mb-4">Gerencie o histórico do cliente selecionado</p>
+                </div>
+                
+                <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="lg" className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
+                      <Plus className="w-5 h-5 mr-2" />
+                      Novo Histórico
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Criar Novo Histórico</DialogTitle>
+                    </DialogHeader>
+                    <HistoricoForm
+                      ambientes={ambientes}
+                      onSubmit={(data: any) => createMutation.mutate(data)}
+                    />
+                  </DialogContent>
+                </Dialog>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" className="btn-action">
+                    <Filter className="w-4 h-4 mr-1" />
+                    Filtrar
+                  </Button>
+                  <Button variant="outline" size="sm" className="btn-action">
+                    <Database className="w-4 h-4 mr-1" />
+                    Exportar
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -1352,7 +1390,8 @@ export default function Clientes() {
                                 size="sm"
                                 onClick={() => handleEdit(item)}
                                 className="h-8 w-8 p-0"
-                                title="Editar"
+                                title={item.statusAtual === 'CONCLUIDO' ? "Não é possível editar históricos concluídos" : "Editar"}
+                                disabled={item.statusAtual === 'CONCLUIDO'}
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>

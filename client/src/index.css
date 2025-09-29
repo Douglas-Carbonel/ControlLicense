@@ -522,6 +522,26 @@ body {
   box-shadow: 0 1px 2px hsl(var(--primary) / 0.1);
 }
 
+/* Status badges modernos */
+.status-pendente {
+  @apply animate-pulse;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #f87171;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.status-andamento {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.status-concluido {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
 .license-hardware-key {
   @apply font-mono text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-md border border-outline;
   max-width: 150px;
