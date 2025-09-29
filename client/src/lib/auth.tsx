@@ -165,17 +165,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const response = await apiRequest("POST", "/api/auth/login", {
+    const data = await apiRequest("POST", "/api/auth/login", {
       username,
       password,
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Erro ao fazer login");
-    }
-
-    const data = await response.json();
     
     // Armazenar token e dados do usuário
     localStorage.setItem("token", data.token);
