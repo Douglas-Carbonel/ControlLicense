@@ -72,12 +72,6 @@ function Sidebar() {
           label: "Logs", 
           icon: Activity,
           description: "Logs e histórico de ações"
-        }</old_str>
-        { 
-          href: "/activities", 
-          label: "Logs", 
-          icon: Activity,
-          description: "Logs e histórico de ações"
         }
       );
 
