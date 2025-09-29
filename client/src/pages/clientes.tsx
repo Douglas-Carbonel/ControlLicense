@@ -94,7 +94,7 @@ export default function Clientes() {
 
   // Filtrar histórico
   const filteredHistorico = useMemo(() => {
-    if (!historico) return [];
+    if (!historico || !Array.isArray(historico)) return [];
 
     return historico.filter((item: ClienteHistorico) => {
       const matchesStatus = filterStatus === "all" || item.statusAtual === filterStatus;
