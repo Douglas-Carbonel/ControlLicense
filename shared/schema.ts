@@ -155,7 +155,10 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
     }
     return val;
   }),
-  atendenteSuporteId: z.string().optional().nullable(),
+  atendenteSuporteId: z.string().optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
+    return val;
+  }),
   anexos: z.array(z.string()).optional().nullable(),
   checklistInstalacao: z.string().optional().nullable(),
   checklistAtualizacao: z.string().optional().nullable(),

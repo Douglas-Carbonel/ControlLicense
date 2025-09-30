@@ -31,6 +31,7 @@ interface ClienteHistorico {
   tipoAtualizacao: string;
   observacoes?: string;
   responsavel: string;
+  atendenteSuporteId?: string;
   dataUltimoAcesso?: string;
   casoCritico: boolean;
   statusAtual: string;
@@ -380,6 +381,7 @@ export default function Clientes() {
       tipoAtualizacao: initialData?.tipoAtualizacao || "ATUALIZACAO_MOBILE",
       observacoes: initialData?.observacoes || "",
       responsavel: initialData?.responsavel || "",
+      atendenteSuporteId: initialData?.atendenteSuporteId || "",
       dataUltimoAcesso: initialData?.dataUltimoAcesso || "",
       casoCritico: initialData?.casoCritico || false,
       statusAtual: initialData?.statusAtual || "CONCLUIDO",
@@ -387,8 +389,7 @@ export default function Clientes() {
       problemas: initialData?.problemas || "",
       solucoes: initialData?.solucoes || "",
       anexos: initialData?.anexos || [],
-      observacoesChecklist: initialData?.observacoesChecklist || "",
-      atendenteSuporte: initialData?.atendenteSuporte || "", // Novo campo
+      observacoesChecklist: initialData?.observacoesChecklist || ""
     });
 
     const [checklistInstalacao, setChecklistInstalacao] = useState<ChecklistInstalacao>(() => {
@@ -615,18 +616,18 @@ export default function Clientes() {
                   </div>
 
                   <div>
-                    <Label htmlFor="atendenteSuporte">Atendente Suporte</Label>
+                    <Label htmlFor="atendenteSuporteId">Atendente Suporte</Label>
                     <Select
-                      value={formData.atendenteSuporte}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, atendenteSuporte: value }))}
+                      value={formData.atendenteSuporteId}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, atendenteSuporteId: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o atendente" />
                       </SelectTrigger>
                       <SelectContent>
                         {usuarios?.map((usuario: any) => (
-                          <SelectItem key={usuario.id} value={usuario.id}>
-                            {usuario.nome}
+                          <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                            {usuario.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1352,6 +1353,7 @@ export default function Clientes() {
                         <TableHead>Tipo de Ação</TableHead>
                         <TableHead>Ambiente</TableHead>
                         <TableHead>Responsável</TableHead>
+                        <TableHead>Atendente</TableHead>
                         <TableHead>Data/Hora</TableHead>
                         <TableHead>Tempo</TableHead>
                         <TableHead>Versão</TableHead>
@@ -1394,6 +1396,19 @@ export default function Clientes() {
                               <User className="w-4 h-4 text-slate-400" />
                               <span className="text-slate-700">{item.responsavel}</span>
                             </div>
+                          </TableCell>
+
+                          <TableCell>
+                            {item.atendenteSuporteId ? (
+                              <div className="flex items-center space-x-2">
+                                <User className="w-4 h-4 text-blue-400" />
+                                <span className="text-slate-700">
+                                  {usuarios?.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
                           </TableCell>
 
                           <TableCell>
