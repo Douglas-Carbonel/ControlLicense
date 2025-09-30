@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Plus, Edit, Trash2, Clock, AlertTriangle, CheckCircle, XCircle, Calendar as CalendarIcon, User, Database, History, Filter, Search, Paperclip, Upload, FileImage, CheckSquare } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Clock, AlertTriangle, CheckCircle, XCircle, Calendar as CalendarIcon, User, Database, History, Filter, Search, Paperclip, Upload, FileImage, CheckSquare, Eye, ChevronDown, ChevronUp, ExternalLink, Copy, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -129,6 +129,9 @@ export default function Clientes() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTipo, setFilterTipo] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedHistorico, setSelectedHistorico] = useState<ClienteHistorico | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -369,6 +372,46 @@ export default function Clientes() {
   const getTipoAcaoLabel = (tipo: string) => {
     const tipoObj = TIPOS_ACAO.find(t => t.value === tipo);
     return tipoObj?.label || tipo;
+  };
+
+  const handleViewDetails = (historico: ClienteHistorico) => {
+    setSelectedHistorico(historico);
+    setIsDetailModalOpen(true);
+  };
+
+  const toggleCardExpansion = (historicoId: number) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(historicoId)) {
+      newExpanded.delete(historicoId);
+    } else {
+      newExpanded.add(historicoId);
+    }
+    setExpandedCards(newExpanded);
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copiado!",
+        description: `${label} copiado para a área de transferência.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível copiar para a área de transferência.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatChecklistData = (checklistString: string | null) => {
+    if (!checklistString) return null;
+    try {
+      return JSON.parse(checklistString);
+    } catch {
+      return null;
+    }
   };
 
   // Modal Form Component
@@ -1382,115 +1425,263 @@ export default function Clientes() {
                 </div>
 
                 <div className="space-y-4">
-                  {filteredHistorico?.map((item: ClienteHistorico) => (
-                    <Card key={item.id} className="border border-slate-200 hover:shadow-md transition-shadow duration-200">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          {/* Cabeçalho do Card */}
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                              {getStatusIcon(item.statusAtual)}
-                              {getStatusBadge(item.statusAtual)}
-                              {item.casoCritico && (
-                                <Badge variant="destructive" className="text-xs animate-pulse">
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  Crítico
-                                </Badge>
-                              )}
+                  {filteredHistorico?.map((item: ClienteHistorico) => {
+                    const isExpanded = expandedCards.has(item.id);
+                    return (
+                      <Card key={item.id} className="border border-slate-200 hover:shadow-lg transition-all duration-300 hover:border-blue-300 bg-white">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            {/* Cabeçalho do Card */}
+                            <div className="flex items-center space-x-4 flex-1">
+                              <div className="flex items-center space-x-2">
+                                {getStatusIcon(item.statusAtual)}
+                                {getStatusBadge(item.statusAtual)}
+                                {item.casoCritico && (
+                                  <Badge variant="destructive" className="text-xs animate-pulse">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Crítico
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="h-6 border-l border-slate-300"></div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h3 className="font-semibold text-slate-900 text-lg">
+                                      {getTipoAcaoLabel(item.tipoAtualizacao)}
+                                    </h3>
+                                    <p className="text-sm text-slate-600">
+                                      {format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleViewDetails(item)}
+                                      className="h-8 px-3 hover:bg-blue-50 text-blue-600 hover:text-blue-700"
+                                      title="Ver detalhes completos"
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      Detalhes
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => toggleCardExpansion(item.id)}
+                                      className="h-8 w-8 p-0 hover:bg-slate-50"
+                                      title={isExpanded ? "Recolher" : "Expandir"}
+                                    >
+                                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="h-6 border-l border-slate-300"></div>
-                            <div>
-                              <h3 className="font-semibold text-slate-900 text-lg">
-                                {getTipoAcaoLabel(item.tipoAtualizacao)}
-                              </h3>
-                              <p className="text-sm text-slate-600">
-                                {format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </p>
-                            </div>
-                          </div>
 
-                          {/* Ações */}
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(item)}
-                              className="h-8 w-8 p-0 hover:bg-blue-50"
-                              title={item.statusAtual === 'CONCLUIDO' ? "Não é possível editar históricos concluídos" : "Editar"}
-                              disabled={item.statusAtual === 'CONCLUIDO'}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                                  title="Excluir"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. O histórico será removido permanentemente.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(item.id)}>
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            {/* Ações */}
+                            <div className="flex items-center space-x-2 ml-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(item)}
+                                className="h-8 w-8 p-0 hover:bg-blue-50"
+                                title={item.statusAtual === 'CONCLUIDO' ? "Não é possível editar históricos concluídos" : "Editar"}
+                                disabled={item.statusAtual === 'CONCLUIDO'}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                    title="Excluir"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. O histórico será removido permanentemente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(item.id)}>
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </div>
-                        </div>
 
                         {/* Informações Principais */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                          <div className="flex items-center space-x-2">
-                            <Database className="w-4 h-4 text-slate-400" />
-                            <div>
-                              <p className="text-xs text-slate-500 uppercase font-medium">Ambiente</p>
-                              <p className="text-sm font-medium text-slate-700">{item.ambiente || '-'}</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                            <div className="flex items-center space-x-2">
+                              <Database className="w-4 h-4 text-slate-400" />
+                              <div>
+                                <p className="text-xs text-slate-500 uppercase font-medium">Ambiente</p>
+                                <p className="text-sm font-medium text-slate-700">{item.ambiente || '-'}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <User className="w-4 h-4 text-slate-400" />
+                              <div>
+                                <p className="text-xs text-slate-500 uppercase font-medium">Responsável</p>
+                                <p className="text-sm font-medium text-slate-700">{item.responsavel}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <User className="w-4 h-4 text-blue-400" />
+                              <div>
+                                <p className="text-xs text-slate-500 uppercase font-medium">Atendente</p>
+                                <p className="text-sm font-medium text-slate-700">
+                                  {item.atendenteSuporteId 
+                                    ? usuarios?.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
+                                    : '-'
+                                  }
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-4 h-4 text-slate-400" />
+                              <div>
+                                <p className="text-xs text-slate-500 uppercase font-medium">Tempo Gasto</p>
+                                <p className="text-sm font-medium text-slate-700">
+                                  {item.tempoGasto ? `${item.tempoGasto} min` : '-'}
+                                </p>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center space-x-2">
-                            <User className="w-4 h-4 text-slate-400" />
-                            <div>
-                              <p className="text-xs text-slate-500 uppercase font-medium">Responsável</p>
-                              <p className="text-sm font-medium text-slate-700">{item.responsavel}</p>
-                            </div>
-                          </div>
+                          {/* Seção Expandida */}
+                          {isExpanded && (
+                            <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">
+                              {/* Informações Detalhadas */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {item.dataUltimoAcesso && (
+                                  <div className="flex items-center space-x-2">
+                                    <CalendarIcon className="w-4 h-4 text-slate-400" />
+                                    <div>
+                                      <p className="text-xs text-slate-500 uppercase font-medium">Último Acesso</p>
+                                      <p className="text-sm font-medium text-slate-700">
+                                        {format(new Date(item.dataUltimoAcesso), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
 
-                          <div className="flex items-center space-x-2">
-                            <User className="w-4 h-4 text-blue-400" />
-                            <div>
-                              <p className="text-xs text-slate-500 uppercase font-medium">Atendente</p>
-                              <p className="text-sm font-medium text-slate-700">
-                                {item.atendenteSuporteId 
-                                  ? usuarios?.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
-                                  : '-'
-                                }
-                              </p>
-                            </div>
-                          </div>
+                                {item.numeroChamado && (
+                                  <div className="flex items-center space-x-2">
+                                    <FileImage className="w-4 h-4 text-slate-400" />
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-500 uppercase font-medium">Chamado</p>
+                                      <div className="flex items-center space-x-2">
+                                        <p className="text-sm font-medium text-slate-700 truncate">
+                                          {item.numeroChamado}
+                                        </p>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 hover:bg-slate-100"
+                                          onClick={() => copyToClipboard(item.numeroChamado!, "Número do chamado")}
+                                          title="Copiar"
+                                        >
+                                          <Copy className="w-3 h-3" />
+                                        </Button>
+                                        {item.numeroChamado.startsWith('http') && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 hover:bg-slate-100"
+                                            onClick={() => window.open(item.numeroChamado, '_blank')}
+                                            title="Abrir link"
+                                          >
+                                            <ExternalLink className="w-3 h-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
 
-                          <div className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            <div>
-                              <p className="text-xs text-slate-500 uppercase font-medium">Tempo Gasto</p>
-                              <p className="text-sm font-medium text-slate-700">
-                                {item.tempoGasto ? `${item.tempoGasto} min` : '-'}
-                              </p>
+                              {/* Checklist Preview */}
+                              {(item.checklistInstalacao || item.checklistAtualizacao) && (
+                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  <h4 className="text-sm font-medium text-blue-700 mb-2 flex items-center space-x-2">
+                                    <CheckSquare className="w-4 h-4" />
+                                    <span>Checklist Executado</span>
+                                  </h4>
+                                  <div className="text-sm text-blue-600">
+                                    {item.checklistInstalacao && (
+                                      <span className="inline-block bg-blue-100 px-2 py-1 rounded text-xs mr-2">
+                                        ✅ Checklist de Instalação
+                                      </span>
+                                    )}
+                                    {item.checklistAtualizacao && (
+                                      <span className="inline-block bg-blue-100 px-2 py-1 rounded text-xs">
+                                        ✅ Checklist de Atualização
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Anexos Preview */}
+                              {item.anexos && Array.isArray(item.anexos) && item.anexos.length > 0 && (
+                                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                                  <h4 className="text-sm font-medium text-green-700 mb-2 flex items-center space-x-2">
+                                    <Paperclip className="w-4 h-4" />
+                                    <span>Anexos ({item.anexos.length})</span>
+                                  </h4>
+                                  <div className="space-y-1">
+                                    {item.anexos.slice(0, 2).map((anexo: string, index: number) => (
+                                      <div key={index} className="flex items-center space-x-2 text-sm">
+                                        <FileImage className="w-3 h-3 text-green-600" />
+                                        <span className="text-green-600 truncate flex-1">{anexo}</span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-5 w-5 p-0 hover:bg-green-100"
+                                          onClick={() => window.open(anexo, '_blank')}
+                                          title="Abrir anexo"
+                                        >
+                                          <ExternalLink className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                    {item.anexos.length > 2 && (
+                                      <p className="text-xs text-green-600 font-medium">
+                                        +{item.anexos.length - 2} anexos adicionais
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Observações Resumidas */}
+                              {item.observacoes && (
+                                <div className="p-3 bg-slate-50 rounded-lg">
+                                  <h4 className="text-sm font-medium text-slate-700 mb-1">Observações</h4>
+                                  <p className="text-sm text-slate-600 line-clamp-2">
+                                    {item.observacoes.length > 150 
+                                      ? `${item.observacoes.substring(0, 150)}...` 
+                                      : item.observacoes
+                                    }
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        </div>
+                          )}
 
                         {/* Número do Chamado */}
                         {item.numeroChamado && (
@@ -1577,15 +1768,308 @@ export default function Clientes() {
                             )}
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de Detalhes Completos */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto bg-white">
+          <DialogHeader className="pb-4 border-b border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                <Eye className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-800">
+                  Detalhes do Histórico
+                </DialogTitle>
+                <p className="text-sm text-slate-600 mt-1">
+                  Visualização completa das informações do atendimento
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {selectedHistorico && (
+            <div className="space-y-6 mt-6">
+              {/* Cabeçalho com Status */}
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-4">
+                  {getStatusIcon(selectedHistorico.statusAtual)}
+                  {getStatusBadge(selectedHistorico.statusAtual)}
+                  {selectedHistorico.casoCritico && (
+                    <Badge variant="destructive" className="animate-pulse">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Caso Crítico
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-right">
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    {getTipoAcaoLabel(selectedHistorico.tipoAtualizacao)}
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    {format(new Date(selectedHistorico.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Informações Gerais */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-slate-500 uppercase">Cliente</h4>
+                  <p className="text-base font-semibold text-slate-800">{selectedHistorico.nomeCliente}</p>
+                  <p className="text-sm text-slate-600">Código: {selectedHistorico.codigoCliente}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-slate-500 uppercase">Ambiente</h4>
+                  <p className="text-base font-semibold text-slate-800">{selectedHistorico.ambiente || 'N/A'}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-slate-500 uppercase">Responsável</h4>
+                  <p className="text-base font-semibold text-slate-800">{selectedHistorico.responsavel}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-slate-500 uppercase">Atendente Suporte</h4>
+                  <p className="text-base font-semibold text-slate-800">
+                    {selectedHistorico.atendenteSuporteId 
+                      ? usuarios?.find((u: any) => u.id.toString() === selectedHistorico.atendenteSuporteId)?.name || 'N/A'
+                      : 'N/A'
+                    }
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-slate-500 uppercase">Tempo Gasto</h4>
+                  <p className="text-base font-semibold text-slate-800">
+                    {selectedHistorico.tempoGasto ? `${selectedHistorico.tempoGasto} minutos` : 'N/A'}
+                  </p>
+                </div>
+
+                {selectedHistorico.numeroChamado && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-slate-500 uppercase">Número/URL do Chamado</h4>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-base font-semibold text-slate-800 truncate flex-1">
+                        {selectedHistorico.numeroChamado}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(selectedHistorico.numeroChamado!, "Número do chamado")}
+                        className="h-7 px-2"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                      {selectedHistorico.numeroChamado.startsWith('http') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(selectedHistorico.numeroChamado, '_blank')}
+                          className="h-7 px-2"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Versões */}
+              {(selectedHistorico.versaoAnterior || selectedHistorico.versaoInstalada) && (
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h4 className="text-lg font-semibold text-slate-700 mb-3">Controle de Versões</h4>
+                  <div className="flex items-center space-x-6">
+                    {selectedHistorico.versaoAnterior && (
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 uppercase">Versão Anterior</p>
+                        <p className="text-lg font-bold text-red-600">{selectedHistorico.versaoAnterior}</p>
+                      </div>
+                    )}
+                    {selectedHistorico.versaoAnterior && selectedHistorico.versaoInstalada && (
+                      <div className="text-slate-400 text-2xl">→</div>
+                    )}
+                    {selectedHistorico.versaoInstalada && (
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 uppercase">Versão Instalada</p>
+                        <p className="text-lg font-bold text-green-600">{selectedHistorico.versaoInstalada}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Checklists */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {selectedHistorico.checklistInstalacao && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="text-lg font-semibold text-blue-700 mb-3 flex items-center space-x-2">
+                      <CheckSquare className="w-5 h-5" />
+                      <span>Checklist de Instalação</span>
+                    </h4>
+                    {(() => {
+                      const checklist = formatChecklistData(selectedHistorico.checklistInstalacao);
+                      if (!checklist) return <p className="text-blue-600">Dados do checklist não disponíveis</p>;
+                      
+                      const completed = Object.values(checklist).filter(Boolean).length;
+                      const total = Object.keys(checklist).length;
+                      
+                      return (
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm text-blue-600">Progresso:</span>
+                            <span className="text-sm font-bold text-blue-700">{completed}/{total} concluídos</span>
+                          </div>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {Object.entries(checklist).map(([key, value]) => (
+                              <div key={key} className="flex items-center space-x-2 text-sm">
+                                <div className={`w-3 h-3 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                <span className={value ? 'text-green-700' : 'text-gray-600'}>
+                                  {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {selectedHistorico.checklistAtualizacao && (
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h4 className="text-lg font-semibold text-green-700 mb-3 flex items-center space-x-2">
+                      <CheckSquare className="w-5 h-5" />
+                      <span>Checklist de Atualização</span>
+                    </h4>
+                    {(() => {
+                      const checklist = formatChecklistData(selectedHistorico.checklistAtualizacao);
+                      if (!checklist) return <p className="text-green-600">Dados do checklist não disponíveis</p>;
+                      
+                      const completed = Object.values(checklist).filter(Boolean).length;
+                      const total = Object.keys(checklist).length;
+                      
+                      return (
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm text-green-600">Progresso:</span>
+                            <span className="text-sm font-bold text-green-700">{completed}/{total} concluídos</span>
+                          </div>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {Object.entries(checklist).map(([key, value]) => (
+                              <div key={key} className="flex items-center space-x-2 text-sm">
+                                <div className={`w-3 h-3 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                <span className={value ? 'text-green-700' : 'text-gray-600'}>
+                                  {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              {/* Anexos */}
+              {selectedHistorico.anexos && Array.isArray(selectedHistorico.anexos) && selectedHistorico.anexos.length > 0 && (
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <h4 className="text-lg font-semibold text-purple-700 mb-3 flex items-center space-x-2">
+                    <Paperclip className="w-5 h-5" />
+                    <span>Anexos ({selectedHistorico.anexos.length})</span>
+                  </h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {selectedHistorico.anexos.map((anexo: string, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-white rounded border border-purple-200">
+                        <div className="flex items-center space-x-2 flex-1">
+                          <FileImage className="w-4 h-4 text-purple-600" />
+                          <span className="text-sm text-purple-700 truncate">{anexo}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(anexo, "Link do anexo")}
+                            className="h-7 w-7 p-0 hover:bg-purple-100"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(anexo, '_blank')}
+                            className="h-7 w-7 p-0 hover:bg-purple-100"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Descrições Detalhadas */}
+              <div className="space-y-4">
+                {selectedHistorico.observacoes && (
+                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <h4 className="text-lg font-semibold text-blue-700 mb-2">Observações</h4>
+                    <p className="text-blue-800 whitespace-pre-wrap">{selectedHistorico.observacoes}</p>
+                  </div>
+                )}
+                
+                {selectedHistorico.problemas && (
+                  <div className="p-4 bg-red-50 rounded-lg border-l-4 border-red-400">
+                    <h4 className="text-lg font-semibold text-red-700 mb-2 flex items-center space-x-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      <span>Problemas Encontrados</span>
+                    </h4>
+                    <p className="text-red-800 whitespace-pre-wrap">{selectedHistorico.problemas}</p>
+                  </div>
+                )}
+                
+                {selectedHistorico.solucoes && (
+                  <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-400">
+                    <h4 className="text-lg font-semibold text-green-700 mb-2 flex items-center space-x-2">
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Soluções Aplicadas</span>
+                    </h4>
+                    <p className="text-green-800 whitespace-pre-wrap">{selectedHistorico.solucoes}</p>
+                  </div>
+                )}
+
+                {selectedHistorico.observacoesChecklist && (
+                  <div className="p-4 bg-slate-50 rounded-lg border-l-4 border-slate-400">
+                    <h4 className="text-lg font-semibold text-slate-700 mb-2">Observações do Checklist</h4>
+                    <p className="text-slate-800 whitespace-pre-wrap">{selectedHistorico.observacoesChecklist}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Rodapé com Informações de Auditoria */}
+              <div className="pt-4 border-t border-slate-200 text-sm text-slate-500">
+                <div className="flex justify-between">
+                  <span>Criado em: {format(new Date(selectedHistorico.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                  <span>Última atualização: {format(new Date(selectedHistorico.updatedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Edição */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
