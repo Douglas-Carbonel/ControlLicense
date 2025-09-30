@@ -130,7 +130,8 @@ export const clienteHistorico = pgTable("cliente_historico", {
   // Campos para checklist de atualização
   checklistAtualizacao: text("checklist_atualizacao"), // JSON string do checklist
   // Observações do checklist
-  observacoesChecklist: text("observacoes_checklist"), // Observações gerais do checklist
+  observacoesChecklist: text("observacoes_checklist"),
+  numeroChamado: text("numero_chamado"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -163,6 +164,7 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
   checklistInstalacao: z.string().optional().nullable(),
   checklistAtualizacao: z.string().optional().nullable(),
   observacoesChecklist: z.string().optional().nullable(),
+  numeroChamado: z.string().optional().nullable(),
 });
 
 export type License = typeof licenses.$inferSelect;

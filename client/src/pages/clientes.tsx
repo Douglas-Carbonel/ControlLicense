@@ -42,6 +42,7 @@ interface ClienteHistorico {
   checklistInstalacao?: string;
   checklistAtualizacao?: string;
   observacoesChecklist?: string;
+  numeroChamado?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -389,7 +390,8 @@ export default function Clientes() {
       problemas: initialData?.problemas || "",
       solucoes: initialData?.solucoes || "",
       anexos: initialData?.anexos || [],
-      observacoesChecklist: initialData?.observacoesChecklist || ""
+      observacoesChecklist: initialData?.observacoesChecklist || "",
+      numeroChamado: initialData?.numeroChamado || ""
     });
 
     const [checklistInstalacao, setChecklistInstalacao] = useState<ChecklistInstalacao>(() => {
@@ -688,6 +690,17 @@ export default function Clientes() {
                     type="datetime-local"
                     value={formData.dataUltimoAcesso ? new Date(formData.dataUltimoAcesso).toISOString().slice(0, 16) : ""}
                     onChange={(e) => setFormData(prev => ({ ...prev, dataUltimoAcesso: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="numeroChamado" className="text-[#0c151f] font-medium">Número/URL do Chamado</Label>
+                  <Input
+                    id="numeroChamado"
+                    value={formData.numeroChamado}
+                    onChange={(e) => setFormData(prev => ({ ...prev, numeroChamado: e.target.value }))}
+                    placeholder="Ex: #12345 ou https://support.exemplo.com/ticket/12345"
+                    className="border-[#e0e0e0] focus:border-[#0095da]"
                   />
                 </div>
 
@@ -1462,6 +1475,30 @@ export default function Clientes() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Número do Chamado */}
+                        {item.numeroChamado && (
+                          <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <h4 className="text-sm font-medium text-indigo-700 mb-2 flex items-center space-x-2">
+                              <span>📋</span>
+                              <span>Número/URL do Chamado</span>
+                            </h4>
+                            <div className="text-sm">
+                              {item.numeroChamado.startsWith('http') ? (
+                                <a 
+                                  href={item.numeroChamado} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-indigo-600 hover:text-indigo-800 underline font-medium"
+                                >
+                                  {item.numeroChamado}
+                                </a>
+                              ) : (
+                                <span className="text-indigo-800 font-medium">{item.numeroChamado}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Versões (se aplicável) */}
                         {(item.versaoAnterior || item.versaoInstalada) && (
