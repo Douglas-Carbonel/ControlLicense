@@ -1088,7 +1088,7 @@ export default function Clientes() {
         </div>
       </div>
 
-      {/* Seleção de Cliente - Simplificada */}
+      {/* Seleção de Cliente */}
       <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center space-x-3">
@@ -1102,9 +1102,9 @@ export default function Clientes() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-            {/* Campo de Seleção de Cliente */}
-            <div className="lg:col-span-2 space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-end">
+            {/* Campo único de Seleção de Cliente */}
+            <div className="space-y-3">
               <Label className="text-sm font-semibold text-slate-700 flex items-center space-x-2">
                 <Search className="w-4 h-4" />
                 <span>Buscar e Selecionar Cliente</span>
@@ -1173,7 +1173,6 @@ export default function Clientes() {
             {/* Botão de Nova Ação */}
             {selectedCliente && (
               <div className="space-y-3">
-                <Label className="text-sm font-semibold text-slate-700">Ações</Label>
                 <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                   <DialogTrigger asChild>
                     <Button size="lg" className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white shadow-lg hover:shadow-xl transition-all duration-200">
@@ -1341,184 +1340,188 @@ export default function Clientes() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="text-sm text-slate-600">
-                  Mostrando {filteredHistorico?.length} de {historico?.length || 0} registros
+                <div className="text-sm text-slate-600 flex items-center justify-between">
+                  <span>Mostrando {filteredHistorico?.length} de {historico?.length || 0} registros</span>
+                  <div className="text-xs text-slate-500">
+                    Ordenado por data de criação (mais recente primeiro)
+                  </div>
                 </div>
 
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Tipo de Ação</TableHead>
-                        <TableHead>Ambiente</TableHead>
-                        <TableHead>Responsável</TableHead>
-                        <TableHead>Atendente</TableHead>
-                        <TableHead>Data/Hora</TableHead>
-                        <TableHead>Tempo</TableHead>
-                        <TableHead>Versão</TableHead>
-                        <TableHead>Detalhes</TableHead>
-                        <TableHead className="w-20">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredHistorico?.map((item: ClienteHistorico) => (
-                        <TableRow key={item.id} className="hover:bg-slate-50">
-                          <TableCell>
+                <div className="space-y-4">
+                  {filteredHistorico?.map((item: ClienteHistorico) => (
+                    <Card key={item.id} className="border border-slate-200 hover:shadow-md transition-shadow duration-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          {/* Cabeçalho do Card */}
+                          <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2">
                               {getStatusIcon(item.statusAtual)}
+                              {getStatusBadge(item.statusAtual)}
+                              {item.casoCritico && (
+                                <Badge variant="destructive" className="text-xs animate-pulse">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  Crítico
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="h-6 border-l border-slate-300"></div>
+                            <div>
+                              <h3 className="font-semibold text-slate-900 text-lg">
+                                {getTipoAcaoLabel(item.tipoAtualizacao)}
+                              </h3>
+                              <p className="text-sm text-slate-600">
+                                {format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Ações */}
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(item)}
+                              className="h-8 w-8 p-0 hover:bg-blue-50"
+                              title={item.statusAtual === 'CONCLUIDO' ? "Não é possível editar históricos concluídos" : "Editar"}
+                              disabled={item.statusAtual === 'CONCLUIDO'}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. O histórico será removido permanentemente.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(item.id)}>
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+
+                        {/* Informações Principais */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="flex items-center space-x-2">
+                            <Database className="w-4 h-4 text-slate-400" />
+                            <div>
+                              <p className="text-xs text-slate-500 uppercase font-medium">Ambiente</p>
+                              <p className="text-sm font-medium text-slate-700">{item.ambiente || '-'}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-slate-400" />
+                            <div>
+                              <p className="text-xs text-slate-500 uppercase font-medium">Responsável</p>
+                              <p className="text-sm font-medium text-slate-700">{item.responsavel}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-blue-400" />
+                            <div>
+                              <p className="text-xs text-slate-500 uppercase font-medium">Atendente</p>
+                              <p className="text-sm font-medium text-slate-700">
+                                {item.atendenteSuporteId 
+                                  ? usuarios?.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
+                                  : '-'
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            <div>
+                              <p className="text-xs text-slate-500 uppercase font-medium">Tempo Gasto</p>
+                              <p className="text-sm font-medium text-slate-700">
+                                {item.tempoGasto ? `${item.tempoGasto} min` : '-'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Versões (se aplicável) */}
+                        {(item.versaoAnterior || item.versaoInstalada) && (
+                          <div className="mb-4 p-3 bg-slate-50 rounded-lg">
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">Informações de Versão</h4>
+                            <div className="flex items-center space-x-4">
+                              {item.versaoAnterior && (
+                                <div>
+                                  <p className="text-xs text-slate-500 uppercase font-medium">Versão Anterior</p>
+                                  <p className="text-sm font-medium text-red-600">{item.versaoAnterior}</p>
+                                </div>
+                              )}
+                              {item.versaoAnterior && item.versaoInstalada && (
+                                <div className="text-slate-400">→</div>
+                              )}
+                              {item.versaoInstalada && (
+                                <div>
+                                  <p className="text-xs text-slate-500 uppercase font-medium">Versão Instalada</p>
+                                  <p className="text-sm font-medium text-green-600">{item.versaoInstalada}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Detalhes */}
+                        {(item.observacoes || item.problemas || item.solucoes) && (
+                          <div className="space-y-3">
+                            {item.observacoes && (
                               <div>
-                                {getStatusBadge(item.statusAtual)}
-                                {item.casoCritico && (
-                                  <Badge variant="destructive" className="text-xs ml-1">
-                                    <AlertTriangle className="w-3 h-3 mr-1" />
-                                    Crítico
-                                  </Badge>
-                                )}
+                                <h4 className="text-sm font-medium text-slate-700 mb-1">Observações</h4>
+                                <p className="text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border-l-4 border-blue-200">
+                                  {item.observacoes}
+                                </p>
                               </div>
-                            </div>
-                          </TableCell>
-
-                          <TableCell>
-                            <span className="font-medium text-slate-900">
-                              {getTipoAcaoLabel(item.tipoAtualizacao)}
-                            </span>
-                          </TableCell>
-
-                          <TableCell>
-                            <span className="text-slate-700">
-                              {item.ambiente || '-'}
-                            </span>
-                          </TableCell>
-
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <User className="w-4 h-4 text-slate-400" />
-                              <span className="text-slate-700">{item.responsavel}</span>
-                            </div>
-                          </TableCell>
-
-                          <TableCell>
-                            {item.atendenteSuporteId ? (
-                              <div className="flex items-center space-x-2">
-                                <User className="w-4 h-4 text-blue-400" />
-                                <span className="text-slate-700">
-                                  {usuarios?.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400">-</span>
                             )}
-                          </TableCell>
-
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <CalendarIcon className="w-4 h-4 text-slate-400" />
-                              <span className="text-sm">
-                                {format(new Date(item.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                              </span>
-                            </div>
-                          </TableCell>
-
-                          <TableCell>
-                            {item.tempoGasto ? (
-                              <div className="flex items-center space-x-1">
-                                <Clock className="w-4 h-4 text-slate-400" />
-                                <span className="text-sm">{item.tempoGasto} min</span>
+                            
+                            {item.problemas && (
+                              <div>
+                                <h4 className="text-sm font-medium text-red-700 mb-1 flex items-center space-x-1">
+                                  <AlertTriangle className="w-4 h-4" />
+                                  <span>Problemas Encontrados</span>
+                                </h4>
+                                <p className="text-sm text-slate-600 bg-red-50 p-3 rounded-lg border-l-4 border-red-200">
+                                  {item.problemas}
+                                </p>
                               </div>
-                            ) : (
-                              <span className="text-slate-400">-</span>
                             )}
-                          </TableCell>
-
-                          <TableCell>
-                            {(item.versaoAnterior || item.versaoInstalada) ? (
-                              <div className="text-sm">
-                                {item.versaoAnterior && <span className="text-red-600">{item.versaoAnterior}</span>}
-                                {item.versaoAnterior && item.versaoInstalada && <span className="mx-1 text-slate-400">→</span>}
-                                {item.versaoInstalada && <span className="text-green-600">{item.versaoInstalada}</span>}
+                            
+                            {item.solucoes && (
+                              <div>
+                                <h4 className="text-sm font-medium text-green-700 mb-1 flex items-center space-x-1">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Soluções Aplicadas</span>
+                                </h4>
+                                <p className="text-sm text-slate-600 bg-green-50 p-3 rounded-lg border-l-4 border-green-200">
+                                  {item.solucoes}
+                                </p>
                               </div>
-                            ) : (
-                              <span className="text-slate-400">-</span>
                             )}
-                          </TableCell>
-
-                          <TableCell>
-                            <div className="space-y-1">
-                              {item.observacoes && (
-                                <div className="text-sm">
-                                  <span className="font-medium text-slate-700">Obs:</span>
-                                  <p className="text-slate-600 truncate max-w-xs" title={item.observacoes}>
-                                    {item.observacoes}
-                                  </p>
-                                </div>
-                              )}
-                              {item.problemas && (
-                                <div className="text-sm">
-                                  <span className="font-medium text-red-600">Problemas:</span>
-                                  <p className="text-slate-600 truncate max-w-xs" title={item.problemas}>
-                                    {item.problemas}
-                                  </p>
-                                </div>
-                              )}
-                              {item.solucoes && (
-                                <div className="text-sm">
-                                  <span className="font-medium text-green-600">Soluções:</span>
-                                  <p className="text-slate-600 truncate max-w-xs" title={item.solucoes}>
-                                    {item.solucoes}
-                                  </p>
-                                </div>
-                              )}
-                              {!item.observacoes && !item.problemas && !item.solucoes && (
-                                <span className="text-slate-400">-</span>
-                              )}
-                            </div>
-                          </TableCell>
-
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(item)}
-                                className="h-8 w-8 p-0"
-                                title={item.statusAtual === 'CONCLUIDO' ? "Não é possível editar históricos concluídos" : "Editar"}
-                                disabled={item.statusAtual === 'CONCLUIDO'}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                                    title="Excluir"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta ação não pode ser desfeita. O histórico será removido permanentemente.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(item.id)}>
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
             )}
