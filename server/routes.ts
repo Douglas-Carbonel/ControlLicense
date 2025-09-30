@@ -983,6 +983,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para listar usuários (para dropdowns)
+  app.get("/api/usuarios", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const users = await storage.getUsers();
+      // Retornar apenas dados necessários para o dropdown
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        active: user.active
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching usuarios:", error);
+      res.status(500).json({ message: "Failed to fetch usuarios" });
+    }
+  });
+
   // Rotas auxiliares para clientes
   app.get("/api/clientes/lista", authenticateToken, async (req: AuthRequest, res) => {
     try {
