@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -128,7 +127,7 @@ export default function Clientes() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTipo, setFilterTipo] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -143,7 +142,7 @@ export default function Clientes() {
     if (!clientes || !Array.isArray(clientes)) return [];
     if (!clienteSearchTerm) return clientes;
 
-    return clientes.filter((cliente: Cliente) => 
+    return clientes.filter((cliente: Cliente) =>
       cliente.code.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
       cliente.nomeCliente.toLowerCase().includes(clienteSearchTerm.toLowerCase())
     );
@@ -156,37 +155,37 @@ export default function Clientes() {
       try {
         console.log(`Making API request for cliente: ${selectedCliente}`);
         console.log(`Full URL: /api/clientes-historico?codigoCliente=${selectedCliente}`);
-        
+
         const result = await apiRequest("GET", `/api/clientes-historico?codigoCliente=${selectedCliente}`);
         console.log("Raw API Response:", result);
         console.log("API Response type:", typeof result);
         console.log("API Response isArray:", Array.isArray(result));
         console.log("API Response stringified:", JSON.stringify(result));
-        
+
         // Verificações múltiplas para garantir que sempre temos um array
         if (result === null || result === undefined) {
           console.log("Result is null/undefined, returning empty array");
           return [];
         }
-        
+
         if (Array.isArray(result)) {
           console.log("Result is array with", result.length, "items");
           console.log("First item:", result[0]);
           return result;
         }
-        
+
         // Se não for array, tentar extrair dados se for um wrapper
         if (typeof result === 'object' && result.data && Array.isArray(result.data)) {
           console.log("Result has data property, extracting array");
           return result.data;
         }
-        
+
         // Se result for um objeto vazio, retornar array vazio
         if (typeof result === 'object' && Object.keys(result).length === 0) {
           console.log("Result is empty object, returning empty array");
           return [];
         }
-        
+
         console.warn("Result is not an array, type:", typeof result, "value:", result);
         return [];
       } catch (error) {
@@ -206,21 +205,27 @@ export default function Clientes() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Buscar usuários para "Atendente Suporte"
+  const { data: usuarios } = useQuery({
+    queryKey: ["/api/usuarios"],
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Filtrar histórico
   const filteredHistorico = useMemo(() => {
-    console.log("Filtering historico:", { 
-      historico, 
-      isArray: Array.isArray(historico), 
+    console.log("Filtering historico:", {
+      historico,
+      isArray: Array.isArray(historico),
       type: typeof historico,
-      length: historico?.length 
+      length: historico?.length
     });
-    
+
     // Verificações múltiplas de segurança
     if (!historico) {
       console.log("No historico data");
       return [];
     }
-    
+
     if (!Array.isArray(historico)) {
       console.error("Historico is not an array:", historico);
       return [];
@@ -237,10 +242,10 @@ export default function Clientes() {
           console.warn("Invalid item in historico:", item);
           return false;
         }
-        
+
         const matchesStatus = filterStatus === "all" || item.statusAtual === filterStatus;
         const matchesTipo = filterTipo === "all" || item.tipoAtualizacao === filterTipo;
-        const matchesSearch = !searchTerm || 
+        const matchesSearch = !searchTerm ||
           item.ambiente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.versaoInstalada?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.observacoes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -365,7 +370,7 @@ export default function Clientes() {
   };
 
   // Modal Form Component
-  const HistoricoForm = ({ isEdit = false, initialData = null, onSubmit, ambientes = [] }: any) => {
+  const HistoricoForm = ({ isEdit = false, initialData = null, onSubmit, ambientes = [], usuarios = [] }: any) => {
     const [formData, setFormData] = useState({
       codigoCliente: initialData?.codigoCliente || selectedCliente || "",
       nomeCliente: initialData?.nomeCliente || (Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente || "" : ""),
@@ -383,6 +388,7 @@ export default function Clientes() {
       solucoes: initialData?.solucoes || "",
       anexos: initialData?.anexos || [],
       observacoesChecklist: initialData?.observacoesChecklist || "",
+      atendenteSuporte: initialData?.atendenteSuporte || "", // Novo campo
     });
 
     const [checklistInstalacao, setChecklistInstalacao] = useState<ChecklistInstalacao>(() => {
@@ -451,30 +457,30 @@ export default function Clientes() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Tabs defaultValue="geral" className="w-full">
           <TabsList className={`grid w-full bg-[#f4f4f4] border border-[#e0e0e0] rounded-lg p-1 ${showChecklistInstalacao || showChecklistAtualizacao ? 'grid-cols-5' : 'grid-cols-4'}`}>
-            <TabsTrigger 
-              value="geral" 
+            <TabsTrigger
+              value="geral"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
             >
               <User className="h-4 w-4" />
               Geral
             </TabsTrigger>
-            <TabsTrigger 
-              value="detalhes" 
+            <TabsTrigger
+              value="detalhes"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
             >
               <Database className="h-4 w-4" />
               Detalhes
             </TabsTrigger>
-            <TabsTrigger 
-              value="anexos" 
+            <TabsTrigger
+              value="anexos"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
             >
               <Paperclip className="h-4 w-4" />
               Anexos
             </TabsTrigger>
             {showChecklistInstalacao && (
-              <TabsTrigger 
-                value="checklist-instalacao" 
+              <TabsTrigger
+                value="checklist-instalacao"
                 className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
               >
                 <CheckSquare className="h-4 w-4" />
@@ -482,16 +488,16 @@ export default function Clientes() {
               </TabsTrigger>
             )}
             {showChecklistAtualizacao && (
-              <TabsTrigger 
-                value="checklist-atualizacao" 
+              <TabsTrigger
+                value="checklist-atualizacao"
                 className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
               >
                 <CheckSquare className="h-4 w-4" />
                 Checklist Atualização
               </TabsTrigger>
             )}
-            <TabsTrigger 
-              value="problemas" 
+            <TabsTrigger
+              value="problemas"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
             >
               <AlertTriangle className="h-4 w-4" />
@@ -503,113 +509,132 @@ export default function Clientes() {
             <Card className="border border-[#e0e0e0] shadow-sm">
               <CardContent className="pt-6">
                 <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="codigoCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
-                <Select
-                  value={formData.codigoCliente}
-                  onValueChange={(value) => {
-                    const cliente = Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === value) : undefined;
-                    setFormData(prev => ({
-                      ...prev,
-                      codigoCliente: value,
-                      nomeCliente: cliente?.nomeCliente || ""
-                    }));
-                  }}
-                >
-                  <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] bg-white border-[#e0e0e0]">
-                    {Array.isArray(clientes) ? clientes.map((cliente: Cliente) => (
-                      <SelectItem key={cliente.code} value={cliente.code}>
-                        {cliente.code} - {cliente.nomeCliente}
-                      </SelectItem>
-                    )) : null}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div>
+                    <Label htmlFor="codigoCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
+                    <Select
+                      value={formData.codigoCliente}
+                      onValueChange={(value) => {
+                        const cliente = Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === value) : undefined;
+                        setFormData(prev => ({
+                          ...prev,
+                          codigoCliente: value,
+                          nomeCliente: cliente?.nomeCliente || ""
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectValue placeholder="Selecione o cliente" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[200px] bg-white border-[#e0e0e0]">
+                        {Array.isArray(clientes) ? clientes.map((cliente: Cliente) => (
+                          <SelectItem key={cliente.code} value={cliente.code}>
+                            {cliente.code} - {cliente.nomeCliente}
+                          </SelectItem>
+                        )) : null}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div>
-                <Label htmlFor="ambiente">Ambiente/Base</Label>
-                <Select
-                  value={formData.ambiente}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, ambiente: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o ambiente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ambientes?.map((ambiente: string) => (
-                      <SelectItem key={ambiente} value={ambiente}>
-                        {ambiente}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div>
+                    <Label htmlFor="ambiente">Ambiente/Base</Label>
+                    <Select
+                      value={formData.ambiente}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, ambiente: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o ambiente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ambientes?.map((ambiente: string) => (
+                          <SelectItem key={ambiente} value={ambiente}>
+                            {ambiente}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div>
-                <Label htmlFor="tipoAtualizacao">Tipo de Ação</Label>
-                <Select
-                  value={formData.tipoAtualizacao}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, tipoAtualizacao: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPOS_ACAO.map((tipo) => (
-                      <SelectItem key={tipo.value} value={tipo.value}>
-                        {tipo.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div>
+                    <Label htmlFor="tipoAtualizacao">Tipo de Ação</Label>
+                    <Select
+                      value={formData.tipoAtualizacao}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, tipoAtualizacao: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPOS_ACAO.map((tipo) => (
+                          <SelectItem key={tipo.value} value={tipo.value}>
+                            {tipo.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div>
-                <Label htmlFor="statusAtual">Status Atual</Label>
-                <Select
-                  value={formData.statusAtual}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, statusAtual: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div>
+                    <Label htmlFor="statusAtual">Status Atual</Label>
+                    <Select
+                      value={formData.statusAtual}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, statusAtual: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map((status) => (
+                          <SelectItem key={status.value} value={status.value}>
+                            {status.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div>
-                <Label htmlFor="responsavel">Responsável</Label>
-                <Input
-                  id="responsavel"
-                  value={formData.responsavel}
-                  onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
-                  placeholder="Nome do responsável"
-                  required
-                />
-              </div>
+                  <div>
+                    <Label htmlFor="responsavel">Responsável</Label>
+                    <Input
+                      id="responsavel"
+                      value={formData.responsavel}
+                      onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
+                      placeholder="Nome do responsável"
+                      required
+                    />
+                  </div>
 
-              <div>
-                <Label htmlFor="tempoGasto">Tempo Gasto (minutos)</Label>
-                <Input
-                  id="tempoGasto"
-                  type="number"
-                  value={formData.tempoGasto}
-                  onChange={(e) => setFormData(prev => ({ ...prev, tempoGasto: e.target.value }))}
-                  placeholder="Ex: 120"
-                />
-              </div>
-            </div>
+                  <div>
+                    <Label htmlFor="tempoGasto">Tempo Gasto (minutos)</Label>
+                    <Input
+                      id="tempoGasto"
+                      type="number"
+                      value={formData.tempoGasto}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tempoGasto: e.target.value }))}
+                      placeholder="Ex: 120"
+                    />
+                  </div>
 
-            <div className="flex items-center space-x-2">
+                  <div>
+                    <Label htmlFor="atendenteSuporte">Atendente Suporte</Label>
+                    <Select
+                      value={formData.atendenteSuporte}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, atendenteSuporte: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o atendente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {usuarios?.map((usuario: any) => (
+                          <SelectItem key={usuario.id} value={usuario.id}>
+                            {usuario.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
                   <Switch
                     id="casoCritico"
                     checked={formData.casoCritico}
@@ -627,40 +652,45 @@ export default function Clientes() {
           <TabsContent value="detalhes" className="mt-6">
             <Card className="border border-[#e0e0e0] shadow-sm">
               <CardContent className="pt-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="versaoAnterior" className="text-[#0c151f] font-medium">Versão Anterior</Label>
-                <Input
-                  id="versaoAnterior"
-                  value={formData.versaoAnterior}
-                  onChange={(e) => setFormData(prev => ({ ...prev, versaoAnterior: e.target.value }))}
-                  placeholder="Ex: 1.0.0"
-                  className="border-[#e0e0e0] focus:border-[#0095da]"
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Exibir apenas para tipo de ação de atualização */}
+                  {(formData.tipoAtualizacao === 'ATUALIZACAO_MOBILE' || formData.tipoAtualizacao === 'ATUALIZACAO_PORTAL') && (
+                    <>
+                      <div>
+                        <Label htmlFor="versaoAnterior" className="text-[#0c151f] font-medium">Versão Anterior</Label>
+                        <Input
+                          id="versaoAnterior"
+                          value={formData.versaoAnterior}
+                          onChange={(e) => setFormData(prev => ({ ...prev, versaoAnterior: e.target.value }))}
+                          placeholder="Ex: 1.0.0"
+                          className="border-[#e0e0e0] focus:border-[#0095da]"
+                        />
+                      </div>
 
-              <div>
-                <Label htmlFor="versaoInstalada">Versão Instalada</Label>
-                <Input
-                  id="versaoInstalada"
-                  value={formData.versaoInstalada}
-                  onChange={(e) => setFormData(prev => ({ ...prev, versaoInstalada: e.target.value }))}
-                  placeholder="Ex: 1.0.1"
-                />
-              </div>
-            </div>
+                      <div>
+                        <Label htmlFor="versaoInstalada">Versão Instalada</Label>
+                        <Input
+                          id="versaoInstalada"
+                          value={formData.versaoInstalada}
+                          onChange={(e) => setFormData(prev => ({ ...prev, versaoInstalada: e.target.value }))}
+                          placeholder="Ex: 1.0.1"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
 
-            <div>
-              <Label htmlFor="dataUltimoAcesso">Data do Último Acesso</Label>
-              <Input
-                id="dataUltimoAcesso"
-                type="datetime-local"
-                value={formData.dataUltimoAcesso ? new Date(formData.dataUltimoAcesso).toISOString().slice(0, 16) : ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, dataUltimoAcesso: e.target.value }))}
-              />
-            </div>
+                <div>
+                  <Label htmlFor="dataUltimoAcesso">Data do Último Acesso</Label>
+                  <Input
+                    id="dataUltimoAcesso"
+                    type="datetime-local"
+                    value={formData.dataUltimoAcesso ? new Date(formData.dataUltimoAcesso).toISOString().slice(0, 16) : ""}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dataUltimoAcesso: e.target.value }))}
+                  />
+                </div>
 
-            <div>
+                <div>
                   <Label htmlFor="observacoes" className="text-[#0c151f] font-medium">Observações</Label>
                   <Textarea
                     id="observacoes"
@@ -681,7 +711,7 @@ export default function Clientes() {
                 <Paperclip className="w-5 h-5" />
                 <span>Anexos (Prints e Documentos)</span>
               </div>
-              
+
               <div className="flex space-x-2">
                 <Input
                   value={newAnexo}
@@ -740,7 +770,7 @@ export default function Clientes() {
                   <CheckSquare className="w-5 h-5" />
                   <span>Checklist de Instalação</span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 gap-4">
                   <div className="p-4 border rounded-lg">
                     <h4 className="font-semibold text-slate-700 mb-3">Módulos e Configurações</h4>
@@ -916,7 +946,7 @@ export default function Clientes() {
                   <CheckSquare className="w-5 h-5" />
                   <span>Checklist de Atualização</span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 gap-4">
                   <div className="p-4 border rounded-lg">
                     <h4 className="font-semibold text-slate-700 mb-3">Itens de Verificação</h4>
@@ -1025,16 +1055,16 @@ export default function Clientes() {
         </Tabs>
 
         <div className="flex justify-end space-x-3 pt-6 border-t border-[#e0e0e0] mt-6">
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => isEdit ? setIsEditModalOpen(false) : setIsCreateModalOpen(false)}
             className="border-[#e0e0e0] text-[#3a3a3c] hover:bg-[#f4f4f4]"
           >
             Cancelar
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={createMutation.isPending || updateMutation.isPending}
             className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white font-medium shadow-md transition-all duration-200"
           >
@@ -1057,137 +1087,92 @@ export default function Clientes() {
         </div>
       </div>
 
-      {/* Seleção de Cliente - Layout Modernizado */}
-      <Card className="professional-card">
+      {/* Seleção de Cliente - Simplificada */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-800">Gestão de Clientes</h2>
-                <p className="text-sm text-slate-600">Selecione um cliente para visualizar seu histórico</p>
-              </div>
+          <CardTitle className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-800">Selecionar Cliente</h2>
+              <p className="text-sm text-slate-600">Escolha um cliente para visualizar e gerenciar seu histórico</p>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Coluna 1 - Busca e Seleção */}
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-slate-700 flex items-center space-x-2">
-                  <Search className="w-4 h-4" />
-                  <span>Buscar e Selecionar Cliente</span>
-                </Label>
-                
-                {/* Campo de Busca Integrado */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
-                  <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                    <SelectTrigger className="w-full pl-10 h-12 border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 transition-all duration-200">
-                      <SelectValue placeholder="🔍 Digite para buscar ou selecionar um cliente..." />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[400px] w-full">
-                      {/* Campo de busca interno */}
-                      <div className="sticky top-0 bg-white p-2 border-b">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <Input
-                            placeholder="Digite o código ou nome do cliente..."
-                            value={clienteSearchTerm}
-                            onChange={(e) => setClienteSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 border-slate-300"
-                          />
-                        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+            {/* Campo de Seleção de Cliente */}
+            <div className="lg:col-span-2 space-y-3">
+              <Label className="text-sm font-semibold text-slate-700 flex items-center space-x-2">
+                <Search className="w-4 h-4" />
+                <span>Buscar e Selecionar Cliente</span>
+              </Label>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                <Select value={selectedCliente} onValueChange={setSelectedCliente}>
+                  <SelectTrigger className="w-full pl-10 h-12 border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 transition-all duration-200">
+                    <SelectValue placeholder="🔍 Digite para buscar ou selecionar um cliente..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[400px] w-full">
+                    {/* Campo de busca interno */}
+                    <div className="sticky top-0 bg-white p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input
+                          placeholder="Digite o código ou nome do cliente..."
+                          value={clienteSearchTerm}
+                          onChange={(e) => setClienteSearchTerm(e.target.value)}
+                          className="pl-10 pr-4 border-slate-300"
+                        />
+                      </div>
+                      {clienteSearchTerm && (
+                        <p className="text-xs text-slate-600 mt-1 pl-2">
+                          {filteredClientes?.length || 0} resultado(s) encontrado(s)
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Lista de Clientes */}
+                    {filteredClientes?.length === 0 ? (
+                      <div className="p-6 text-center text-gray-500">
+                        <Database className="w-8 h-8 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm font-medium">Nenhum cliente encontrado</p>
                         {clienteSearchTerm && (
-                          <p className="text-xs text-slate-600 mt-1 pl-2">
-                            {filteredClientes?.length || 0} resultado(s) encontrado(s)
+                          <p className="text-xs text-gray-400 mt-1">
+                            Tente alterar o termo de busca
                           </p>
                         )}
                       </div>
-                      
-                      {/* Lista de Clientes */}
-                      {filteredClientes?.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500">
-                          <Database className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-                          <p className="text-sm font-medium">Nenhum cliente encontrado</p>
-                          {clienteSearchTerm && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              Tente alterar o termo de busca
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        filteredClientes?.map((cliente: Cliente) => (
-                          <SelectItem 
-                            key={cliente.code} 
-                            value={cliente.code}
-                            className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50"
-                          >
-                            <div className="flex items-center space-x-3 w-full py-1">
-                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Building2 className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-semibold text-slate-800">{cliente.code}</div>
-                                <div className="text-sm text-slate-600 truncate">{cliente.nomeCliente}</div>
-                              </div>
+                    ) : (
+                      filteredClientes?.map((cliente: Cliente) => (
+                        <SelectItem
+                          key={cliente.code}
+                          value={cliente.code}
+                          className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50"
+                        >
+                          <div className="flex items-center space-x-3 w-full py-1">
+                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <Building2 className="w-4 h-4 text-blue-600" />
                             </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-slate-800">{cliente.code}</div>
+                              <div className="text-sm text-slate-600 truncate">{cliente.nomeCliente}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            {/* Coluna 2 - Cliente Selecionado e Ações */}
-            <div className="space-y-4">
-
-            {/* Cliente Selecionado */}
-              {selectedCliente && (
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-                      <Building2 className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-lg">
-                        {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : ""}
-                      </h3>
-                      <p className="text-sm text-slate-600 font-medium">Código: {selectedCliente}</p>
-                    </div>
-                  </div>
-                  
-                  {historico && historico.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center space-x-2 text-slate-700">
-                        <History className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium">{historico.length} registros</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-slate-700">
-                        <Clock className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium">
-                          {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Ações do Cliente */}
+            {/* Botão de Nova Ação */}
             {selectedCliente && (
-              <div className="flex flex-col justify-center space-y-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Ações Disponíveis</h3>
-                  <p className="text-sm text-slate-600 mb-4">Gerencie o histórico do cliente selecionado</p>
-                </div>
-                
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-slate-700">Ações</Label>
                 <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                   <DialogTrigger asChild>
                     <Button size="lg" className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white shadow-lg hover:shadow-xl transition-all duration-200">
@@ -1213,24 +1198,48 @@ export default function Clientes() {
                     </DialogHeader>
                     <HistoricoForm
                       ambientes={ambientes}
+                      usuarios={usuarios}
                       onSubmit={(data: any) => createMutation.mutate(data)}
                     />
                   </DialogContent>
                 </Dialog>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" className="btn-action">
-                    <Filter className="w-4 h-4 mr-1" />
-                    Filtrar
-                  </Button>
-                  <Button variant="outline" size="sm" className="btn-action">
-                    <Database className="w-4 h-4 mr-1" />
-                    Exportar
-                  </Button>
-                </div>
               </div>
             )}
           </div>
+
+          {/* Cliente Selecionado - Info Box */}
+          {selectedCliente && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-lg">
+                      {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : ""}
+                    </h3>
+                    <p className="text-sm text-slate-600 font-medium">Código: {selectedCliente}</p>
+                  </div>
+                </div>
+
+                {historico && historico.length > 0 && (
+                  <div className="flex items-center space-x-6 text-sm">
+                    <div className="flex items-center space-x-2 text-slate-700">
+                      <History className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium">{historico.length} registros</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-slate-700">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium">
+                        Último: {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -1249,14 +1258,14 @@ export default function Clientes() {
                 </p>
               </div>
             </div>
-            
+
             {/* Filtros */}
             <div className="flex flex-wrap items-center gap-4 mt-4 p-4 bg-slate-50 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Filter className="w-4 h-4 text-slate-500" />
                 <span className="text-sm font-medium text-slate-700">Filtros:</span>
               </div>
-              
+
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -1266,7 +1275,7 @@ export default function Clientes() {
                   className="pl-10 w-64"
                 />
               </div>
-              
+
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Status" />
@@ -1280,7 +1289,7 @@ export default function Clientes() {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={filterTipo} onValueChange={setFilterTipo}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Tipo de Ação" />
@@ -1294,10 +1303,10 @@ export default function Clientes() {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               {(searchTerm || filterStatus !== "all" || filterTipo !== "all") && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => {
                     setSearchTerm("");
@@ -1323,7 +1332,7 @@ export default function Clientes() {
                 <History className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum histórico encontrado</h3>
                 <p className="text-sm">
-                  {searchTerm || filterStatus !== "all" || filterTipo !== "all" 
+                  {searchTerm || filterStatus !== "all" || filterTipo !== "all"
                     ? "Tente ajustar os filtros para encontrar registros."
                     : "Este cliente não possui histórico de atendimentos ainda."
                   }
@@ -1334,7 +1343,7 @@ export default function Clientes() {
                 <div className="text-sm text-slate-600">
                   Mostrando {filteredHistorico?.length} de {historico?.length || 0} registros
                 </div>
-                
+
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -1367,26 +1376,26 @@ export default function Clientes() {
                               </div>
                             </div>
                           </TableCell>
-                          
+
                           <TableCell>
                             <span className="font-medium text-slate-900">
                               {getTipoAcaoLabel(item.tipoAtualizacao)}
                             </span>
                           </TableCell>
-                          
+
                           <TableCell>
                             <span className="text-slate-700">
                               {item.ambiente || '-'}
                             </span>
                           </TableCell>
-                          
+
                           <TableCell>
                             <div className="flex items-center space-x-2">
                               <User className="w-4 h-4 text-slate-400" />
                               <span className="text-slate-700">{item.responsavel}</span>
                             </div>
                           </TableCell>
-                          
+
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <CalendarIcon className="w-4 h-4 text-slate-400" />
@@ -1395,7 +1404,7 @@ export default function Clientes() {
                               </span>
                             </div>
                           </TableCell>
-                          
+
                           <TableCell>
                             {item.tempoGasto ? (
                               <div className="flex items-center space-x-1">
@@ -1406,7 +1415,7 @@ export default function Clientes() {
                               <span className="text-slate-400">-</span>
                             )}
                           </TableCell>
-                          
+
                           <TableCell>
                             {(item.versaoAnterior || item.versaoInstalada) ? (
                               <div className="text-sm">
@@ -1418,7 +1427,7 @@ export default function Clientes() {
                               <span className="text-slate-400">-</span>
                             )}
                           </TableCell>
-                          
+
                           <TableCell>
                             <div className="space-y-1">
                               {item.observacoes && (
@@ -1450,7 +1459,7 @@ export default function Clientes() {
                               )}
                             </div>
                           </TableCell>
-                          
+
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <Button
@@ -1525,6 +1534,7 @@ export default function Clientes() {
               isEdit={true}
               initialData={editingHistorico}
               ambientes={ambientes}
+              usuarios={usuarios}
               onSubmit={(data: any) => updateMutation.mutate({ id: editingHistorico.id, historico: data })}
             />
           )}

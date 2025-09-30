@@ -116,6 +116,7 @@ export const clienteHistorico = pgTable("cliente_historico", {
   tipoAtualizacao: text("tipo_atualizacao").notNull(), // 'ATUALIZACAO_MOBILE', 'ATUALIZACAO_PORTAL', 'INSTALACAO', 'ACESSO_REMOTO', 'ATENDIMENTO_WHATSAPP', 'REUNIAO_CLIENTE'
   observacoes: text("observacoes"), // Observações detalhadas
   responsavel: text("responsavel").notNull(), // Quem fez a atualização/acesso
+  atendenteSuporteId: text("atendente_suporte_id"), // ID do usuário atendente
   dataUltimoAcesso: timestamp("data_ultimo_acesso"), // Último acesso ao sistema
   casoCritico: boolean("caso_critico").notNull().default(false), // Se é um caso crítico
   statusAtual: text("status_atual").notNull().default('CONCLUIDO'), // 'EM_ANDAMENTO', 'CONCLUIDO', 'PENDENTE'
@@ -154,6 +155,7 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
     }
     return val;
   }),
+  atendenteSuporteId: z.string().optional().nullable(),
   anexos: z.array(z.string()).optional().nullable(),
   checklistInstalacao: z.string().optional().nullable(),
   checklistAtualizacao: z.string().optional().nullable(),
