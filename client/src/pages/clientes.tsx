@@ -369,6 +369,19 @@ export default function Clientes() {
     }
   };
 
+  const getCardBackgroundColor = (status: string) => {
+    switch (status) {
+      case 'CONCLUIDO':
+        return 'bg-green-50 border-green-200';
+      case 'EM_ANDAMENTO':
+        return 'bg-yellow-50 border-yellow-200';
+      case 'PENDENTE':
+        return 'bg-red-50 border-red-200';
+      default:
+        return 'bg-white border-slate-200';
+    }
+  };
+
   const getTipoAcaoLabel = (tipo: string) => {
     const tipoObj = TIPOS_ACAO.find(t => t.value === tipo);
     return tipoObj?.label || tipo;
@@ -1431,7 +1444,7 @@ export default function Clientes() {
                   {filteredHistorico?.map((item: ClienteHistorico) => {
                     const isExpanded = expandedCards.has(item.id);
                     return (
-                      <Card key={item.id} className="border border-slate-200 hover:shadow-lg transition-all duration-300 hover:border-blue-300 bg-white">
+                      <Card key={item.id} className={cn("border hover:shadow-lg transition-all duration-300 hover:border-blue-300", getCardBackgroundColor(item.statusAtual))}>
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between mb-4">
                             {/* Cabeçalho do Card */}
