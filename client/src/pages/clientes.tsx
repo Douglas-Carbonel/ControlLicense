@@ -128,6 +128,7 @@ export default function Clientes() {
   const [editingHistorico, setEditingHistorico] = useState<ClienteHistorico | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTipo, setFilterTipo] = useState<string>("all");
+  const [filterAtendente, setFilterAtendente] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedHistorico, setSelectedHistorico] = useState<ClienteHistorico | null>(null);
@@ -250,13 +251,14 @@ export default function Clientes() {
 
         const matchesStatus = filterStatus === "all" || item.statusAtual === filterStatus;
         const matchesTipo = filterTipo === "all" || item.tipoAtualizacao === filterTipo;
+        const matchesAtendente = filterAtendente === "all" || String(item.atendenteSuporteId ?? "") === filterAtendente;
         const matchesSearch = !searchTerm ||
           item.ambiente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.versaoInstalada?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.observacoes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
 
-        return matchesStatus && matchesTipo && matchesSearch;
+        return matchesStatus && matchesTipo && matchesAtendente && matchesSearch;
       });
 
       console.log("Filtered historico result:", filtered.length, "items");
@@ -265,7 +267,7 @@ export default function Clientes() {
       console.error("Error filtering historico:", error);
       return [];
     }
-  }, [historico, filterStatus, filterTipo, searchTerm]);
+  }, [historico, filterStatus, filterTipo, filterAtendente, searchTerm]);
 
   // Mutations
   const createMutation = useMutation({
@@ -416,6 +418,94 @@ export default function Clientes() {
         variant: "destructive",
       });
     }
+  };
+
+  const generateReport = () => {
+    if (!filteredHistorico || filteredHistorico.length === 0) {
+      toast({
+        title: "Nenhum dado para gerar relatório",
+        description: "Não há registros com os filtros selecionados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const clienteNome = Array.isArray(clientes) 
+      ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente 
+      : "";
+
+    // Criar conteúdo do relatório em formato texto
+    let reportContent = `RELATÓRIO DE HISTÓRICO DO CLIENTE\n`;
+    reportContent += `${"=".repeat(60)}\n\n`;
+    reportContent += `Cliente: ${clienteNome} (${selectedCliente})\n`;
+    reportContent += `Data de Geração: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n`;
+    reportContent += `Total de Registros: ${filteredHistorico.length}\n\n`;
+    
+    // Adicionar filtros aplicados
+    reportContent += `FILTROS APLICADOS:\n`;
+    reportContent += `${"-".repeat(60)}\n`;
+    if (filterStatus !== "all") {
+      const statusLabel = STATUS_OPTIONS.find(s => s.value === filterStatus)?.label;
+      reportContent += `- Status: ${statusLabel}\n`;
+    }
+    if (filterTipo !== "all") {
+      const tipoLabel = TIPOS_ACAO.find(t => t.value === filterTipo)?.label;
+      reportContent += `- Tipo de Ação: ${tipoLabel}\n`;
+    }
+    if (filterAtendente !== "all") {
+      const atendenteNome = Array.isArray(usuarios) 
+        ? usuarios.find((u: any) => u.id.toString() === filterAtendente)?.name 
+        : "";
+      reportContent += `- Atendente: ${atendenteNome}\n`;
+    }
+    if (searchTerm) {
+      reportContent += `- Busca: "${searchTerm}"\n`;
+    }
+    reportContent += `\n`;
+
+    // Adicionar registros
+    reportContent += `HISTÓRICO DE ATENDIMENTOS:\n`;
+    reportContent += `${"=".repeat(60)}\n\n`;
+
+    filteredHistorico.forEach((item: ClienteHistorico, index: number) => {
+      reportContent += `[${index + 1}] ${getTipoAcaoLabel(item.tipoAtualizacao)}\n`;
+      reportContent += `${"-".repeat(60)}\n`;
+      reportContent += `Status: ${item.statusAtual === 'CONCLUIDO' ? 'Concluído' : item.statusAtual === 'EM_ANDAMENTO' ? 'Em Andamento' : 'Pendente'}\n`;
+      reportContent += `Data: ${format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n`;
+      reportContent += `Responsável: ${item.responsavel}\n`;
+      
+      const atendenteNome = item.atendenteSuporteId && Array.isArray(usuarios)
+        ? usuarios.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
+        : 'N/A';
+      reportContent += `Atendente Suporte: ${atendenteNome}\n`;
+      
+      if (item.ambiente) reportContent += `Ambiente: ${item.ambiente}\n`;
+      if (item.versaoInstalada) reportContent += `Versão Instalada: ${item.versaoInstalada}\n`;
+      if (item.versaoAnterior) reportContent += `Versão Anterior: ${item.versaoAnterior}\n`;
+      if (item.numeroChamado) reportContent += `Nº Chamado: ${item.numeroChamado}\n`;
+      if (item.tempoGasto) reportContent += `Tempo Gasto: ${item.tempoGasto} minutos\n`;
+      if (item.casoCritico) reportContent += `⚠️ CASO CRÍTICO\n`;
+      if (item.observacoes) reportContent += `Observações: ${item.observacoes}\n`;
+      if (item.problemas) reportContent += `Problemas: ${item.problemas}\n`;
+      if (item.solucoes) reportContent += `Soluções: ${item.solucoes}\n`;
+      reportContent += `\n`;
+    });
+
+    // Criar e baixar arquivo
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `relatorio_historico_${selectedCliente}_${format(new Date(), "yyyyMMdd_HHmmss")}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Relatório gerado com sucesso!",
+      description: `${filteredHistorico.length} registro(s) exportado(s).`,
+    });
   };
 
   const formatChecklistData = (checklistString: string | null) => {
@@ -1397,7 +1487,21 @@ export default function Clientes() {
                 </SelectContent>
               </Select>
 
-              {(searchTerm || filterStatus !== "all" || filterTipo !== "all") && (
+              <Select value={filterAtendente} onValueChange={setFilterAtendente}>
+                <SelectTrigger className="w-48" data-testid="select-atendente">
+                  <SelectValue placeholder="Atendente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Atendentes</SelectItem>
+                  {Array.isArray(usuarios) && usuarios.map((usuario: any) => (
+                    <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                      {usuario.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(searchTerm || filterStatus !== "all" || filterTipo !== "all" || filterAtendente !== "all") && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1405,10 +1509,25 @@ export default function Clientes() {
                     setSearchTerm("");
                     setFilterStatus("all");
                     setFilterTipo("all");
+                    setFilterAtendente("all");
                   }}
                   className="text-slate-600"
+                  data-testid="button-limpar-filtros"
                 >
                   Limpar Filtros
+                </Button>
+              )}
+
+              {filteredHistorico && filteredHistorico.length > 0 && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={generateReport}
+                  className="bg-blue-600 hover:bg-blue-700 text-white ml-auto"
+                  data-testid="button-gerar-relatorio"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Gerar Relatório
                 </Button>
               )}
             </div>
@@ -1425,7 +1544,7 @@ export default function Clientes() {
                 <History className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum histórico encontrado</h3>
                 <p className="text-sm">
-                  {searchTerm || filterStatus !== "all" || filterTipo !== "all"
+                  {searchTerm || filterStatus !== "all" || filterTipo !== "all" || filterAtendente !== "all"
                     ? "Tente ajustar os filtros para encontrar registros."
                     : "Este cliente não possui histórico de atendimentos ainda."
                   }
