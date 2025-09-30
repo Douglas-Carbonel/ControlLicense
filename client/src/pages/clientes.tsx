@@ -618,35 +618,51 @@ export default function Clientes() {
                   </div>
 
                   <div>
-                    <Label htmlFor="atendenteSuporteId">Atendente Suporte</Label>
+                    <Label htmlFor="atendenteSuporteId" className="text-[#0c151f] font-medium">Atendente Suporte</Label>
                     <Select
                       value={formData.atendenteSuporteId}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, atendenteSuporteId: value }))}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
                         <SelectValue placeholder="Selecione o atendente" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {usuarios?.map((usuario: any) => (
+                      <SelectContent className="max-h-[200px] bg-white border-[#e0e0e0]">
+                        {Array.isArray(usuarios) ? usuarios.map((usuario: any) => (
                           <SelectItem key={usuario.id} value={usuario.id.toString()}>
-                            {usuario.name}
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 bg-gradient-to-br from-[#0095da] to-[#313d5a] rounded-full flex items-center justify-center text-white text-xs font-medium">
+                                {usuario.name?.charAt(0) || 'U'}
+                              </div>
+                              <div>
+                                <div className="font-medium">{usuario.name}</div>
+                                <div className="text-xs text-slate-500">@{usuario.username} • {usuario.role === 'admin' ? 'Administrador' : 'Técnico'}</div>
+                              </div>
+                            </div>
                           </SelectItem>
-                        ))}
+                        )) : null}
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="casoCritico"
-                    checked={formData.casoCritico}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, casoCritico: checked }))}
-                    className="data-[state=checked]:bg-[#0095da]"
-                  />
-                  <Label htmlFor="casoCritico" className="text-sm font-medium text-[#0c151f]">
-                    Caso Crítico
-                  </Label>
+                  <div>
+                    <Label htmlFor="casoCritico" className="text-[#0c151f] font-medium mb-3 block">Configurações Especiais</Label>
+                    <div className="flex items-center space-x-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <Switch
+                        id="casoCritico"
+                        checked={formData.casoCritico}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, casoCritico: checked }))}
+                        className="data-[state=checked]:bg-red-500"
+                      />
+                      <div>
+                        <Label htmlFor="casoCritico" className="text-sm font-medium text-red-700 cursor-pointer">
+                          Caso Crítico
+                        </Label>
+                        <p className="text-xs text-red-600 mt-1">
+                          Marcar como prioridade alta para atendimento urgente
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
