@@ -1310,7 +1310,10 @@ export default function Clientes() {
                   <div className="flex items-center space-x-2 text-slate-700">
                     <User className="w-4 h-4 text-blue-600" />
                     <span className="font-medium">
-                      Último responsável: {historico[0]?.responsavel || "N/A"}
+                      Atendente Suporte: {historico[0]?.atendenteSuporteId 
+                        ? usuarios?.find((u: any) => u.id.toString() === historico[0].atendenteSuporteId)?.name || 'N/A'
+                        : 'N/A'
+                      }
                     </span>
                   </div>
                 </div>
