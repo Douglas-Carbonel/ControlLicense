@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Plus, Edit, Trash2, Clock, AlertTriangle, CheckCircle, XCircle, Calendar as CalendarIcon, User, Database, History, Filter, Search, Paperclip, Upload, FileImage, CheckSquare, Eye, ChevronDown, ChevronUp, ExternalLink, Copy, Download } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Clock, AlertTriangle, CheckCircle, XCircle, Calendar as CalendarIcon, User, Database, History, Filter, Search, Paperclip, Upload, FileImage, CheckSquare, Eye, ChevronDown, ChevronUp, ExternalLink, Copy, Download, List, Grid3X3, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -132,6 +132,8 @@ export default function Clientes() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedHistorico, setSelectedHistorico] = useState<ClienteHistorico | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -403,6 +405,16 @@ export default function Clientes() {
       newExpanded.add(historicoId);
     }
     setExpandedCards(newExpanded);
+  };
+
+  const toggleCardFlip = (historicoId: number) => {
+    const newFlipped = new Set(flippedCards);
+    if (newFlipped.has(historicoId)) {
+      newFlipped.delete(historicoId);
+    } else {
+      newFlipped.add(historicoId);
+    }
+    setFlippedCards(newFlipped);
   };
 
   const getFullTicketUrl = (numeroChamado: string | null) => {
@@ -1457,7 +1469,7 @@ export default function Clientes() {
               </div>
             </div>
 
-            {/* Filtros */}
+            {/* Filtros e Controles de Visualização */}
             <div className="flex flex-wrap items-center gap-4 mt-4 p-4 bg-slate-50 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Filter className="w-4 h-4 text-slate-500" />
@@ -1533,18 +1545,42 @@ export default function Clientes() {
                 </Button>
               )}
 
-              {filteredHistorico && filteredHistorico.length > 0 && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={generateReport}
-                  className="bg-blue-600 hover:bg-blue-700 text-white ml-auto"
-                  data-testid="button-gerar-relatorio"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Gerar Relatório
-                </Button>
-              )}
+              <div className="flex items-center space-x-2 ml-auto">
+                <span className="text-sm font-medium text-slate-700">Visualização:</span>
+                <div className="flex bg-white border border-slate-200 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className={`h-8 px-3 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-600'}`}
+                    title="Visualização em Lista"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className={`h-8 px-3 ${viewMode === 'cards' ? 'bg-blue-600 text-white' : 'text-slate-600'}`}
+                    title="Visualização em Cards"
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                {filteredHistorico && filteredHistorico.length > 0 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={generateReport}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    data-testid="button-gerar-relatorio"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Gerar Relatório
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -1574,12 +1610,14 @@ export default function Clientes() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {filteredHistorico?.map((item: ClienteHistorico) => {
-                    const isExpanded = expandedCards.has(item.id);
-                    return (
-                      <Card key={item.id} className={cn("border hover:shadow-lg transition-all duration-300 hover:border-blue-300", getCardBackgroundColor(item.statusAtual))}>
-                        <CardContent className="p-6">
+                {/* Modo Lista */}
+                {viewMode === 'list' && (
+                  <div className="space-y-4">
+                    {filteredHistorico?.map((item: ClienteHistorico) => {
+                      const isExpanded = expandedCards.has(item.id);
+                      return (
+                        <Card key={item.id} className={cn("border hover:shadow-lg transition-all duration-300 hover:border-blue-300", getCardBackgroundColor(item.statusAtual))}>
+                          <CardContent className="p-6">
                           <div className="flex items-start justify-between mb-4">
                             {/* Cabeçalho do Card */}
                             <div className="flex items-center space-x-4 flex-1">
@@ -1919,10 +1957,271 @@ export default function Clientes() {
                           </div>
                         )}
                         </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Modo Cards */}
+                {viewMode === 'cards' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredHistorico?.map((item: ClienteHistorico) => {
+                      const isFlipped = flippedCards.has(item.id);
+                      return (
+                        <div key={item.id} className="relative h-80 perspective-1000">
+                          {/* Card Container com Flip */}
+                          <div className={cn(
+                            "relative w-full h-full transition-transform duration-700 transform-style-preserve-3d",
+                            isFlipped ? "rotate-y-180" : ""
+                          )}>
+                            
+                            {/* Frente do Card */}
+                            <Card className={cn(
+                              "absolute inset-0 w-full h-full backface-hidden border-2 hover:shadow-xl transition-all duration-300",
+                              getCardBackgroundColor(item.statusAtual)
+                            )}>
+                              <CardContent className="p-4 h-full flex flex-col">
+                                {/* Header */}
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center space-x-2">
+                                    {getStatusIcon(item.statusAtual)}
+                                    {getStatusBadge(item.statusAtual)}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleCardFlip(item.id)}
+                                    className="h-8 w-8 p-0 hover:bg-slate-100"
+                                    title="Virar card"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </Button>
+                                </div>
+
+                                {/* Título */}
+                                <div className="mb-3">
+                                  <h3 className="font-bold text-slate-900 text-sm leading-tight mb-1">
+                                    {getTipoAcaoLabel(item.tipoAtualizacao)}
+                                  </h3>
+                                  <p className="text-xs text-slate-600">
+                                    {format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                  </p>
+                                </div>
+
+                                {/* Informações Principais */}
+                                <div className="space-y-2 flex-1 text-xs">
+                                  <div className="flex items-center space-x-2">
+                                    <Database className="w-3 h-3 text-slate-400" />
+                                    <span className="text-slate-600 truncate">{item.ambiente || 'N/A'}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <User className="w-3 h-3 text-slate-400" />
+                                    <span className="text-slate-600 truncate">{item.responsavel}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Clock className="w-3 h-3 text-slate-400" />
+                                    <span className="text-slate-600">
+                                      {item.tempoGasto ? `${item.tempoGasto} min` : 'N/A'}
+                                    </span>
+                                  </div>
+                                  {item.numeroChamado && (
+                                    <div className="flex items-center space-x-2">
+                                      <FileImage className="w-3 h-3 text-slate-400" />
+                                      <span className="text-slate-600">#{item.numeroChamado}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Badges */}
+                                <div className="flex flex-wrap gap-1 mt-3">
+                                  {item.casoCritico && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      <AlertTriangle className="w-2 h-2 mr-1" />
+                                      Crítico
+                                    </Badge>
+                                  )}
+                                  {item.checklistInstalacao && (
+                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                      Checklist Instalação
+                                    </Badge>
+                                  )}
+                                  {item.checklistAtualizacao && (
+                                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                                      Checklist Atualização
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {/* Ações na Frente */}
+                                <div className="flex justify-end space-x-1 mt-3 pt-2 border-t border-slate-200">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewDetails(item)}
+                                    className="h-7 px-2 text-xs hover:bg-blue-50 text-blue-600"
+                                  >
+                                    <Eye className="w-3 h-3 mr-1" />
+                                    Ver
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(item)}
+                                    className="h-7 px-2 text-xs hover:bg-slate-50"
+                                    disabled={item.statusAtual === 'CONCLUIDO'}
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Verso do Card */}
+                            <Card className={cn(
+                              "absolute inset-0 w-full h-full backface-hidden rotate-y-180 border-2",
+                              getCardBackgroundColor(item.statusAtual)
+                            )}>
+                              <CardContent className="p-4 h-full flex flex-col">
+                                {/* Header do Verso */}
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="font-semibold text-slate-700 text-sm">Detalhes</h4>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleCardFlip(item.id)}
+                                    className="h-8 w-8 p-0 hover:bg-slate-100"
+                                    title="Virar card"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </Button>
+                                </div>
+
+                                {/* Conteúdo do Verso */}
+                                <div className="space-y-3 flex-1 text-xs overflow-y-auto">
+                                  {/* Atendente */}
+                                  <div>
+                                    <span className="font-medium text-slate-600">Atendente:</span>
+                                    <p className="text-slate-800 mt-1">
+                                      {item.atendenteSuporteId 
+                                        ? usuarios?.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
+                                        : 'N/A'
+                                      }
+                                    </p>
+                                  </div>
+
+                                  {/* Versões */}
+                                  {(item.versaoAnterior || item.versaoInstalada) && (
+                                    <div>
+                                      <span className="font-medium text-slate-600">Versões:</span>
+                                      <div className="mt-1 space-y-1">
+                                        {item.versaoAnterior && (
+                                          <p className="text-red-600">Anterior: {item.versaoAnterior}</p>
+                                        )}
+                                        {item.versaoInstalada && (
+                                          <p className="text-green-600">Instalada: {item.versaoInstalada}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Observações */}
+                                  {item.observacoes && (
+                                    <div>
+                                      <span className="font-medium text-slate-600">Observações:</span>
+                                      <p className="text-slate-800 mt-1 text-xs leading-relaxed">
+                                        {item.observacoes.length > 120 
+                                          ? `${item.observacoes.substring(0, 120)}...` 
+                                          : item.observacoes
+                                        }
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Problemas */}
+                                  {item.problemas && (
+                                    <div>
+                                      <span className="font-medium text-red-600">Problemas:</span>
+                                      <p className="text-slate-800 mt-1 text-xs leading-relaxed">
+                                        {item.problemas.length > 100 
+                                          ? `${item.problemas.substring(0, 100)}...` 
+                                          : item.problemas
+                                        }
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Soluções */}
+                                  {item.solucoes && (
+                                    <div>
+                                      <span className="font-medium text-green-600">Soluções:</span>
+                                      <p className="text-slate-800 mt-1 text-xs leading-relaxed">
+                                        {item.solucoes.length > 100 
+                                          ? `${item.solucoes.substring(0, 100)}...` 
+                                          : item.solucoes
+                                        }
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Anexos */}
+                                  {item.anexos && Array.isArray(item.anexos) && item.anexos.length > 0 && (
+                                    <div>
+                                      <span className="font-medium text-purple-600">Anexos:</span>
+                                      <p className="text-slate-800 mt-1">{item.anexos.length} arquivo(s)</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Ações no Verso */}
+                                <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-200">
+                                  <div className="flex space-x-1">
+                                    {item.numeroChamado && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => window.open(getFullTicketUrl(item.numeroChamado!) || item.numeroChamado!, '_blank')}
+                                        className="h-7 px-2 text-xs hover:bg-indigo-50 text-indigo-600"
+                                      >
+                                        <ExternalLink className="w-3 h-3 mr-1" />
+                                        Chamado
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs hover:bg-red-50 text-red-600"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Esta ação não pode ser desfeita. O histórico será removido permanentemente.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(item.id)}>
+                                          Excluir
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

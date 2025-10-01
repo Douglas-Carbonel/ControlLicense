@@ -3,6 +3,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Classes para efeito flip 3D */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -241,15 +258,15 @@ body {
   width: 380px;
   height: 380px;
   transform: rotate(45deg);
-  background: linear-gradient(45deg, 
-    #3498DB 0%, 
+  background: linear-gradient(45deg,
+    #3498DB 0%,
     #2980B9 25%,
     #1F4E79 50%,
     #17365C 75%,
     #0F2A44 100%
   );
   border-radius: 0px;
-  box-shadow: 
+  box-shadow:
     0 25px 50px rgba(52, 152, 219, 0.30),
     0 15px 30px rgba(52, 152, 219, 0.20),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -918,4 +935,74 @@ textarea.transition-none {
 
 .license-table-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* CSS for flip cards */
+.card-container {
+  width: 18rem; /* Example width */
+  height: 24rem; /* Example height */
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+  cursor: pointer;
+}
+
+.card-front, .card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem; /* Tailwind's rounded-xl */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-front {
+  background-color: white; /* Default background, can be styled further */
+  color: #3a3a3c; /* Default foreground */
+}
+
+.card-back {
+  background-color: #0095da; /* DW IT Solutions Primary Blue */
+  color: white;
+  transform: rotateY(180deg);
+}
+
+.card-container.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-back-content {
+  padding: 1.5rem; /* Tailwind's p-6 */
+  text-align: center;
+}
+
+.card-back-title {
+  font-size: 1.25rem; /* Tailwind's text-lg */
+  font-weight: 600; /* Tailwind's font-semibold */
+  margin-bottom: 0.5rem; /* Tailwind's mb-2 */
+}
+
+.card-back-description {
+  font-size: 0.875rem; /* Tailwind's text-sm */
+  color: rgba(255, 255, 255, 0.8); /* Slightly transparent white */
+}
+
+/* Styles for toggling between list and cards view */
+.view-toggle-button {
+  @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300;
+}
+
+.view-toggle-button.active {
+  background-color: #0095da; /* DW Primary Blue */
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 149, 218, 0.3);
+}
+
+.view-toggle-button:not(.active) {
+  background-color: var(--surface-variant);
+  color: var(--foreground);
+  border: 1px solid var(--outline);
 }
