@@ -282,11 +282,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userData = req.body;
+      const { username, email, name, role, active, passwordHash } = req.body;
+
+      // Criar objeto apenas com campos válidos para atualização
+      const userData: Partial<any> = {
+        username,
+        email,
+        name,
+        role,
+        active
+      };
 
       // Se está alterando a senha, fazer hash
-      if (userData.passwordHash) {
-        userData.passwordHash = await bcrypt.hash(userData.passwordHash, 10);
+      if (passwordHash) {
+        userData.passwordHash = await bcrypt.hash(passwordHash, 10);
       }
 
       const updatedUser = await storage.updateUser(id, userData);
