@@ -1266,18 +1266,7 @@ export default function Clientes() {
 
       {/* Seleção de Cliente */}
       <Card className="bg-white border border-gray-200 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-800">Gestão de Clientes</h2>
-              <p className="text-sm text-slate-600">Selecione um cliente para visualizar e gerenciar seu histórico</p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex items-center space-x-4">
             {/* Campo de busca e seleção de cliente otimizado */}
             <div className="flex-1 relative">
@@ -1303,7 +1292,7 @@ export default function Clientes() {
                         </div>
                       </div>
                     ) : (
-                      <span className="text-slate-500 font-medium">🔍 Buscar e selecionar cliente...</span>
+                      <span className="text-slate-500 font-medium">Selecionar cliente...</span>
                     )}
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
@@ -1311,18 +1300,15 @@ export default function Clientes() {
                 <PopoverContent className="w-[800px] p-0 bg-white border-slate-200 shadow-lg">
                   {/* Campo de busca */}
                   <div className="p-3 border-b border-slate-200 bg-slate-50">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Digite o código ou nome do cliente..."
-                        value={clienteSearchTerm}
-                        onChange={(e) => handleClienteSearchChange(e.target.value)}
-                        className="pl-10 pr-4 border-slate-300 h-10 bg-white"
-                        autoFocus
-                      />
-                    </div>
+                    <Input
+                      placeholder="Digite o código ou nome do cliente..."
+                      value={clienteSearchTerm}
+                      onChange={(e) => handleClienteSearchChange(e.target.value)}
+                      className="border-slate-300 h-10 bg-white"
+                      autoFocus
+                    />
                     {clienteSearchTerm && (
-                      <p className="text-xs text-slate-600 mt-2 pl-2">
+                      <p className="text-xs text-slate-600 mt-2">
                         {filteredClientes?.length || 0} resultado(s) encontrado(s)
                       </p>
                     )}
