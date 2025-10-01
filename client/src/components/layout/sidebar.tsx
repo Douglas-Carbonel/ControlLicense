@@ -20,14 +20,48 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 
 function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [lastViewedLogTime, setLastViewedLogTime] = useState(() => {
+    return localStorage.getItem('lastViewedLogTime') || new Date().toISOString();
+  });
+
+  // Query para buscar atividades e verificar novas
+  const { data: activities } = useQuery({
+    queryKey: ["/api/activities"],
+    staleTime: 30 * 1000,
+    gcTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 60 * 1000,
+    enabled: user?.role === 'admin', // Apenas para administradores
+  });
+
+  // Contar novos logs desde a última visualização
+  const newLogsCount = useMemo(() => {
+    if (!activities || !Array.isArray(activities) || user?.role !== 'admin') return 0;
+    
+    const lastViewed = new Date(lastViewedLogTime);
+    return activities.filter(activity => {
+      const activityDate = new Date(activity.timestamp);
+      return activityDate > lastViewed;
+    }).length;
+  }, [activities, lastViewedLogTime, user?.role]);
+
+  // Atualizar último tempo de visualização quando entrar na página de logs
+  useEffect(() => {
+    if (location === '/activities') {
+      const now = new Date().toISOString();
+      setLastViewedLogTime(now);
+      localStorage.setItem('lastViewedLogTime', now);
+    }
+  }, [location]);
 
   const navigationItems = useMemo(() => {
     const items = [];
@@ -71,7 +105,8 @@ function Sidebar() {
           href: "/activities", 
           label: "Logs", 
           icon: Activity,
-          description: "Logs e histórico de ações"
+          description: "Logs e histórico de ações",
+          badge: newLogsCount > 0 ? newLogsCount : null
         }
       );
 
@@ -180,25 +215,41 @@ function Sidebar() {
                 title={isCollapsed ? item.label : ''}
               >
                 <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`relative p-2 rounded-lg transition-all duration-300 ${
                     isActive 
                       ? 'bg-white/20 shadow-inner' 
                       : 'group-hover:bg-[#0095da]/20'
                   }`}>
                     <Icon className="w-5 h-5 flex-shrink-0" />
+                    {/* Badge de notificação */}
+                    {item.badge && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                        {item.badge > 99 ? '99+' : item.badge}
+                      </div>
+                    )}
                   </div>
                   {!isCollapsed && (
-                    <span className="font-medium tracking-wide">{item.label}</span>
+                    <div className="flex items-center justify-between flex-1">
+                      <span className="font-medium tracking-wide">{item.label}</span>
+                      {item.badge && (
+                        <Badge 
+                          variant="destructive" 
+                          className="ml-2 bg-red-500 text-white text-xs px-2 py-1 animate-pulse"
+                        >
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </Badge>
+                      )}
+                    </div>
                   )}
                 </div>
 
                 {/* Active indicator */}
-                {isActive && !isCollapsed && (
+                {isActive && !isCollapsed && !item.badge && (
                   <div className="w-2 h-2 bg-white rounded-full shadow-sm animate-pulse"></div>
                 )}
 
                 {/* Hover indicator */}
-                {!isActive && !isCollapsed && (
+                {!isActive && !isCollapsed && !item.badge && (
                   <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
                 )}
 
