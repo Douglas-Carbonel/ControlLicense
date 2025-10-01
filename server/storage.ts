@@ -39,6 +39,8 @@ export interface IStorage {
   // Activity operations
   getActivities(limit?: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
+  getUnreadActivityCount(userId: string): Promise<number>;
+  markActivitiesAsRead(userId: string): Promise<void>;
 
   // User operations
   getUsers(): Promise<User[]>;
@@ -68,6 +70,8 @@ export interface IStorage {
 }
 
 export class DbStorage implements IStorage {
+  private lastSeenActivityAt: Map<string, Date> = new Map();
+
   async getLicenses(): Promise<License[]> {
     return await db.select().from(licenses).orderBy(desc(licenses.id));
   }
@@ -280,6 +284,26 @@ export class DbStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const result = await db.insert(activities).values(activity).returning();
     return result[0];
+  }
+
+  async getUnreadActivityCount(userId: string): Promise<number> {
+    const lastSeen = this.lastSeenActivityAt.get(userId);
+    
+    if (!lastSeen) {
+      const [result] = await db.select({ count: count() }).from(activities);
+      return result.count;
+    }
+
+    const [result] = await db
+      .select({ count: count() })
+      .from(activities)
+      .where(sql`${activities.timestamp} > ${lastSeen}`);
+    
+    return result.count;
+  }
+
+  async markActivitiesAsRead(userId: string): Promise<void> {
+    this.lastSeenActivityAt.set(userId, new Date());
   }
 
   // Métodos para usuários
