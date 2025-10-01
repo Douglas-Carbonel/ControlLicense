@@ -135,9 +135,26 @@ export async function apiRequest(method: string, url: string, data?: any) {
   // Notificar sobre mudanças que podem gerar logs para admins
   if (['POST', 'PUT', 'DELETE'].includes(method) && 
       ['/api/mensagens', '/api/licenses', '/api/users', '/api/clientes-historico'].some(endpoint => url.includes(endpoint))) {
-    console.log('Triggering activity update notification');
+    console.log('Triggering activity update notification via custom event');
+    
+    // Invalidar queries de atividades imediatamente
+    if (typeof window !== 'undefined' && (window as any).queryClient) {
+      console.log('Invalidating activities queries immediately');
+      (window as any).queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+    }
+    
+    // Disparar evento customizado para notificar mudanças
+    const event = new CustomEvent('activityUpdate', {
+      detail: {
+        method,
+        url,
+        timestamp: Date.now()
+      }
+    });
+    window.dispatchEvent(event);
+    
+    // Também manter localStorage como backup
     localStorage.setItem('activityUpdate', Date.now().toString());
-    // Remover após um breve momento para evitar loops
     setTimeout(() => localStorage.removeItem('activityUpdate'), 100);
   }
 

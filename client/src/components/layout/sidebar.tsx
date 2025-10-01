@@ -36,39 +36,47 @@ function Sidebar() {
   // Query para buscar atividades e verificar novas
   const { data: activities, refetch: refetchActivities } = useQuery({
     queryKey: ["/api/activities"],
-    staleTime: 5 * 1000, // Reduzir para 5 segundos para resposta mais rápida
+    staleTime: 2 * 1000, // Reduzir para 2 segundos para resposta ainda mais rápida
     gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
-    refetchInterval: 30 * 1000, // Verificar a cada 30 segundos
+    refetchInterval: 15 * 1000, // Verificar a cada 15 segundos
     enabled: user?.role === 'admin', // Apenas para administradores
   });
 
   // Contar novos logs desde a última visualização
   const newLogsCount = useMemo(() => {
-    if (!activities || !Array.isArray(activities) || user?.role !== 'admin') return 0;
+    if (!activities || !Array.isArray(activities) || user?.role !== 'admin') {
+      console.log('No activities or not admin, returning 0');
+      return 0;
+    }
     
     const lastViewed = new Date(lastViewedLogTime);
     console.log('Checking new logs:', {
       totalActivities: activities.length,
       lastViewedTime: lastViewed.toISOString(),
-      firstActivityTime: activities[0]?.timestamp
+      firstActivityTime: activities[0]?.timestamp,
+      lastViewedTimestamp: lastViewed.getTime()
     });
     
     const newActivities = activities.filter(activity => {
+      if (!activity.timestamp) return false;
+      
       const activityDate = new Date(activity.timestamp);
       const isNew = activityDate > lastViewed;
-      if (isNew) {
-        console.log('New activity found:', {
-          id: activity.id,
-          action: activity.action,
-          timestamp: activity.timestamp,
-          description: activity.description
-        });
-      }
+      
+      console.log('Activity check:', {
+        id: activity.id,
+        action: activity.action,
+        timestamp: activity.timestamp,
+        activityTime: activityDate.getTime(),
+        lastViewedTime: lastViewed.getTime(),
+        isNew
+      });
+      
       return isNew;
     });
     
-    console.log('New logs count:', newActivities.length);
+    console.log('Final new logs count:', newActivities.length);
     return newActivities.length;
   }, [activities, lastViewedLogTime, user?.role]);
 
@@ -85,15 +93,29 @@ function Sidebar() {
 
   // Forçar atualização das atividades quando houver mudanças no sistema
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'activityUpdate' && user?.role === 'admin') {
-        console.log('Activity update detected, refetching...');
+    const handleActivityUpdate = (e: CustomEvent) => {
+      if (user?.role === 'admin') {
+        console.log('Activity update detected via custom event:', e.detail);
         refetchActivities();
       }
     };
 
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'activityUpdate' && user?.role === 'admin') {
+        console.log('Activity update detected via storage, refetching...');
+        refetchActivities();
+      }
+    };
+
+    // Escutar eventos customizados (mais confiável)
+    window.addEventListener('activityUpdate', handleActivityUpdate as EventListener);
+    // Manter localStorage como backup
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('activityUpdate', handleActivityUpdate as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [refetchActivities, user?.role]);
 
   const navigationItems = useMemo(() => {
