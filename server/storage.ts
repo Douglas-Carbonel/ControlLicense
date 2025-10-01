@@ -289,21 +289,27 @@ export class DbStorage implements IStorage {
   async getUnreadActivityCount(userId: string): Promise<number> {
     const lastSeen = this.lastSeenActivityAt.get(userId);
     
+    console.log(`[UNREAD] Checking unread count for user ${userId}, lastSeen:`, lastSeen);
+    
     if (!lastSeen) {
       const [result] = await db.select({ count: count() }).from(activities);
+      console.log(`[UNREAD] No lastSeen for user ${userId}, total activities: ${result.count}`);
       return result.count;
     }
 
     const [result] = await db
       .select({ count: count() })
       .from(activities)
-      .where(sql`${activities.timestamp} > ${lastSeen}`);
+      .where(sql`${activities.timestamp} > ${lastSeen.toISOString()}`);
     
+    console.log(`[UNREAD] User ${userId} has ${result.count} unread activities (since ${lastSeen.toISOString()})`);
     return result.count;
   }
 
   async markActivitiesAsRead(userId: string): Promise<void> {
-    this.lastSeenActivityAt.set(userId, new Date());
+    const now = new Date();
+    this.lastSeenActivityAt.set(userId, now);
+    console.log(`[MARK_READ] User ${userId} marked activities as read at ${now.toISOString()}`);
   }
 
   // Métodos para usuários

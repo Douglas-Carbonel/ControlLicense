@@ -116,7 +116,7 @@ function Sidebar() {
       }
     }
     return items;
-  }, [user?.role]);
+  }, [user?.role, newLogsCount]);
 
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed(prev => !prev);
