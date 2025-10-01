@@ -19,7 +19,7 @@ const NewLicenseModal = lazy(() => import("@/components/modals/new-license-modal
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/lib/permissions";
 
 
 const AVAILABLE_COLUMNS = [
