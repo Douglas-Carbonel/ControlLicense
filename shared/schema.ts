@@ -200,7 +200,8 @@ export const fieldPermissions = pgTable("field_permissions", {
   fieldName: text("field_name").notNull(), // Nome do campo ao qual a permissão se aplica
   canView: boolean("can_view").notNull().default(true), // Se pode visualizar
   canEdit: boolean("can_edit").notNull().default(true), // Se o usuário pode editar o campo
-  createdAt: timestamp("created_at").defaultNow().notNull(),stamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type License = typeof licenses.$inferSelect;
