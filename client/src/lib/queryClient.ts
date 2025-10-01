@@ -116,20 +116,32 @@ export async function apiRequest(method: string, url: string, data?: any) {
   const contentType = response.headers.get("content-type");
   console.log(`Response content-type: ${contentType}`);
 
+  let result;
   if (contentType && contentType.includes("application/json")) {
     const jsonData = await response.json();
     console.log(`JSON Response data:`, jsonData);
-    return jsonData;
+    result = jsonData;
   } else {
     const textData = await response.text();
     console.log(`Text Response data:`, textData);
     try {
-      return JSON.parse(textData);
+      result = JSON.parse(textData);
     } catch (e) {
       console.warn("Could not parse response as JSON:", textData);
-      return textData;
+      result = textData;
     }
   }
+
+  // Notificar sobre mudanças que podem gerar logs para admins
+  if (['POST', 'PUT', 'DELETE'].includes(method) && 
+      ['/api/mensagens', '/api/licenses', '/api/users', '/api/clientes-historico'].some(endpoint => url.includes(endpoint))) {
+    console.log('Triggering activity update notification');
+    localStorage.setItem('activityUpdate', Date.now().toString());
+    // Remover após um breve momento para evitar loops
+    setTimeout(() => localStorage.removeItem('activityUpdate'), 100);
+  }
+
+  return result;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

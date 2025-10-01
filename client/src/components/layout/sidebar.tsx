@@ -34,12 +34,12 @@ function Sidebar() {
   });
 
   // Query para buscar atividades e verificar novas
-  const { data: activities } = useQuery({
+  const { data: activities, refetch: refetchActivities } = useQuery({
     queryKey: ["/api/activities"],
-    staleTime: 30 * 1000,
+    staleTime: 5 * 1000, // Reduzir para 5 segundos para resposta mais rápida
     gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
-    refetchInterval: 60 * 1000,
+    refetchInterval: 30 * 1000, // Verificar a cada 30 segundos
     enabled: user?.role === 'admin', // Apenas para administradores
   });
 
@@ -48,10 +48,28 @@ function Sidebar() {
     if (!activities || !Array.isArray(activities) || user?.role !== 'admin') return 0;
     
     const lastViewed = new Date(lastViewedLogTime);
-    return activities.filter(activity => {
+    console.log('Checking new logs:', {
+      totalActivities: activities.length,
+      lastViewedTime: lastViewed.toISOString(),
+      firstActivityTime: activities[0]?.timestamp
+    });
+    
+    const newActivities = activities.filter(activity => {
       const activityDate = new Date(activity.timestamp);
-      return activityDate > lastViewed;
-    }).length;
+      const isNew = activityDate > lastViewed;
+      if (isNew) {
+        console.log('New activity found:', {
+          id: activity.id,
+          action: activity.action,
+          timestamp: activity.timestamp,
+          description: activity.description
+        });
+      }
+      return isNew;
+    });
+    
+    console.log('New logs count:', newActivities.length);
+    return newActivities.length;
   }, [activities, lastViewedLogTime, user?.role]);
 
   // Atualizar último tempo de visualização quando entrar na página de logs
@@ -60,8 +78,23 @@ function Sidebar() {
       const now = new Date().toISOString();
       setLastViewedLogTime(now);
       localStorage.setItem('lastViewedLogTime', now);
+      // Forçar atualização das atividades
+      refetchActivities();
     }
-  }, [location]);
+  }, [location, refetchActivities]);
+
+  // Forçar atualização das atividades quando houver mudanças no sistema
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'activityUpdate' && user?.role === 'admin') {
+        console.log('Activity update detected, refetching...');
+        refetchActivities();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refetchActivities, user?.role]);
 
   const navigationItems = useMemo(() => {
     const items = [];
