@@ -95,9 +95,9 @@ export class DbStorage implements IStorage {
 
   async getPaginatedLicenses(offset: number, limit: number, search?: string): Promise<License[]> {
     const conditions = search ? this.buildSearchConditions(search) : [];
-    
+
     let query = db.select().from(licenses);
-    
+
     if (conditions.length > 0) {
       query = query.where(or(...conditions)) as any;
     }
@@ -112,9 +112,9 @@ export class DbStorage implements IStorage {
 
   async getLicensesCount(search?: string): Promise<number> {
     const conditions = search ? this.buildSearchConditions(search) : [];
-    
+
     let query = db.select({ count: count() }).from(licenses);
-    
+
     if (conditions.length > 0) {
       query = query.where(or(...conditions)) as any;
     }
@@ -194,15 +194,15 @@ export class DbStorage implements IStorage {
     const maxLinha = await db
       .select({ maxLinha: sql<number>`MAX(${licenses.linha})` })
       .from(licenses);
-    
+
     const nextLinha = (maxLinha[0]?.maxLinha || 0) + 1;
-    
+
     // Adicionar o campo linha automaticamente
     const licenseWithLinha = {
       ...license,
       linha: nextLinha
     };
-    
+
     const result = await db.insert(licenses).values(licenseWithLinha).returning();
     return result[0];
   }
@@ -306,9 +306,9 @@ export class DbStorage implements IStorage {
 
   async getUnreadActivityCount(userId: string): Promise<number> {
     const lastSeen = this.lastSeenActivityAt.get(userId);
-    
+
     console.log(`[UNREAD] Checking unread count for user ${userId}, lastSeen:`, lastSeen);
-    
+
     if (!lastSeen) {
       const [result] = await db.select({ count: count() }).from(activities);
       console.log(`[UNREAD] No lastSeen for user ${userId}, total activities: ${result.count}`);
@@ -319,7 +319,7 @@ export class DbStorage implements IStorage {
       .select({ count: count() })
       .from(activities)
       .where(sql`${activities.timestamp} > ${lastSeen.toISOString()}`);
-    
+
     console.log(`[UNREAD] User ${userId} has ${result.count} unread activities (since ${lastSeen.toISOString()})`);
     return result.count;
   }
@@ -485,14 +485,22 @@ export class DbStorage implements IStorage {
     }
   }
 
-  async getUserFieldPermissions(userId: number, tableName: string): Promise<FieldPermission[]> {
+  async getUserFieldPermissions(userId: number, tableName: string = 'licenses'): Promise<FieldPermission[]> {
     const user = await this.getUser(userId);
     if (!user || !user.permissionGroupId) {
       return [];
     }
 
     return await db
-      .select()
+      .select({
+        id: fieldPermissions.id,
+        permissionGroupId: fieldPermissions.permissionGroupId,
+        tableName: fieldPermissions.tableName,
+        fieldName: fieldPermissions.fieldName,
+        canView: fieldPermissions.canView,
+        canEdit: fieldPermissions.canEdit,
+        createdAt: fieldPermissions.createdAt,
+      })
       .from(fieldPermissions)
       .where(
         and(
@@ -624,7 +632,7 @@ export class DbStorage implements IStorage {
                 .selectDistinct({ nomeDb: licenses.nomeDb })
                 .from(licenses)
                 .where(and(
-                    not(isNull(licenses.nomeDb)), 
+                    not(isNull(licenses.nomeDb)),
                     eq(licenses.ativo, true)
                 ))
                 .orderBy(asc(licenses.nomeDb));
@@ -690,17 +698,17 @@ export class DbStorage implements IStorage {
     async getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]> {
         try {
             console.log(`Buscando histórico para cliente: ${codigoCliente}`);
-            
+
             let query = db.select().from(clienteHistorico);
-            
+
             if (codigoCliente) {
                 query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente)) as any;
             }
-            
+
             const result = await query.orderBy(desc(clienteHistorico.createdAt));
             console.log(`Resultado da busca: ${result.length} registros encontrados`);
             console.log(`Dados do resultado:`, JSON.stringify(result, null, 2));
-            
+
             // Garantir que sempre retorna um array
             const finalResult = Array.isArray(result) ? result : [];
             console.log(`Retornando array final:`, finalResult.length, 'items');
