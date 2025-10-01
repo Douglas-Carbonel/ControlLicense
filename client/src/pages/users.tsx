@@ -527,7 +527,7 @@ export default function UsersPage() {
 
       {/* Dialog de Edição com Tabs */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-white border border-[#e0e0e0] shadow-2xl max-w-3xl">
+        <DialogContent className="bg-white border border-[#e0e0e0] shadow-2xl max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="pb-4 border-b border-[#e0e0e0]">
             <DialogTitle className="text-xl font-bold text-[#0c151f]">Editar Usuário</DialogTitle>
             <p className="text-sm text-[#3a3a3c] mt-2">Atualize as informações e permissões do usuário</p>
@@ -624,15 +624,16 @@ export default function UsersPage() {
                     <p className="text-sm text-gray-600">
                       Configure quais campos da tela de licenças este usuário pode visualizar e editar:
                     </p>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Campo</TableHead>
-                          <TableHead className="text-center">Visualizar</TableHead>
-                          <TableHead className="text-center">Editar</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                    <div className="border rounded-md overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[200px]">Campo</TableHead>
+                            <TableHead className="text-center min-w-[120px]">Visualizar</TableHead>
+                            <TableHead className="text-center min-w-[120px]">Editar</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                         {LICENSE_FIELDS.map((field) => {
                           const permission = getFieldPermission(field.name);
                           return (
@@ -665,6 +666,7 @@ export default function UsersPage() {
                         })}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 )}
               </TabsContent>
