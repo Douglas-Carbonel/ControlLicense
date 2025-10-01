@@ -405,6 +405,14 @@ export default function Clientes() {
     setExpandedCards(newExpanded);
   };
 
+  const getFullTicketUrl = (numeroChamado: string | null) => {
+    if (!numeroChamado) return null;
+    // Se já for uma URL completa, retorna como está
+    if (numeroChamado.startsWith('http')) return numeroChamado;
+    // Caso contrário, concatena com a URL base
+    return `https://portalsuporte.dwu.com.br/front/ticket.form.php?id=${numeroChamado}`;
+  };
+
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -857,14 +865,24 @@ export default function Clientes() {
                 </div>
 
                 <div>
-                  <Label htmlFor="numeroChamado" className="text-[#0c151f] font-medium">Número/URL do Chamado</Label>
-                  <Input
-                    id="numeroChamado"
-                    value={formData.numeroChamado}
-                    onChange={(e) => setFormData(prev => ({ ...prev, numeroChamado: e.target.value }))}
-                    placeholder="Ex: #12345 ou https://support.exemplo.com/ticket/12345"
-                    className="border-[#e0e0e0] focus:border-[#0095da]"
-                  />
+                  <Label htmlFor="numeroChamado" className="text-[#0c151f] font-medium">Número do Chamado</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id="numeroChamado"
+                      value={formData.numeroChamado}
+                      onChange={(e) => setFormData(prev => ({ ...prev, numeroChamado: e.target.value }))}
+                      placeholder="Ex: 123"
+                      className="border-[#e0e0e0] focus:border-[#0095da]"
+                    />
+                    {formData.numeroChamado && (
+                      <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                        <span className="text-blue-600 font-medium">URL completa: </span>
+                        <span className="text-blue-800">
+                          https://portalsuporte.dwu.com.br/front/ticket.form.php?id={formData.numeroChamado}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -1718,28 +1736,26 @@ export default function Clientes() {
                                       <p className="text-xs text-slate-500 uppercase font-medium">Chamado</p>
                                       <div className="flex items-center space-x-2">
                                         <p className="text-sm font-medium text-slate-700 truncate">
-                                          {item.numeroChamado}
+                                          #{item.numeroChamado}
                                         </p>
                                         <Button
                                           variant="ghost"
                                           size="sm"
                                           className="h-6 w-6 p-0 hover:bg-slate-100"
-                                          onClick={() => copyToClipboard(item.numeroChamado!, "Número do chamado")}
-                                          title="Copiar"
+                                          onClick={() => copyToClipboard(getFullTicketUrl(item.numeroChamado) || item.numeroChamado, "URL do chamado")}
+                                          title="Copiar URL"
                                         >
                                           <Copy className="w-3 h-3" />
                                         </Button>
-                                        {item.numeroChamado.startsWith('http') && (
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-6 w-6 p-0 hover:bg-slate-100"
-                                            onClick={() => window.open(item.numeroChamado, '_blank')}
-                                            title="Abrir link"
-                                          >
-                                            <ExternalLink className="w-3 h-3" />
-                                          </Button>
-                                        )}
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 hover:bg-slate-100"
+                                          onClick={() => window.open(getFullTicketUrl(item.numeroChamado) || item.numeroChamado, '_blank')}
+                                          title="Abrir chamado"
+                                        >
+                                          <ExternalLink className="w-3 h-3" />
+                                        </Button>
                                       </div>
                                     </div>
                                   </div>
@@ -1820,21 +1836,23 @@ export default function Clientes() {
                           <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
                             <h4 className="text-sm font-medium text-indigo-700 mb-2 flex items-center space-x-2">
                               <span>📋</span>
-                              <span>Número/URL do Chamado</span>
+                              <span>Chamado de Suporte</span>
                             </h4>
-                            <div className="text-sm">
-                              {item.numeroChamado.startsWith('http') ? (
+                            <div className="space-y-2">
+                              <div className="text-sm">
+                                <span className="text-indigo-600 font-medium">Número: </span>
+                                <span className="text-indigo-800 font-medium">#{item.numeroChamado}</span>
+                              </div>
+                              <div className="text-sm">
                                 <a 
-                                  href={item.numeroChamado} 
+                                  href={getFullTicketUrl(item.numeroChamado) || '#'} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-indigo-600 hover:text-indigo-800 underline font-medium"
+                                  className="text-indigo-600 hover:text-indigo-800 underline font-medium break-all"
                                 >
-                                  {item.numeroChamado}
+                                  {getFullTicketUrl(item.numeroChamado)}
                                 </a>
-                              ) : (
-                                <span className="text-indigo-800 font-medium">{item.numeroChamado}</span>
-                              )}
+                              </div>
                             </div>
                           </div>
                         )}
@@ -1991,29 +2009,35 @@ export default function Clientes() {
 
                 {selectedHistorico.numeroChamado && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-slate-500 uppercase">Número/URL do Chamado</h4>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-base font-semibold text-slate-800 truncate flex-1">
-                        {selectedHistorico.numeroChamado}
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(selectedHistorico.numeroChamado!, "Número do chamado")}
-                        className="h-7 px-2"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                      {selectedHistorico.numeroChamado.startsWith('http') && (
+                    <h4 className="text-sm font-medium text-slate-500 uppercase">Chamado de Suporte</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-slate-600">Número:</span>
+                        <p className="text-base font-semibold text-slate-800">
+                          #{selectedHistorico.numeroChamado}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-sm text-slate-600 truncate flex-1">
+                          {getFullTicketUrl(selectedHistorico.numeroChamado)}
+                        </p>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(selectedHistorico.numeroChamado, '_blank')}
+                          onClick={() => copyToClipboard(getFullTicketUrl(selectedHistorico.numeroChamado!) || selectedHistorico.numeroChamado!, "URL do chamado")}
+                          className="h-7 px-2"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(getFullTicketUrl(selectedHistorico.numeroChamado!) || selectedHistorico.numeroChamado!, '_blank')}
                           className="h-7 px-2"
                         >
                           <ExternalLink className="w-3 h-3" />
                         </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 )}
