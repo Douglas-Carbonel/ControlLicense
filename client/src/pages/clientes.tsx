@@ -20,6 +20,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useClientSearch } from "@/hooks/use-client-search";
 
 interface ClienteHistorico {
   id: number;
@@ -121,8 +122,16 @@ const STATUS_OPTIONS = [
 ];
 
 export default function Clientes() {
-  const [selectedCliente, setSelectedCliente] = useState<string>("");
-  const [clienteSearchTerm, setClienteSearchTerm] = useState<string>("");
+  const {
+    searchTerm: clienteSearchTerm,
+    selectedClient: selectedCliente,
+    isOpen: isSelectOpen,
+    filteredClientes,
+    setIsOpen: setIsSelectOpen,
+    handleSearchChange: handleClienteSearchChange,
+    handleClientSelect,
+    setSelectedClient: setSelectedCliente
+  } = useClientSearch(clientes);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingHistorico, setEditingHistorico] = useState<ClienteHistorico | null>(null);
@@ -143,16 +152,7 @@ export default function Clientes() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filtrar clientes baseado na busca
-  const filteredClientes = useMemo(() => {
-    if (!clientes || !Array.isArray(clientes)) return [];
-    if (!clienteSearchTerm) return clientes;
-
-    return clientes.filter((cliente: Cliente) =>
-      cliente.code.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
-      cliente.nomeCliente.toLowerCase().includes(clienteSearchTerm.toLowerCase())
-    );
-  }, [clientes, clienteSearchTerm]);
+  
 
   // Buscar histórico do cliente selecionado
   const { data: historico, isLoading, error, refetch } = useQuery({
@@ -1278,18 +1278,23 @@ export default function Clientes() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4">
-            {/* Campo único de seleção integrado */}
+            {/* Campo de busca e seleção de cliente otimizado */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
-              <Select value={selectedCliente} onValueChange={setSelectedCliente}>
-                <SelectTrigger className="w-full pl-12 h-14 border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 transition-all duration-200 text-left bg-white">
-                  <SelectValue>
+              <Popover open={isSelectOpen} onOpenChange={setIsSelectOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isSelectOpen}
+                    className="w-full pl-12 h-14 border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 transition-all duration-200 text-left bg-white justify-start font-normal"
+                  >
                     {selectedCliente ? (
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 w-full">
                         <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Building2 className="w-4 h-4 text-blue-600" />
                         </div>
-                        <div className="text-left">
+                        <div className="text-left flex-1">
                           <div className="font-semibold text-slate-800">
                             {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : ""}
                           </div>
@@ -1299,18 +1304,20 @@ export default function Clientes() {
                     ) : (
                       <span className="text-slate-500 font-medium">🔍 Buscar e selecionar cliente...</span>
                     )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-[400px] w-full">
-                  {/* Campo de busca interno */}
-                  <div className="sticky top-0 bg-white p-3 border-b border-slate-200">
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[800px] p-0 bg-white border-slate-200 shadow-lg">
+                  {/* Campo de busca */}
+                  <div className="p-3 border-b border-slate-200 bg-slate-50">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         placeholder="Digite o código ou nome do cliente..."
                         value={clienteSearchTerm}
-                        onChange={(e) => setClienteSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 border-slate-300 h-10"
+                        onChange={(e) => handleClienteSearchChange(e.target.value)}
+                        className="pl-10 pr-4 border-slate-300 h-10 bg-white"
+                        autoFocus
                       />
                     </div>
                     {clienteSearchTerm && (
@@ -1333,27 +1340,30 @@ export default function Clientes() {
                         )}
                       </div>
                     ) : (
-                      filteredClientes?.map((cliente: Cliente) => (
-                        <SelectItem
-                          key={cliente.code}
-                          value={cliente.code}
-                          className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50 p-3"
-                        >
-                          <div className="flex items-center space-x-3 w-full">
-                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <Building2 className="w-4 h-4 text-blue-600" />
+                      <div className="p-1">
+                        {filteredClientes?.map((cliente: Cliente) => (
+                          <Button
+                            key={cliente.code}
+                            variant="ghost"
+                            className="w-full justify-start p-3 h-auto hover:bg-blue-50 focus:bg-blue-50 text-left"
+                            onClick={() => handleClientSelect(cliente.code)}
+                          >
+                            <div className="flex items-center space-x-3 w-full">
+                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Building2 className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1 text-left">
+                                <div className="font-semibold text-slate-800">{cliente.code}</div>
+                                <div className="text-sm text-slate-600 truncate">{cliente.nomeCliente}</div>
+                              </div>
                             </div>
-                            <div className="flex-1 text-left">
-                              <div className="font-semibold text-slate-800">{cliente.code}</div>
-                              <div className="text-sm text-slate-600 truncate">{cliente.nomeCliente}</div>
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))
+                          </Button>
+                        ))}
+                      </div>
                     )}
                   </div>
-                </SelectContent>
-              </Select>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Botão de Nova Ação - sempre visível */}
