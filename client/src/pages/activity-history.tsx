@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +22,7 @@ export default function ActivityHistory() {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [showOnlyErrors, setShowOnlyErrors] = useState(false);
-  
+
   const { data: activities, isLoading, refetch } = useQuery({
     queryKey: ["/api/activities"],
     staleTime: 30 * 1000,
@@ -34,7 +33,7 @@ export default function ActivityHistory() {
 
   const filteredActivities = useMemo(() => {
     if (!activities) return [];
-    
+
     let filtered = activities;
 
     // Filtro por aba
@@ -57,6 +56,31 @@ export default function ActivityHistory() {
       case "auth":
         filtered = filtered.filter((activity: any) => 
           ['LOGIN', 'LOGOUT'].includes(activity.action)
+        );
+        break;
+      case "licenses":
+        filtered = filtered.filter((activity: any) =>
+          activity.action.startsWith('LICENSE_')
+        );
+        break;
+      case "clients":
+        filtered = filtered.filter((activity: any) =>
+          activity.action.startsWith('CLIENT_')
+        );
+        break;
+      case "messages":
+        filtered = filtered.filter((activity: any) =>
+          activity.action.startsWith('MESSAGE_')
+        );
+        break;
+      case "users":
+        filtered = filtered.filter((activity: any) =>
+          activity.action.startsWith('USER_')
+        );
+        break;
+      case "errors":
+        filtered = filtered.filter((activity: any) =>
+          activity.action === 'ERROR' || activity.description?.includes("(ERRO)") || activity.description?.includes("ERROR")
         );
         break;
     }
@@ -193,6 +217,28 @@ export default function ActivityHistory() {
         return "Login";
       case "LOGOUT":
         return "Logout";
+      case "LICENSE_CREATE":
+        return "Criação de Licença";
+      case "LICENSE_UPDATE":
+        return "Atualização de Licença";
+      case "LICENSE_DELETE":
+        return "Exclusão de Licença";
+      case "CLIENT_CREATE":
+        return "Criação de Cliente";
+      case "CLIENT_UPDATE":
+        return "Atualização de Cliente";
+      case "CLIENT_DELETE":
+        return "Exclusão de Cliente";
+      case "MESSAGE_SEND":
+        return "Envio de Mensagem";
+      case "USER_CREATE":
+        return "Criação de Usuário";
+      case "USER_UPDATE":
+        return "Atualização de Usuário";
+      case "USER_DELETE":
+        return "Exclusão de Usuário";
+      case "ERROR":
+        return "Erro Registrado";
       default:
         return action;
     }
@@ -201,32 +247,32 @@ export default function ActivityHistory() {
   const formatActivityDescription = (activity: any) => {
     if (activity.action === "QUERY" || activity.action === "QUERY_ENCRYPTED") {
       const description = activity.description || "";
-      
+
       const hardwareMatch = description.match(/Hardware: ([A-Z0-9]+)/);
       const systemMatch = description.match(/System: ([A-Z0-9]+)/);
       const installMatch = description.match(/Install: ([A-Z0-9]+)/);
       const databaseMatch = description.match(/Database: "([^"]*?)"/);
       const countMatch = description.match(/(\d+) licenças encontradas/);
       const isError = description.includes("(ERRO)");
-      
+
       let title = activity.action === "QUERY_ENCRYPTED" ? "Requisição de licença (Criptografada)" : "Requisição de licença";
       if (isError) {
         title += " - ERRO";
       }
-      
+
       const hardware = hardwareMatch ? hardwareMatch[1] : "N/A";
       const system = systemMatch ? systemMatch[1] : "N/A";
       const install = installMatch ? installMatch[1] : "N/A";
       const database = databaseMatch ? (databaseMatch[1] || "vazio") : "N/A";
       const count = countMatch ? countMatch[1] : "0";
-      
+
       return {
         title,
         details: `Hardware: ${hardware} • System: ${system} • Install: ${install} • Database: ${database} • Resultado: ${count} licenças encontradas`,
         isError
       };
     }
-    
+
     return {
       title: activity.description || "Sem descrição",
       details: null,
@@ -420,7 +466,7 @@ export default function ActivityHistory() {
                   filteredActivities.map((activity: any) => {
                     const Icon = getActivityIcon(activity.action);
                     const formatted = formatActivityDescription(activity);
-                    
+
                     return (
                       <TableRow key={activity.id} className={formatted.isError ? "bg-red-50" : ""}>
                         <TableCell>
