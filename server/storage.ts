@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, permissionGroups, menuPermissions, fieldPermissions, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery, type PermissionGroup, type InsertPermissionGroup, type MenuPermission, type InsertMenuPermission, type FieldPermission, type InsertFieldPermission } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -50,6 +50,23 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
+
+  // Permission operations
+  getPermissionGroups(): Promise<PermissionGroup[]>;
+  getPermissionGroup(id: number): Promise<PermissionGroup | undefined>;
+  createPermissionGroup(group: InsertPermissionGroup): Promise<PermissionGroup>;
+  updatePermissionGroup(id: number, group: Partial<InsertPermissionGroup>): Promise<PermissionGroup>;
+  deletePermissionGroup(id: number): Promise<void>;
+
+  // Menu permissions
+  getMenuPermissions(groupId: number): Promise<MenuPermission[]>;
+  setMenuPermission(permission: InsertMenuPermission): Promise<MenuPermission>;
+  getUserMenuPermissions(userId: number): Promise<MenuPermission[]>;
+
+  // Field permissions
+  getFieldPermissions(groupId: number): Promise<FieldPermission[]>;
+  setFieldPermission(permission: InsertFieldPermission): Promise<FieldPermission>;
+  getUserFieldPermissions(userId: number, tableName: string): Promise<FieldPermission[]>;
 
   // Mensagem Sistema operations
   getMensagens(): Promise<any>;
@@ -362,6 +379,125 @@ export class DbStorage implements IStorage {
 
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  // Métodos de grupos de permissões
+  async getPermissionGroups(): Promise<PermissionGroup[]> {
+    return await db.select().from(permissionGroups).orderBy(permissionGroups.name);
+  }
+
+  async getPermissionGroup(id: number): Promise<PermissionGroup | undefined> {
+    const result = await db.select().from(permissionGroups).where(eq(permissionGroups.id, id));
+    return result[0];
+  }
+
+  async createPermissionGroup(group: InsertPermissionGroup): Promise<PermissionGroup> {
+    const result = await db.insert(permissionGroups).values(group).returning();
+    return result[0];
+  }
+
+  async updatePermissionGroup(id: number, group: Partial<InsertPermissionGroup>): Promise<PermissionGroup> {
+    const result = await db
+      .update(permissionGroups)
+      .set({ ...group, updatedAt: new Date() })
+      .where(eq(permissionGroups.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePermissionGroup(id: number): Promise<void> {
+    await db.delete(permissionGroups).where(eq(permissionGroups.id, id));
+  }
+
+  // Métodos de permissões de menu
+  async getMenuPermissions(groupId: number): Promise<MenuPermission[]> {
+    return await db
+      .select()
+      .from(menuPermissions)
+      .where(eq(menuPermissions.permissionGroupId, groupId));
+  }
+
+  async setMenuPermission(permission: InsertMenuPermission): Promise<MenuPermission> {
+    const existing = await db
+      .select()
+      .from(menuPermissions)
+      .where(
+        and(
+          eq(menuPermissions.permissionGroupId, permission.permissionGroupId),
+          eq(menuPermissions.menuId, permission.menuId)
+        )
+      );
+
+    if (existing.length > 0) {
+      const result = await db
+        .update(menuPermissions)
+        .set(permission)
+        .where(eq(menuPermissions.id, existing[0].id))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(menuPermissions).values(permission).returning();
+      return result[0];
+    }
+  }
+
+  async getUserMenuPermissions(userId: number): Promise<MenuPermission[]> {
+    const user = await this.getUser(userId);
+    if (!user || !user.permissionGroupId) {
+      return [];
+    }
+
+    return await this.getMenuPermissions(user.permissionGroupId);
+  }
+
+  // Métodos de permissões de campos
+  async getFieldPermissions(groupId: number): Promise<FieldPermission[]> {
+    return await db
+      .select()
+      .from(fieldPermissions)
+      .where(eq(fieldPermissions.permissionGroupId, groupId));
+  }
+
+  async setFieldPermission(permission: InsertFieldPermission): Promise<FieldPermission> {
+    const existing = await db
+      .select()
+      .from(fieldPermissions)
+      .where(
+        and(
+          eq(fieldPermissions.permissionGroupId, permission.permissionGroupId),
+          eq(fieldPermissions.tableName, permission.tableName),
+          eq(fieldPermissions.fieldName, permission.fieldName)
+        )
+      );
+
+    if (existing.length > 0) {
+      const result = await db
+        .update(fieldPermissions)
+        .set(permission)
+        .where(eq(fieldPermissions.id, existing[0].id))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(fieldPermissions).values(permission).returning();
+      return result[0];
+    }
+  }
+
+  async getUserFieldPermissions(userId: number, tableName: string): Promise<FieldPermission[]> {
+    const user = await this.getUser(userId);
+    if (!user || !user.permissionGroupId) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(fieldPermissions)
+      .where(
+        and(
+          eq(fieldPermissions.permissionGroupId, user.permissionGroupId),
+          eq(fieldPermissions.tableName, tableName)
+        )
+      );
   }
 
   // Mensagem Sistema methods

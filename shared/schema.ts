@@ -167,6 +167,36 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
   numeroChamado: z.string().optional().nullable(),
 });
 
+// Tabela de grupos de permissão
+export const permissionGroups = pgTable("permission_groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // Nome do grupo (ex: Admin, Suporte Técnico)
+  description: text("description"), // Descrição do grupo
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de permissões de menu
+export const menuPermissions = pgTable("menu_permissions", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => permissionGroups.id), // Referência ao grupo de permissão
+  menuName: text("menu_name").notNull(), // Nome do menu ao qual a permissão se aplica
+  canAccess: boolean("can_access").notNull().default(false), // Se o usuário pode acessar o menu
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de permissões de campo
+export const fieldPermissions = pgTable("field_permissions", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => permissionGroups.id), // Referência ao grupo de permissão
+  tableName: text("table_name").notNull(), // Nome da tabela onde o campo se encontra (ex: 'licenses')
+  fieldName: text("field_name").notNull(), // Nome do campo ao qual a permissão se aplica
+  canEdit: boolean("can_edit").notNull().default(true), // Se o usuário pode editar o campo
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type License = typeof licenses.$inferSelect;
 export type InsertLicense = z.infer<typeof insertLicenseSchema>;
 export type Activity = typeof activities.$inferSelect;
@@ -177,6 +207,12 @@ export type MensagemSistema = typeof mensagemSistema.$inferSelect;
 export type InsertMensagemSistema = z.infer<typeof insertMensagemSistemaSchema>;
 export type ClienteHistorico = typeof clienteHistorico.$inferSelect;
 export type InsertClienteHistorico = z.infer<typeof insertClienteHistoricoSchema>;
+export type PermissionGroup = typeof permissionGroups.$inferSelect;
+export type InsertPermissionGroup = z.infer<typeof insertPermissionGroupSchema>;
+export type MenuPermission = typeof menuPermissions.$inferSelect;
+export type InsertMenuPermission = z.infer<typeof insertMenuPermissionSchema>;
+export type FieldPermission = typeof fieldPermissions.$inferSelect;
+export type InsertFieldPermission = z.infer<typeof insertFieldPermissionSchema>;
 
 export const licenseSchema = z.object({
   id: z.number().optional(),
