@@ -54,7 +54,7 @@ function Sidebar() {
 
     // Escutar eventos customizados
     window.addEventListener('activityUpdate', handleActivityUpdate as EventListener);
-    
+
     return () => {
       window.removeEventListener('activityUpdate', handleActivityUpdate as EventListener);
     };
