@@ -1097,7 +1097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.json({ message: `Successfully imported ${importedCount} licenses` });
           } catch (error) {
             console.error("Import processing error:", error);
-            res.status(500).json({ message: "Failed to import data", error: error.message });
+            res.status(500).json({ message: "Failed to import data", error: error instanceof Error ? error.message : String(error) });
           }
         });
       } else if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
@@ -1125,7 +1125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Import error:", error);
-      res.status(500).json({ message: "Failed to process import", error: error.message });
+      res.status(500).json({ message: "Failed to process import", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -1170,7 +1170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Imported ${importedCount} records so far...`);
         }
         } catch (error) {
-          console.error("Failed to import record:", record.Code || record.code || 'unknown', error.message);
+          console.error("Failed to import record:", record.Code || record.code || 'unknown', error instanceof Error ? error.message : String(error));
         }
       }
     }

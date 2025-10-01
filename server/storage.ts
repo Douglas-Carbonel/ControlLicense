@@ -77,13 +77,12 @@ export class DbStorage implements IStorage {
   }
 
   async getPaginatedLicenses(offset: number, limit: number, search?: string): Promise<License[]> {
+    const conditions = search ? this.buildSearchConditions(search) : [];
+    
     let query = db.select().from(licenses);
-
-    if (search) {
-      const conditions = this.buildSearchConditions(search);
-      if (conditions.length > 0) {
-        query = query.where(or(...conditions));
-      }
+    
+    if (conditions.length > 0) {
+      query = query.where(or(...conditions)) as any;
     }
 
     const result = await query
@@ -95,13 +94,12 @@ export class DbStorage implements IStorage {
   }
 
   async getLicensesCount(search?: string): Promise<number> {
+    const conditions = search ? this.buildSearchConditions(search) : [];
+    
     let query = db.select({ count: count() }).from(licenses);
-
-    if (search) {
-      const conditions = this.buildSearchConditions(search);
-      if (conditions.length > 0) {
-        query = query.where(or(...conditions));
-      }
+    
+    if (conditions.length > 0) {
+      query = query.where(or(...conditions)) as any;
     }
 
     const result = await query;
@@ -135,17 +133,20 @@ export class DbStorage implements IStorage {
               conditions.push(eq(licenses.ativo, isActive));
               break;
             case 'qtLicencas':
+              const numLic = parseInt(value);
+              if (!isNaN(numLic)) {
+                conditions.push(eq(licenses.qtLicencas, numLic));
+              }
+              break;
             case 'qtLicencasAdicionais':
-              const num = parseInt(value);
-              if (!isNaN(num)) {
-                conditions.push(eq(licenses[column as keyof typeof licenses], num));
+              const numAd = parseInt(value);
+              if (!isNaN(numAd)) {
+                conditions.push(eq(licenses.qtLicencasAdicionais, numAd));
               }
               break;
             default:
-              // Para outras colunas, buscar como texto
-              if (licenses[column as keyof typeof licenses]) {
-                conditions.push(ilike(licenses[column as keyof typeof licenses], `%${value}%`));
-              }
+              // Para outras colunas, buscar como texto - ignorar campos dinâmicos
+              break;
           }
         }
       } else {
@@ -555,7 +556,7 @@ export class DbStorage implements IStorage {
             let query = db.select().from(clienteHistorico);
             
             if (codigoCliente) {
-                query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente));
+                query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente)) as any;
             }
             
             const result = await query.orderBy(desc(clienteHistorico.createdAt));
