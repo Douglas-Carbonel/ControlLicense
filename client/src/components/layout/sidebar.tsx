@@ -104,6 +104,13 @@ function Sidebar() {
         icon: Users,
         description: "Gerenciar usuários",
         menuId: "users"
+      },
+      {
+        href: "/permissions",
+        label: "Permissões",
+        icon: Shield,
+        description: "Configurar grupos e permissões",
+        menuId: "permissions"
       }
     ];
 
