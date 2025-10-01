@@ -471,9 +471,11 @@ export class DbStorage implements IStorage {
       );
 
     if (existing.length > 0) {
+      // Remove createdAt from update to avoid issues
+      const { createdAt, ...updateData } = permission as any;
       const result = await db
         .update(fieldPermissions)
-        .set(permission)
+        .set(updateData)
         .where(eq(fieldPermissions.id, existing[0].id))
         .returning();
       return result[0];
