@@ -122,16 +122,6 @@ const STATUS_OPTIONS = [
 ];
 
 export default function Clientes() {
-  const {
-    searchTerm: clienteSearchTerm,
-    selectedClient: selectedCliente,
-    isOpen: isSelectOpen,
-    filteredClientes,
-    setIsOpen: setIsSelectOpen,
-    handleSearchChange: handleClienteSearchChange,
-    handleClientSelect,
-    setSelectedClient: setSelectedCliente
-  } = useClientSearch(clientes);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingHistorico, setEditingHistorico] = useState<ClienteHistorico | null>(null);
@@ -151,6 +141,17 @@ export default function Clientes() {
     queryKey: ["/api/clientes/lista"],
     staleTime: 5 * 60 * 1000,
   });
+
+  const {
+    searchTerm: clienteSearchTerm,
+    selectedClient: selectedCliente,
+    isOpen: isSelectOpen,
+    filteredClientes,
+    setIsOpen: setIsSelectOpen,
+    handleSearchChange: handleClienteSearchChange,
+    handleClientSelect,
+    setSelectedClient: setSelectedCliente
+  } = useClientSearch(clientes);
 
   
 
