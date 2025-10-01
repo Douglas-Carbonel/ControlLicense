@@ -3,8 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/lib/auth";
-import { PermissionsProvider } from "@/lib/permissions";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard";
 import Licenses from "@/pages/licenses";
 import ActivityHistory from "@/pages/activity-history";
@@ -13,7 +12,6 @@ import Login from "@/pages/login";
 import AppLayout from "@/components/layout/app-layout";
 import Mensagens from "@/pages/mensagens";
 import Clientes from "@/pages/clientes";
-import { useAuth } from "@/lib/auth";
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -64,12 +62,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <PermissionsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </PermissionsProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

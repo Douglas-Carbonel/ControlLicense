@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, permissionGroups, menuPermissions, fieldPermissions, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery, type PermissionGroup, type InsertPermissionGroup, type MenuPermission, type InsertMenuPermission, type FieldPermission, type InsertFieldPermission } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -51,23 +51,6 @@ export interface IStorage {
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
 
-  // Permission operations
-  getPermissionGroups(): Promise<PermissionGroup[]>;
-  getPermissionGroup(id: number): Promise<PermissionGroup | undefined>;
-  createPermissionGroup(group: InsertPermissionGroup): Promise<PermissionGroup>;
-  updatePermissionGroup(id: number, group: Partial<InsertPermissionGroup>): Promise<PermissionGroup>;
-  deletePermissionGroup(id: number): Promise<void>;
-
-  // Menu permissions
-  getMenuPermissions(groupId: number): Promise<MenuPermission[]>;
-  setMenuPermission(permission: InsertMenuPermission): Promise<MenuPermission>;
-  getUserMenuPermissions(userId: number): Promise<MenuPermission[]>;
-
-  // Field permissions
-  getFieldPermissions(groupId: number): Promise<FieldPermission[]>;
-  setFieldPermission(permission: InsertFieldPermission): Promise<FieldPermission>;
-  getUserFieldPermissions(userId: number, tableName: string): Promise<FieldPermission[]>;
-
   // Mensagem Sistema operations
   getMensagens(): Promise<any>;
   getMensagem(id: number): Promise<any>;
@@ -95,9 +78,9 @@ export class DbStorage implements IStorage {
 
   async getPaginatedLicenses(offset: number, limit: number, search?: string): Promise<License[]> {
     const conditions = search ? this.buildSearchConditions(search) : [];
-
+    
     let query = db.select().from(licenses);
-
+    
     if (conditions.length > 0) {
       query = query.where(or(...conditions)) as any;
     }
@@ -112,9 +95,9 @@ export class DbStorage implements IStorage {
 
   async getLicensesCount(search?: string): Promise<number> {
     const conditions = search ? this.buildSearchConditions(search) : [];
-
+    
     let query = db.select({ count: count() }).from(licenses);
-
+    
     if (conditions.length > 0) {
       query = query.where(or(...conditions)) as any;
     }
@@ -194,15 +177,15 @@ export class DbStorage implements IStorage {
     const maxLinha = await db
       .select({ maxLinha: sql<number>`MAX(${licenses.linha})` })
       .from(licenses);
-
+    
     const nextLinha = (maxLinha[0]?.maxLinha || 0) + 1;
-
+    
     // Adicionar o campo linha automaticamente
     const licenseWithLinha = {
       ...license,
       linha: nextLinha
     };
-
+    
     const result = await db.insert(licenses).values(licenseWithLinha).returning();
     return result[0];
   }
@@ -306,9 +289,9 @@ export class DbStorage implements IStorage {
 
   async getUnreadActivityCount(userId: string): Promise<number> {
     const lastSeen = this.lastSeenActivityAt.get(userId);
-
+    
     console.log(`[UNREAD] Checking unread count for user ${userId}, lastSeen:`, lastSeen);
-
+    
     if (!lastSeen) {
       const [result] = await db.select({ count: count() }).from(activities);
       console.log(`[UNREAD] No lastSeen for user ${userId}, total activities: ${result.count}`);
@@ -319,7 +302,7 @@ export class DbStorage implements IStorage {
       .select({ count: count() })
       .from(activities)
       .where(sql`${activities.timestamp} > ${lastSeen.toISOString()}`);
-
+    
     console.log(`[UNREAD] User ${userId} has ${result.count} unread activities (since ${lastSeen.toISOString()})`);
     return result.count;
   }
@@ -379,135 +362,6 @@ export class DbStorage implements IStorage {
 
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
-  }
-
-  // Métodos de grupos de permissões
-  async getPermissionGroups(): Promise<PermissionGroup[]> {
-    return await db.select().from(permissionGroups).orderBy(permissionGroups.name);
-  }
-
-  async getPermissionGroup(id: number): Promise<PermissionGroup | undefined> {
-    const result = await db.select().from(permissionGroups).where(eq(permissionGroups.id, id));
-    return result[0];
-  }
-
-  async createPermissionGroup(group: InsertPermissionGroup): Promise<PermissionGroup> {
-    const result = await db.insert(permissionGroups).values(group).returning();
-    return result[0];
-  }
-
-  async updatePermissionGroup(id: number, group: Partial<InsertPermissionGroup>): Promise<PermissionGroup> {
-    const result = await db
-      .update(permissionGroups)
-      .set({ ...group, updatedAt: new Date() })
-      .where(eq(permissionGroups.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async deletePermissionGroup(id: number): Promise<void> {
-    await db.delete(permissionGroups).where(eq(permissionGroups.id, id));
-  }
-
-  // Métodos de permissões de menu
-  async getMenuPermissions(groupId: number): Promise<MenuPermission[]> {
-    return await db
-      .select()
-      .from(menuPermissions)
-      .where(eq(menuPermissions.permissionGroupId, groupId));
-  }
-
-  async setMenuPermission(permission: InsertMenuPermission): Promise<MenuPermission> {
-    const existing = await db
-      .select()
-      .from(menuPermissions)
-      .where(
-        and(
-          eq(menuPermissions.permissionGroupId, permission.permissionGroupId),
-          eq(menuPermissions.menuId, permission.menuId)
-        )
-      );
-
-    if (existing.length > 0) {
-      const result = await db
-        .update(menuPermissions)
-        .set(permission)
-        .where(eq(menuPermissions.id, existing[0].id))
-        .returning();
-      return result[0];
-    } else {
-      const result = await db.insert(menuPermissions).values(permission).returning();
-      return result[0];
-    }
-  }
-
-  async getUserMenuPermissions(userId: number): Promise<MenuPermission[]> {
-    const user = await this.getUser(userId);
-    if (!user || !user.permissionGroupId) {
-      return [];
-    }
-
-    return await this.getMenuPermissions(user.permissionGroupId);
-  }
-
-  // Métodos de permissões de campos
-  async getFieldPermissions(groupId: number): Promise<FieldPermission[]> {
-    return await db
-      .select()
-      .from(fieldPermissions)
-      .where(eq(fieldPermissions.permissionGroupId, groupId));
-  }
-
-  async setFieldPermission(permission: InsertFieldPermission): Promise<FieldPermission> {
-    const existing = await db
-      .select()
-      .from(fieldPermissions)
-      .where(
-        and(
-          eq(fieldPermissions.permissionGroupId, permission.permissionGroupId),
-          eq(fieldPermissions.tableName, permission.tableName),
-          eq(fieldPermissions.fieldName, permission.fieldName)
-        )
-      );
-
-    if (existing.length > 0) {
-      // Remove createdAt from update to avoid issues
-      const { createdAt, ...updateData } = permission as any;
-      const result = await db
-        .update(fieldPermissions)
-        .set(updateData)
-        .where(eq(fieldPermissions.id, existing[0].id))
-        .returning();
-      return result[0];
-    } else {
-      const result = await db.insert(fieldPermissions).values(permission).returning();
-      return result[0];
-    }
-  }
-
-  async getUserFieldPermissions(userId: number, tableName: string = 'licenses'): Promise<FieldPermission[]> {
-    const user = await this.getUser(userId);
-    if (!user || !user.permissionGroupId) {
-      return [];
-    }
-
-    return await db
-      .select({
-        id: fieldPermissions.id,
-        permissionGroupId: fieldPermissions.permissionGroupId,
-        tableName: fieldPermissions.tableName,
-        fieldName: fieldPermissions.fieldName,
-        canView: fieldPermissions.canView,
-        canEdit: fieldPermissions.canEdit,
-        createdAt: fieldPermissions.createdAt,
-      })
-      .from(fieldPermissions)
-      .where(
-        and(
-          eq(fieldPermissions.permissionGroupId, user.permissionGroupId),
-          eq(fieldPermissions.tableName, tableName)
-        )
-      );
   }
 
   // Mensagem Sistema methods
@@ -632,7 +486,7 @@ export class DbStorage implements IStorage {
                 .selectDistinct({ nomeDb: licenses.nomeDb })
                 .from(licenses)
                 .where(and(
-                    not(isNull(licenses.nomeDb)),
+                    not(isNull(licenses.nomeDb)), 
                     eq(licenses.ativo, true)
                 ))
                 .orderBy(asc(licenses.nomeDb));
@@ -698,17 +552,17 @@ export class DbStorage implements IStorage {
     async getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]> {
         try {
             console.log(`Buscando histórico para cliente: ${codigoCliente}`);
-
+            
             let query = db.select().from(clienteHistorico);
-
+            
             if (codigoCliente) {
                 query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente)) as any;
             }
-
+            
             const result = await query.orderBy(desc(clienteHistorico.createdAt));
             console.log(`Resultado da busca: ${result.length} registros encontrados`);
             console.log(`Dados do resultado:`, JSON.stringify(result, null, 2));
-
+            
             // Garantir que sempre retorna um array
             const finalResult = Array.isArray(result) ? result : [];
             console.log(`Retornando array final:`, finalResult.length, 'items');

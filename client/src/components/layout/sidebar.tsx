@@ -20,7 +20,6 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { usePermissions } from "@/lib/permissions";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +28,6 @@ import { useQuery } from "@tanstack/react-query";
 function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const { canAccessMenu } = usePermissions();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Query para buscar contagem de atividades não lidas
@@ -54,69 +52,71 @@ function Sidebar() {
 
     // Escutar eventos customizados
     window.addEventListener('activityUpdate', handleActivityUpdate as EventListener);
-
+    
     return () => {
       window.removeEventListener('activityUpdate', handleActivityUpdate as EventListener);
     };
   }, [refetchUnreadCount, user?.role]);
 
   const navigationItems = useMemo(() => {
-    const allItems = [
-      { 
-        href: "/", 
-        label: "Painel", 
-        icon: Home,
-        description: "Visão geral do sistema",
-        menuId: "dashboard"
-      },
-      { 
+    const items = [];
+
+  // Usuários técnicos só podem ver licenças
+    if (user?.role === 'support') {
+      items.push({ 
         href: "/licenses", 
         label: "Licenças", 
         icon: FileText,
-        description: "Gerenciar licenças",
-        menuId: "licenses"
-      },
-      { 
-        href: "/mensagens", 
-        label: "Mensagens", 
-        icon: MessageSquare,
-        description: "Gerenciar mensagens do sistema",
-        menuId: "mensagens"
-      },
-      { 
-        href: "/clientes", 
-        label: "Clientes", 
-        icon: Building2,
-        description: "Histórico e suporte aos clientes",
-        menuId: "clientes"
-      },
-      { 
-        href: "/activities", 
-        label: "Logs", 
-        icon: Activity,
-        description: "Logs e histórico de ações",
-        menuId: "activities",
-        badge: newLogsCount > 0 ? newLogsCount : null
-      },
-      {
-        href: "/users",
-        label: "Usuários",
-        icon: Users,
-        description: "Gerenciar usuários",
-        menuId: "users"
-      },
-      {
-        href: "/permissions",
-        label: "Permissões",
-        icon: Shield,
-        description: "Configurar grupos e permissões",
-        menuId: "permissions"
-      }
-    ];
+        description: "Gerenciar licenças"
+      });
+    } else {
+      // Administradores podem ver tudo
+      items.push(
+        { 
+          href: "/", 
+          label: "Painel", 
+          icon: Home,
+          description: "Visão geral do sistema"
+        },
+        { 
+          href: "/licenses", 
+          label: "Licenças", 
+          icon: FileText,
+          description: "Gerenciar licenças"
+        },
+        { 
+          href: "/mensagens", 
+          label: "Mensagens", 
+          icon: MessageSquare,
+          description: "Gerenciar mensagens do sistema"
+        },
+        { 
+          href: "/clientes", 
+          label: "Clientes", 
+          icon: Building2,
+          description: "Histórico e suporte aos clientes"
+        },
+        { 
+          href: "/activities", 
+          label: "Logs", 
+          icon: Activity,
+          description: "Logs e histórico de ações",
+          badge: newLogsCount > 0 ? newLogsCount : null
+        }
+      );
 
-    // Filtrar itens baseado em permissões
-    return allItems.filter(item => canAccessMenu(item.menuId));
-  }, [canAccessMenu, newLogsCount]);
+      // Adicionar item de usuários apenas para administradores
+      if (user?.role === 'admin') {
+        items.push({
+          href: "/users",
+          label: "Usuários",
+          icon: Users,
+          description: "Gerenciar usuários"
+        });
+      }
+    }
+    return items;
+  }, [user?.role, newLogsCount]);
 
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed(prev => !prev);

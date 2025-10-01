@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useCallback, memo, lazy, Suspense, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,6 @@ const NewLicenseModal = lazy(() => import("@/components/modals/new-license-modal
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
-import { usePermissions } from "@/lib/permissions";
 
 
 const AVAILABLE_COLUMNS = [
@@ -103,8 +103,6 @@ export default function Licenses() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { canEditIn, canDeleteIn, canAccess, canViewField, canEditField } = usePermissions();
-
 
   // ABORDAGEM PROFISSIONAL: Carregar todos os dados uma vez
   const { data: allLicensesResponse, isLoading: isLoadingAll, error } = useQuery({
@@ -153,7 +151,7 @@ export default function Licenses() {
   const paginatedLicenses = useMemo(() => {
     // Evita processamento desnecessário se não há dados
     if (filteredLicenses.length === 0) return [];
-
+    
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     return filteredLicenses.slice(startIndex, endIndex);
@@ -336,13 +334,13 @@ export default function Licenses() {
     setColumnOrder(prev => {
       const fromColumnId = prev[fromIndex];
       const toColumnId = prev[toIndex];
-
+      
       // Não permitir mover colunas fixas (código e ações)
       if (fromColumnId === 'code' || fromColumnId === 'acoes' || 
           toColumnId === 'code' || toColumnId === 'acoes') {
         return prev;
       }
-
+      
       const newOrder = [...prev];
       const [movedItem] = newOrder.splice(fromIndex, 1);
       newOrder.splice(toIndex, 0, movedItem);
@@ -364,7 +362,7 @@ export default function Licenses() {
         console.error('Erro ao carregar configurações salvas:', error);
       }
     }
-
+    
     // Carregar última configuração aplicada
     const lastConfig = localStorage.getItem('licenses-last-config');
     if (lastConfig) {
@@ -401,10 +399,10 @@ export default function Licenses() {
     const newConfigs = [...savedConfigs.filter(c => c.name !== configName.trim()), config];
     setSavedConfigs(newConfigs);
     localStorage.setItem('licenses-filter-configs', JSON.stringify(newConfigs));
-
+    
     setConfigName('');
     setIsSaveConfigOpen(false);
-
+    
     toast({
       title: "Sucesso",
       description: `Configuração "${config.name}" salva com sucesso!`,
@@ -416,10 +414,10 @@ export default function Licenses() {
     setColumnOrder(config.columnOrder || AVAILABLE_COLUMNS.map(col => col.id));
     setColumnFilters(config.columnFilters || {});
     setCurrentPage(1);
-
+    
     // Salvar como última configuração
     localStorage.setItem('licenses-last-config', JSON.stringify(config));
-
+    
     toast({
       title: "Configuração carregada",
       description: "Filtros e colunas aplicados com sucesso!",
@@ -430,7 +428,7 @@ export default function Licenses() {
     const newConfigs = savedConfigs.filter(c => c.name !== configName);
     setSavedConfigs(newConfigs);
     localStorage.setItem('licenses-filter-configs', JSON.stringify(newConfigs));
-
+    
     toast({
       title: "Configuração excluída",
       description: `"${configName}" foi removida`,
@@ -440,9 +438,9 @@ export default function Licenses() {
   const exportToCSV = useCallback(() => {
     const visibleCols = getVisibleColumnsInOrder().filter(col => col.id !== 'acoes');
     const headers = visibleCols.map(col => col.label);
-
+    
     let csvContent = headers.join(';') + '\n';
-
+    
     filteredLicenses.forEach((license: any) => {
       const row = visibleCols.map(col => {
         let value = license[col.id];
@@ -473,7 +471,7 @@ export default function Licenses() {
   const exportToExcel = useCallback(() => {
     const visibleCols = getVisibleColumnsInOrder().filter(col => col.id !== 'acoes');
     const headers = visibleCols.map(col => col.label);
-
+    
     const data = [
       headers,
       ...filteredLicenses.map((license: any) => 
@@ -538,7 +536,7 @@ export default function Licenses() {
               Cód: {license.codCliente || 'N/A'}
             </p>
           </div>
-
+          
           <div className="grid grid-cols-2 gap-3">
             <div>
               <p className="text-xs font-medium text-slate-700 mb-1">Hardware Key</p>
@@ -556,7 +554,7 @@ export default function Licenses() {
                 </Button>
               </div>
             </div>
-
+            
             <div>
               <p className="text-xs font-medium text-slate-700 mb-1">Licenças</p>
               <p className="text-xs text-gray-600">
@@ -565,7 +563,7 @@ export default function Licenses() {
               </p>
             </div>
           </div>
-
+          
           <div>
             <p className="text-xs font-medium text-slate-700 mb-1">Database</p>
             <p className="text-xs text-gray-600 truncate" title={license.nomeDb}>
@@ -577,92 +575,88 @@ export default function Licenses() {
               </p>
             )}
           </div>
-
+          
           {license.versaoSap && (
             <div>
               <p className="text-xs font-medium text-slate-700 mb-1">Versão SAP</p>
               <p className="text-xs text-gray-600">{license.versaoSap}</p>
             </div>
           )}
-
+          
           <div className="flex justify-end space-x-1 pt-2 border-t border-gray-100">
-            {canEditIn('licenses') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEdit(license)}
-                className="p-1 h-7 w-7 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
-                title="Editar"
-              >
-                <Edit className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            {canDeleteIn('licenses') && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={deleteMutation.isPending}
-                    className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
-                    title="Excluir"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="border-red-200 shadow-xl">
-                  <AlertDialogHeader>
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg">
-                        <AlertTriangle className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <AlertDialogTitle className="text-lg font-semibold text-red-900">
-                          Atenção - Excluir Licença
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm text-red-700 mt-1">
-                          Esta ação é irreversível e pode impactar no portal do cliente
-                        </AlertDialogDescription>
-                      </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(license)}
+              className="p-1 h-7 w-7 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
+              title="Editar"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={deleteMutation.isPending}
+                  className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
+                  title="Excluir"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="border-red-200 shadow-xl">
+                <AlertDialogHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg">
+                      <AlertTriangle className="w-5 h-5" />
                     </div>
-                  </AlertDialogHeader>
-                  <div className="py-4">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-red-800">
-                          <p className="font-medium mb-2">Impactos da exclusão:</p>
-                          <ul className="list-disc list-inside space-y-1 text-red-700">
-                            <li>A licença será removida permanentemente do sistema</li>
-                            <li>O cliente perderá acesso às funcionalidades licenciadas</li>
-                            <li>Esta ação não pode ser desfeita</li>
-                          </ul>
-                        </div>
-                      </div>
+                    <div>
+                      <AlertDialogTitle className="text-lg font-semibold text-red-900">
+                        Atenção - Excluir Licença
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-sm text-red-700 mt-1">
+                        Esta ação é irreversível e pode impactar no portal do cliente
+                      </AlertDialogDescription>
                     </div>
-                    <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <div className="flex items-center space-x-2">
-                        <Info className="w-4 h-4 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-800">
-                          Licença: {license.code} - Cliente: {license.nomeCliente}
-                        </span>
+                  </div>
+                </AlertDialogHeader>
+                <div className="py-4">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-red-800">
+                        <p className="font-medium mb-2">Impactos da exclusão:</p>
+                        <ul className="list-disc list-inside space-y-1 text-red-700">
+                          <li>A licença será removida permanentemente do sistema</li>
+                          <li>O cliente perderá acesso às funcionalidades licenciadas</li>
+                          <li>Esta ação não pode ser desfeita</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
-                      Cancelar
-                    </AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => handleDelete(license.id)}
-                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
-                    >
-                      Confirmar Exclusão
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Info className="w-4 h-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-800">
+                        Licença: {license.code} - Cliente: {license.nomeCliente}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => handleDelete(license.id)}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
+                  >
+                    Confirmar Exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </CardContent>
@@ -684,85 +678,81 @@ export default function Licenses() {
       case 'acoes':
         return (
           <div className="flex space-x-1">
-            {canEditIn('licenses') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEdit(license)}
-                className="p-1 h-7 w-7 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
-                title="Editar"
-              >
-                <Edit className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            {canDeleteIn('licenses') && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={deleteMutation.isPending}
-                    className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
-                    title="Excluir"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="border-red-200 shadow-xl">
-                  <AlertDialogHeader>
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg">
-                        <AlertTriangle className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <AlertDialogTitle className="text-lg font-semibold text-red-900">
-                          Atenção - Excluir Licença
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm text-red-700 mt-1">
-                          Esta ação é irreversível e pode impactar no portal do cliente
-                        </AlertDialogDescription>
-                      </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(license)}
+              className="p-1 h-7 w-7 hover:bg-blue-50 text-gray-500 hover:text-blue-600"
+              title="Editar"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={deleteMutation.isPending}
+                  className="p-1 h-7 w-7 hover:bg-red-50 text-gray-500 hover:text-red-600"
+                  title="Excluir"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="border-red-200 shadow-xl">
+                <AlertDialogHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg">
+                      <AlertTriangle className="w-5 h-5" />
                     </div>
-                  </AlertDialogHeader>
-                  <div className="py-4">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-red-800">
-                          <p className="font-medium mb-2">Impactos da exclusão:</p>
-                          <ul className="list-disc list-inside space-y-1 text-red-700">
-                            <li>A licença será removida permanentemente do sistema</li>
-                            <li>O cliente perderá acesso às funcionalidades licenciadas</li>
-                            <li>Esta ação não pode ser desfeita</li>
-                            <li>Pode afetar o funcionamento do portal do cliente</li>
-                            <li>A exclusão será registrada no log de atividades</li>
-                          </ul>
-                        </div>
-                      </div>
+                    <div>
+                      <AlertDialogTitle className="text-lg font-semibold text-red-900">
+                        Atenção - Excluir Licença
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-sm text-red-700 mt-1">
+                        Esta ação é irreversível e pode impactar no portal do cliente
+                      </AlertDialogDescription>
                     </div>
-                    <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <div className="flex items-center space-x-2">
-                        <Info className="w-4 h-4 text-yellow-600" />
-                        <span className="text-sm font-medium text-yellow-800">
-                          Licença: {license.code} - Cliente: {license.nomeCliente}
-                        </span>
+                  </div>
+                </AlertDialogHeader>
+                <div className="py-4">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-red-800">
+                        <p className="font-medium mb-2">Impactos da exclusão:</p>
+                        <ul className="list-disc list-inside space-y-1 text-red-700">
+                          <li>A licença será removida permanentemente do sistema</li>
+                          <li>O cliente perderá acesso às funcionalidades licenciadas</li>
+                          <li>Esta ação não pode ser desfeita</li>
+                          <li>Pode afetar o funcionamento do portal do cliente</li>
+                          <li>A exclusão será registrada no log de atividades</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
-                      Cancelar
-                    </AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => handleDelete(license.id)}
-                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
-                    >
-                      Confirmar Exclusão
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Info className="w-4 h-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-800">
+                        Licença: {license.code} - Cliente: {license.nomeCliente}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => handleDelete(license.id)}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
+                  >
+                    Confirmar Exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         );
 
@@ -783,7 +773,7 @@ export default function Licenses() {
           </div>
         );
     }
-  }, [handleEdit, handleDelete, deleteMutation.isPending, copyToClipboard, canEditIn, canDeleteIn]);
+  }, [handleEdit, handleDelete, deleteMutation.isPending, copyToClipboard]);
 
   return (
     <div className="space-y-4">
@@ -833,7 +823,7 @@ export default function Licenses() {
                   <Grid3x3 className="h-4 w-4" />
                 </Button>
               </div>
-
+              
               <Dialog open={isSaveConfigOpen} onOpenChange={setIsSaveConfigOpen}>
                 <DialogTrigger asChild>
                   <Button 
@@ -1012,7 +1002,7 @@ export default function Licenses() {
                       <TabsTrigger value="visibility">Visibilidade</TabsTrigger>
                       <TabsTrigger value="order">Ordem</TabsTrigger>
                     </TabsList>
-
+                    
                     <TabsContent value="visibility" className="space-y-4">
                       <p className="text-sm text-gray-600">
                         Selecione quais colunas deseja visualizar na tabela:
@@ -1049,7 +1039,7 @@ export default function Licenses() {
                         </Button>
                       </div>
                     </TabsContent>
-
+                    
                     <TabsContent value="order" className="space-y-4">
                       <p className="text-sm text-gray-600">
                         Arraste as colunas para reordenar (Código e Ações não podem ser movidas):
@@ -1058,9 +1048,9 @@ export default function Licenses() {
                         {columnOrder.map((columnId, index) => {
                           const column = AVAILABLE_COLUMNS.find(col => col.id === columnId);
                           if (!column) return null;
-
+                          
                           const isFixed = columnId === 'code' || columnId === 'acoes';
-
+                          
                           return (
                             <div 
                               key={columnId}
@@ -1243,7 +1233,7 @@ export default function Licenses() {
               )}
             </div>
           )}
-
+          
           {/* Paginação */}
           {!isLoadingAll && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
@@ -1251,7 +1241,7 @@ export default function Licenses() {
                 <span>Página {pagination.page} de {pagination.totalPages}</span>
                 <span>({pagination.total} itens no total)</span>
               </div>
-
+              
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
@@ -1262,7 +1252,7 @@ export default function Licenses() {
                 >
                   <ChevronsLeft className="w-4 h-4" />
                 </Button>
-
+                
                 <Button
                   variant="outline"
                   size="sm"
@@ -1272,14 +1262,14 @@ export default function Licenses() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-
+                
                 <div className="flex items-center space-x-1">
                   {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                     const pageNum = Math.max(1, Math.min(
                       pagination.totalPages - 4, 
                       pagination.page - 2
                     )) + i;
-
+                    
                     if (pageNum <= pagination.totalPages) {
                       return (
                         <Button
@@ -1296,7 +1286,7 @@ export default function Licenses() {
                     return null;
                   })}
                 </div>
-
+                
                 <Button
                   variant="outline"
                   size="sm"
@@ -1306,7 +1296,7 @@ export default function Licenses() {
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
-
+                
                 <Button
                   variant="outline"
                   size="sm"
@@ -1323,10 +1313,7 @@ export default function Licenses() {
       </Card>
 
       {/* Modal de Edição Modernizado */}
-      <Dialog open={isEditModalOpen} onOpenChange={(isOpen) => {
-        setIsEditModalOpen(isOpen);
-        if (!isOpen) setEditingLicense(null);
-      }}>
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent 
           className="sm:max-w-[800px] bg-gradient-to-br from-[#f4f4f4] via-white to-[#f8f9fa] border border-[#e0e0e0] shadow-xl"
           aria-describedby="edit-dialog-description"
@@ -1349,7 +1336,7 @@ export default function Licenses() {
               </div>
             </div>
           </DialogHeader>
-
+          
           {editingLicense && (
             <Tabs defaultValue="cliente" className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-[#f4f4f4] border border-[#e0e0e0] rounded-lg p-1">
@@ -1387,60 +1374,48 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {canViewField('licenses', 'codCliente') && (
-                        <div>
-                          <Label htmlFor="edit-codCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
-                          <OptimizedInput
-                            id="edit-codCliente"
-                            value={editingLicense.codCliente || ''}
-                            onChange={(e) => handleFieldChange('codCliente', e.target.value)}
-                            placeholder="C0001"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'codCliente')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'nomeCliente') && (
-                        <div>
-                          <Label htmlFor="edit-nomeCliente" className="text-[#0c151f] font-medium">Nome do Cliente</Label>
-                          <OptimizedInput
-                            id="edit-nomeCliente"
-                            value={editingLicense.nomeCliente || ''}
-                            onChange={(e) => handleFieldChange('nomeCliente', e.target.value)}
-                            placeholder="Nome da empresa"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'nomeCliente')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'listaCnpj') && (
-                        <div>
-                          <Label htmlFor="edit-listaCnpj" className="text-[#0c151f] font-medium">Lista de CNPJ</Label>
-                          <OptimizedInput
-                            id="edit-listaCnpj"
-                            value={editingLicense.listaCnpj || ''}
-                            onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
-                            placeholder="12.345.678/0001-90"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'listaCnpj')}
-                          />
-                        </div>
-                      )}
-                    </div>
-                    {canViewField('licenses', 'dadosEmpresa') && (
-                      <div className="mt-4">
-                        <Label htmlFor="edit-dadosEmpresa" className="text-[#0c151f] font-medium">Dados da Empresa</Label>
-                        <OptimizedTextarea
-                          id="edit-dadosEmpresa"
-                          value={editingLicense.dadosEmpresa || ''}
-                          onChange={(e) => handleFieldChange('dadosEmpresa', e.target.value)}
-                          placeholder="Informações da empresa..."
-                          rows={3}
-                          className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
-                          disabled={!canEditField('licenses', 'dadosEmpresa')}
+                      <div>
+                        <Label htmlFor="edit-codCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
+                        <OptimizedInput
+                          id="edit-codCliente"
+                          value={editingLicense.codCliente || ''}
+                          onChange={(e) => handleFieldChange('codCliente', e.target.value)}
+                          placeholder="C0001"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
                         />
                       </div>
-                    )}
+                      <div>
+                        <Label htmlFor="edit-nomeCliente" className="text-[#0c151f] font-medium">Nome do Cliente</Label>
+                        <OptimizedInput
+                          id="edit-nomeCliente"
+                          value={editingLicense.nomeCliente || ''}
+                          onChange={(e) => handleFieldChange('nomeCliente', e.target.value)}
+                          placeholder="Nome da empresa"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-listaCnpj" className="text-[#0c151f] font-medium">Lista de CNPJ</Label>
+                        <OptimizedInput
+                          id="edit-listaCnpj"
+                          value={editingLicense.listaCnpj || ''}
+                          onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
+                          placeholder="12.345.678/0001-90"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Label htmlFor="edit-dadosEmpresa" className="text-[#0c151f] font-medium">Dados da Empresa</Label>
+                      <OptimizedTextarea
+                        id="edit-dadosEmpresa"
+                        value={editingLicense.dadosEmpresa || ''}
+                        onChange={(e) => handleFieldChange('dadosEmpresa', e.target.value)}
+                        placeholder="Informações da empresa..."
+                        rows={3}
+                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1449,59 +1424,47 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {canViewField('licenses', 'code') && (
-                        <div>
-                          <Label htmlFor="edit-code" className="text-[#0c151f] font-medium">Código</Label>
-                          <OptimizedInput
-                            id="edit-code"
-                            value={editingLicense.code || ''}
-                            onChange={(e) => handleFieldChange('code', e.target.value)}
-                            placeholder="C0001"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'code')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'qtLicencas') && (
-                        <div>
-                          <Label htmlFor="edit-qtLicencas" className="text-[#0c151f] font-medium">Quantidade de Licenças</Label>
-                          <OptimizedInput
-                            id="edit-qtLicencas"
-                            type="number"
-                            value={editingLicense.qtLicencas || ''}
-                            onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
-                            placeholder="1"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'qtLicencas')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'versaoSap') && (
-                        <div>
-                          <Label htmlFor="edit-versaoSap" className="text-[#0c151f] font-medium">Versão SAP</Label>
-                          <OptimizedInput
-                            id="edit-versaoSap"
-                            value={editingLicense.versaoSap || ''}
-                            onChange={(e) => handleFieldChange('versaoSap', e.target.value)}
-                            placeholder="1000230"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'versaoSap')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'ativo') && (
-                        <div className="flex items-center space-x-2 mt-4">
-                          <Switch
-                            id="edit-ativo"
-                            checked={editingLicense.ativo || false}
-                            onCheckedChange={(checked) => handleFieldChange('ativo', checked)}
-                            disabled={!canEditField('licenses', 'ativo')}
-                          />
-                          <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#0c151f]">
-                            Licença Ativa
-                          </Label>
-                        </div>
-                      )}
+                      <div>
+                        <Label htmlFor="edit-code" className="text-[#0c151f] font-medium">Código</Label>
+                        <OptimizedInput
+                          id="edit-code"
+                          value={editingLicense.code || ''}
+                          onChange={(e) => handleFieldChange('code', e.target.value)}
+                          placeholder="C0001"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-qtLicencas" className="text-[#0c151f] font-medium">Quantidade de Licenças</Label>
+                        <OptimizedInput
+                          id="edit-qtLicencas"
+                          type="number"
+                          value={editingLicense.qtLicencas || ''}
+                          onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
+                          placeholder="1"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-versaoSap" className="text-[#0c151f] font-medium">Versão SAP</Label>
+                        <OptimizedInput
+                          id="edit-versaoSap"
+                          value={editingLicense.versaoSap || ''}
+                          onChange={(e) => handleFieldChange('versaoSap', e.target.value)}
+                          placeholder="1000230"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 mt-4">
+                        <Switch
+                          id="edit-ativo"
+                          checked={editingLicense.ativo || false}
+                          onCheckedChange={(checked) => handleFieldChange('ativo', checked)}
+                        />
+                        <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#0c151f]">
+                          Licença Ativa
+                        </Label>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1511,58 +1474,46 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {canViewField('licenses', 'hardwareKey') && (
-                        <div>
-                          <Label htmlFor="edit-hardwareKey" className="text-[#0c151f] font-medium">Hardware Key</Label>
-                          <OptimizedInput
-                            id="edit-hardwareKey"
-                            value={editingLicense.hardwareKey || ''}
-                            onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
-                            placeholder="E0546917180"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'hardwareKey')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'installNumber') && (
-                        <div>
-                          <Label htmlFor="edit-installNumber" className="text-[#0c151f] font-medium">Install Number</Label>
-                          <OptimizedInput
-                            id="edit-installNumber"
-                            value={editingLicense.installNumber || ''}
-                            onChange={(e) => handleFieldChange('installNumber', e.target.value)}
-                            placeholder="0020798655"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'installNumber')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'systemNumber') && (
-                        <div>
-                          <Label htmlFor="edit-systemNumber" className="text-[#0c151f] font-medium">System Number</Label>
-                          <OptimizedInput
-                            id="edit-systemNumber"
-                            value={editingLicense.systemNumber || ''}
-                            onChange={(e) => handleFieldChange('systemNumber', e.target.value)}
-                            placeholder="000000000312513489"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'systemNumber')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'nomeDb') && (
-                        <div>
-                          <Label htmlFor="edit-nomeDb" className="text-[#0c151f] font-medium">Nome do Database</Label>
-                          <OptimizedInput
-                            id="edit-nomeDb"
-                            value={editingLicense.nomeDb || ''}
-                            onChange={(e) => handleFieldChange('nomeDb', e.target.value)}
-                            placeholder="SBO_EMPRESA"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'nomeDb')}
-                          />
-                        </div>
-                      )}
+                      <div>
+                        <Label htmlFor="edit-hardwareKey" className="text-[#0c151f] font-medium">Hardware Key</Label>
+                        <OptimizedInput
+                          id="edit-hardwareKey"
+                          value={editingLicense.hardwareKey || ''}
+                          onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
+                          placeholder="E0546917180"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-installNumber" className="text-[#0c151f] font-medium">Install Number</Label>
+                        <OptimizedInput
+                          id="edit-installNumber"
+                          value={editingLicense.installNumber || ''}
+                          onChange={(e) => handleFieldChange('installNumber', e.target.value)}
+                          placeholder="0020798655"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-systemNumber" className="text-[#0c151f] font-medium">System Number</Label>
+                        <OptimizedInput
+                          id="edit-systemNumber"
+                          value={editingLicense.systemNumber || ''}
+                          onChange={(e) => handleFieldChange('systemNumber', e.target.value)}
+                          placeholder="000000000312513489"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-nomeDb" className="text-[#0c151f] font-medium">Nome do Database</Label>
+                        <OptimizedInput
+                          id="edit-nomeDb"
+                          value={editingLicense.nomeDb || ''}
+                          onChange={(e) => handleFieldChange('nomeDb', e.target.value)}
+                          placeholder="SBO_EMPRESA"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1572,66 +1523,54 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {canViewField('licenses', 'endApi') && (
-                        <div>
-                          <Label htmlFor="edit-endApi" className="text-[#0c151f] font-medium">Endereço da API</Label>
-                          <OptimizedInput
-                            id="edit-endApi"
-                            value={editingLicense.endApi || ''}
-                            onChange={(e) => handleFieldChange('endApi', e.target.value)}
-                            placeholder="http://servidor:8090/SBO_DB/DWUAPI"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'endApi')}
-                          />
-                        </div>
-                      )}
-                      {canViewField('licenses', 'qtLicencasAdicionais') && (
-                        <div>
-                          <Label htmlFor="edit-qtLicencasAdicionais" className="text-[#0c151f] font-medium">Licenças Adicionais</Label>
-                          <OptimizedInput
-                            id="edit-qtLicencasAdicionais"
-                            type="number"
-                            value={editingLicense.qtLicencasAdicionais || ''}
-                            onChange={(e) => handleFieldChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
-                            placeholder="0"
-                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                            disabled={!canEditField('licenses', 'qtLicencasAdicionais')}
-                          />
-                        </div>
-                      )}
+                      <div>
+                        <Label htmlFor="edit-endApi" className="text-[#0c151f] font-medium">Endereço da API</Label>
+                        <OptimizedInput
+                          id="edit-endApi"
+                          value={editingLicense.endApi || ''}
+                          onChange={(e) => handleFieldChange('endApi', e.target.value)}
+                          placeholder="http://servidor:8090/SBO_DB/DWUAPI"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-qtLicencasAdicionais" className="text-[#0c151f] font-medium">Licenças Adicionais</Label>
+                        <OptimizedInput
+                          id="edit-qtLicencasAdicionais"
+                          type="number"
+                          value={editingLicense.qtLicencasAdicionais || ''}
+                          onChange={(e) => handleFieldChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
+                          placeholder="0"
+                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                        />
+                      </div>
                     </div>
-                    {canViewField('licenses', 'descDb') && (
-                      <div className="mt-4">
-                        <Label htmlFor="edit-descDb" className="text-[#0c151f] font-medium">Descrição do Database</Label>
-                        <OptimizedTextarea
-                          id="edit-descDb"
-                          value={editingLicense.descDb || ''}
-                          onChange={(e) => handleFieldChange('descDb', e.target.value)}
-                          placeholder="Base de produção..."
-                          rows={2}
-                          className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
-                          disabled={!canEditField('licenses', 'descDb')}
-                        />
-                      </div>
-                    )}
-                    {canViewField('licenses', 'observacao') && (
-                      <div className="mt-4">
-                        <Label htmlFor="edit-observacao" className="text-[#0c151f] font-medium">Observações</Label>
-                        <OptimizedTextarea
-                          id="edit-observacao"
-                          value={editingLicense.observacao || ''}
-                          onChange={(e) => handleFieldChange('observacao', e.target.value)}
-                          placeholder="Observações adicionais..."
-                          rows={3}
-                          className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
-                          disabled={!canEditField('licenses', 'observacao')}
-                        />
-                      </div>
-                    )}
+                    <div className="mt-4">
+                      <Label htmlFor="edit-descDb" className="text-[#0c151f] font-medium">Descrição do Database</Label>
+                      <OptimizedTextarea
+                        id="edit-descDb"
+                        value={editingLicense.descDb || ''}
+                        onChange={(e) => handleFieldChange('descDb', e.target.value)}
+                        placeholder="Base de produção..."
+                        rows={2}
+                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <Label htmlFor="edit-observacao" className="text-[#0c151f] font-medium">Observações</Label>
+                      <OptimizedTextarea
+                        id="edit-observacao"
+                        value={editingLicense.observacao || ''}
+                        onChange={(e) => handleFieldChange('observacao', e.target.value)}
+                        placeholder="Observações adicionais..."
+                        rows={3}
+                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
-
+              
               <div className="flex justify-end space-x-3 pt-6 border-t border-[#e0e0e0] mt-6">
                 <Button 
                   type="button" 
