@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,8 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Plus, Edit, Upload, Trash2, Globe, Shield, Activity, Filter, Search, Calendar as CalendarIcon, X, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function ActivityHistory() {
   const [activeTab, setActiveTab] = useState("all");
@@ -30,6 +31,29 @@ export default function ActivityHistory() {
     refetchOnWindowFocus: true,
     refetchInterval: 60 * 1000,
   });
+
+  // Mutation para marcar atividades como lidas
+  const markAsReadMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/activities/mark-read');
+    },
+    onSuccess: () => {
+      // Invalidar cache da contagem de não lidas
+      queryClient.invalidateQueries({ queryKey: ['/api/activities/unread-count'] });
+    },
+  });
+
+  // Marcar como lido quando o componente montar e quando focar na janela
+  useEffect(() => {
+    markAsReadMutation.mutate();
+
+    const handleFocus = () => {
+      markAsReadMutation.mutate();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
 
   const filteredActivities = useMemo(() => {
     if (!activities) return [];

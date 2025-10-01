@@ -29,94 +29,34 @@ function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [lastViewedLogTime, setLastViewedLogTime] = useState(() => {
-    return localStorage.getItem('lastViewedLogTime') || new Date().toISOString();
-  });
 
-  // Query para buscar atividades e verificar novas
-  const { data: activities, refetch: refetchActivities } = useQuery({
-    queryKey: ["/api/activities"],
-    staleTime: 2 * 1000, // Reduzir para 2 segundos para resposta ainda mais rápida
+  // Query para buscar contagem de atividades não lidas
+  const { data: unreadData, refetch: refetchUnreadCount } = useQuery<{ count: number }>({
+    queryKey: ["/api/activities/unread-count"],
+    staleTime: 10 * 1000,
     gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
-    refetchInterval: 15 * 1000, // Verificar a cada 15 segundos
+    refetchInterval: 20 * 1000, // Verificar a cada 20 segundos
     enabled: user?.role === 'admin', // Apenas para administradores
   });
 
-  // Contar novos logs desde a última visualização
-  const newLogsCount = useMemo(() => {
-    if (!activities || !Array.isArray(activities) || user?.role !== 'admin') {
-      console.log('No activities or not admin, returning 0');
-      return 0;
-    }
-    
-    const lastViewed = new Date(lastViewedLogTime);
-    console.log('Checking new logs:', {
-      totalActivities: activities.length,
-      lastViewedTime: lastViewed.toISOString(),
-      firstActivityTime: activities[0]?.timestamp,
-      lastViewedTimestamp: lastViewed.getTime()
-    });
-    
-    const newActivities = activities.filter(activity => {
-      if (!activity.timestamp) return false;
-      
-      const activityDate = new Date(activity.timestamp);
-      const isNew = activityDate > lastViewed;
-      
-      console.log('Activity check:', {
-        id: activity.id,
-        action: activity.action,
-        timestamp: activity.timestamp,
-        activityTime: activityDate.getTime(),
-        lastViewedTime: lastViewed.getTime(),
-        isNew
-      });
-      
-      return isNew;
-    });
-    
-    console.log('Final new logs count:', newActivities.length);
-    return newActivities.length;
-  }, [activities, lastViewedLogTime, user?.role]);
+  const newLogsCount = unreadData?.count || 0;
 
-  // Atualizar último tempo de visualização quando entrar na página de logs
+  // Forçar atualização quando houver mudanças no sistema
   useEffect(() => {
-    if (location === '/activities') {
-      const now = new Date().toISOString();
-      setLastViewedLogTime(now);
-      localStorage.setItem('lastViewedLogTime', now);
-      // Forçar atualização das atividades
-      refetchActivities();
-    }
-  }, [location, refetchActivities]);
-
-  // Forçar atualização das atividades quando houver mudanças no sistema
-  useEffect(() => {
-    const handleActivityUpdate = (e: CustomEvent) => {
+    const handleActivityUpdate = () => {
       if (user?.role === 'admin') {
-        console.log('Activity update detected via custom event:', e.detail);
-        refetchActivities();
+        refetchUnreadCount();
       }
     };
 
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'activityUpdate' && user?.role === 'admin') {
-        console.log('Activity update detected via storage, refetching...');
-        refetchActivities();
-      }
-    };
-
-    // Escutar eventos customizados (mais confiável)
+    // Escutar eventos customizados
     window.addEventListener('activityUpdate', handleActivityUpdate as EventListener);
-    // Manter localStorage como backup
-    window.addEventListener('storage', handleStorageChange);
     
     return () => {
       window.removeEventListener('activityUpdate', handleActivityUpdate as EventListener);
-      window.removeEventListener('storage', handleStorageChange);
     };
-  }, [refetchActivities, user?.role]);
+  }, [refetchUnreadCount, user?.role]);
 
   const navigationItems = useMemo(() => {
     const items = [];
