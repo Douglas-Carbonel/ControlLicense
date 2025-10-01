@@ -103,7 +103,7 @@ export default function Licenses() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { canEditIn, canDeleteIn, canAccess } = usePermissions();
+  const { canEditIn, canDeleteIn, canAccess, canViewField, canEditField } = usePermissions();
 
 
   // ABORDAGEM PROFISSIONAL: Carregar todos os dados uma vez
@@ -1387,48 +1387,60 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-codCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
-                        <OptimizedInput
-                          id="edit-codCliente"
-                          value={editingLicense.codCliente || ''}
-                          onChange={(e) => handleFieldChange('codCliente', e.target.value)}
-                          placeholder="C0001"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-nomeCliente" className="text-[#0c151f] font-medium">Nome do Cliente</Label>
-                        <OptimizedInput
-                          id="edit-nomeCliente"
-                          value={editingLicense.nomeCliente || ''}
-                          onChange={(e) => handleFieldChange('nomeCliente', e.target.value)}
-                          placeholder="Nome da empresa"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-listaCnpj" className="text-[#0c151f] font-medium">Lista de CNPJ</Label>
-                        <OptimizedInput
-                          id="edit-listaCnpj"
-                          value={editingLicense.listaCnpj || ''}
-                          onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
-                          placeholder="12.345.678/0001-90"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
+                      {canViewField('licenses', 'codCliente') && (
+                        <div>
+                          <Label htmlFor="edit-codCliente" className="text-[#0c151f] font-medium">Código do Cliente</Label>
+                          <OptimizedInput
+                            id="edit-codCliente"
+                            value={editingLicense.codCliente || ''}
+                            onChange={(e) => handleFieldChange('codCliente', e.target.value)}
+                            placeholder="C0001"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'codCliente')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'nomeCliente') && (
+                        <div>
+                          <Label htmlFor="edit-nomeCliente" className="text-[#0c151f] font-medium">Nome do Cliente</Label>
+                          <OptimizedInput
+                            id="edit-nomeCliente"
+                            value={editingLicense.nomeCliente || ''}
+                            onChange={(e) => handleFieldChange('nomeCliente', e.target.value)}
+                            placeholder="Nome da empresa"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'nomeCliente')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'listaCnpj') && (
+                        <div>
+                          <Label htmlFor="edit-listaCnpj" className="text-[#0c151f] font-medium">Lista de CNPJ</Label>
+                          <OptimizedInput
+                            id="edit-listaCnpj"
+                            value={editingLicense.listaCnpj || ''}
+                            onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
+                            placeholder="12.345.678/0001-90"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'listaCnpj')}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-4">
-                      <Label htmlFor="edit-dadosEmpresa" className="text-[#0c151f] font-medium">Dados da Empresa</Label>
-                      <OptimizedTextarea
-                        id="edit-dadosEmpresa"
-                        value={editingLicense.dadosEmpresa || ''}
-                        onChange={(e) => handleFieldChange('dadosEmpresa', e.target.value)}
-                        placeholder="Informações da empresa..."
-                        rows={3}
-                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
-                      />
-                    </div>
+                    {canViewField('licenses', 'dadosEmpresa') && (
+                      <div className="mt-4">
+                        <Label htmlFor="edit-dadosEmpresa" className="text-[#0c151f] font-medium">Dados da Empresa</Label>
+                        <OptimizedTextarea
+                          id="edit-dadosEmpresa"
+                          value={editingLicense.dadosEmpresa || ''}
+                          onChange={(e) => handleFieldChange('dadosEmpresa', e.target.value)}
+                          placeholder="Informações da empresa..."
+                          rows={3}
+                          className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                          disabled={!canEditField('licenses', 'dadosEmpresa')}
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1437,47 +1449,59 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-code" className="text-[#0c151f] font-medium">Código</Label>
-                        <OptimizedInput
-                          id="edit-code"
-                          value={editingLicense.code || ''}
-                          onChange={(e) => handleFieldChange('code', e.target.value)}
-                          placeholder="C0001"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-qtLicencas" className="text-[#0c151f] font-medium">Quantidade de Licenças</Label>
-                        <OptimizedInput
-                          id="edit-qtLicencas"
-                          type="number"
-                          value={editingLicense.qtLicencas || ''}
-                          onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
-                          placeholder="1"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-versaoSap" className="text-[#0c151f] font-medium">Versão SAP</Label>
-                        <OptimizedInput
-                          id="edit-versaoSap"
-                          value={editingLicense.versaoSap || ''}
-                          onChange={(e) => handleFieldChange('versaoSap', e.target.value)}
-                          placeholder="1000230"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div className="flex items-center space-x-2 mt-4">
-                        <Switch
-                          id="edit-ativo"
-                          checked={editingLicense.ativo || false}
-                          onCheckedChange={(checked) => handleFieldChange('ativo', checked)}
-                        />
-                        <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#0c151f]">
-                          Licença Ativa
-                        </Label>
-                      </div>
+                      {canViewField('licenses', 'code') && (
+                        <div>
+                          <Label htmlFor="edit-code" className="text-[#0c151f] font-medium">Código</Label>
+                          <OptimizedInput
+                            id="edit-code"
+                            value={editingLicense.code || ''}
+                            onChange={(e) => handleFieldChange('code', e.target.value)}
+                            placeholder="C0001"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'code')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'qtLicencas') && (
+                        <div>
+                          <Label htmlFor="edit-qtLicencas" className="text-[#0c151f] font-medium">Quantidade de Licenças</Label>
+                          <OptimizedInput
+                            id="edit-qtLicencas"
+                            type="number"
+                            value={editingLicense.qtLicencas || ''}
+                            onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
+                            placeholder="1"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'qtLicencas')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'versaoSap') && (
+                        <div>
+                          <Label htmlFor="edit-versaoSap" className="text-[#0c151f] font-medium">Versão SAP</Label>
+                          <OptimizedInput
+                            id="edit-versaoSap"
+                            value={editingLicense.versaoSap || ''}
+                            onChange={(e) => handleFieldChange('versaoSap', e.target.value)}
+                            placeholder="1000230"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'versaoSap')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'ativo') && (
+                        <div className="flex items-center space-x-2 mt-4">
+                          <Switch
+                            id="edit-ativo"
+                            checked={editingLicense.ativo || false}
+                            onCheckedChange={(checked) => handleFieldChange('ativo', checked)}
+                            disabled={!canEditField('licenses', 'ativo')}
+                          />
+                          <Label htmlFor="edit-ativo" className="text-sm font-medium text-[#0c151f]">
+                            Licença Ativa
+                          </Label>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1487,46 +1511,58 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-hardwareKey" className="text-[#0c151f] font-medium">Hardware Key</Label>
-                        <OptimizedInput
-                          id="edit-hardwareKey"
-                          value={editingLicense.hardwareKey || ''}
-                          onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
-                          placeholder="E0546917180"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-installNumber" className="text-[#0c151f] font-medium">Install Number</Label>
-                        <OptimizedInput
-                          id="edit-installNumber"
-                          value={editingLicense.installNumber || ''}
-                          onChange={(e) => handleFieldChange('installNumber', e.target.value)}
-                          placeholder="0020798655"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-systemNumber" className="text-[#0c151f] font-medium">System Number</Label>
-                        <OptimizedInput
-                          id="edit-systemNumber"
-                          value={editingLicense.systemNumber || ''}
-                          onChange={(e) => handleFieldChange('systemNumber', e.target.value)}
-                          placeholder="000000000312513489"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-nomeDb" className="text-[#0c151f] font-medium">Nome do Database</Label>
-                        <OptimizedInput
-                          id="edit-nomeDb"
-                          value={editingLicense.nomeDb || ''}
-                          onChange={(e) => handleFieldChange('nomeDb', e.target.value)}
-                          placeholder="SBO_EMPRESA"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
-                        />
-                      </div>
+                      {canViewField('licenses', 'hardwareKey') && (
+                        <div>
+                          <Label htmlFor="edit-hardwareKey" className="text-[#0c151f] font-medium">Hardware Key</Label>
+                          <OptimizedInput
+                            id="edit-hardwareKey"
+                            value={editingLicense.hardwareKey || ''}
+                            onChange={(e) => handleFieldChange('hardwareKey', e.target.value)}
+                            placeholder="E0546917180"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'hardwareKey')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'installNumber') && (
+                        <div>
+                          <Label htmlFor="edit-installNumber" className="text-[#0c151f] font-medium">Install Number</Label>
+                          <OptimizedInput
+                            id="edit-installNumber"
+                            value={editingLicense.installNumber || ''}
+                            onChange={(e) => handleFieldChange('installNumber', e.target.value)}
+                            placeholder="0020798655"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'installNumber')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'systemNumber') && (
+                        <div>
+                          <Label htmlFor="edit-systemNumber" className="text-[#0c151f] font-medium">System Number</Label>
+                          <OptimizedInput
+                            id="edit-systemNumber"
+                            value={editingLicense.systemNumber || ''}
+                            onChange={(e) => handleFieldChange('systemNumber', e.target.value)}
+                            placeholder="000000000312513489"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'systemNumber')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'nomeDb') && (
+                        <div>
+                          <Label htmlFor="edit-nomeDb" className="text-[#0c151f] font-medium">Nome do Database</Label>
+                          <OptimizedInput
+                            id="edit-nomeDb"
+                            value={editingLicense.nomeDb || ''}
+                            onChange={(e) => handleFieldChange('nomeDb', e.target.value)}
+                            placeholder="SBO_EMPRESA"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'nomeDb')}
+                          />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1536,50 +1572,62 @@ export default function Licenses() {
                 <Card className="border border-[#e0e0e0] shadow-sm">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-endApi" className="text-[#0c151f] font-medium">Endereço da API</Label>
-                        <OptimizedInput
-                          id="edit-endApi"
-                          value={editingLicense.endApi || ''}
-                          onChange={(e) => handleFieldChange('endApi', e.target.value)}
-                          placeholder="http://servidor:8090/SBO_DB/DWUAPI"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                      {canViewField('licenses', 'endApi') && (
+                        <div>
+                          <Label htmlFor="edit-endApi" className="text-[#0c151f] font-medium">Endereço da API</Label>
+                          <OptimizedInput
+                            id="edit-endApi"
+                            value={editingLicense.endApi || ''}
+                            onChange={(e) => handleFieldChange('endApi', e.target.value)}
+                            placeholder="http://servidor:8090/SBO_DB/DWUAPI"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'endApi')}
+                          />
+                        </div>
+                      )}
+                      {canViewField('licenses', 'qtLicencasAdicionais') && (
+                        <div>
+                          <Label htmlFor="edit-qtLicencasAdicionais" className="text-[#0c151f] font-medium">Licenças Adicionais</Label>
+                          <OptimizedInput
+                            id="edit-qtLicencasAdicionais"
+                            type="number"
+                            value={editingLicense.qtLicencasAdicionais || ''}
+                            onChange={(e) => handleFieldChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                            className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                            disabled={!canEditField('licenses', 'qtLicencasAdicionais')}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {canViewField('licenses', 'descDb') && (
+                      <div className="mt-4">
+                        <Label htmlFor="edit-descDb" className="text-[#0c151f] font-medium">Descrição do Database</Label>
+                        <OptimizedTextarea
+                          id="edit-descDb"
+                          value={editingLicense.descDb || ''}
+                          onChange={(e) => handleFieldChange('descDb', e.target.value)}
+                          placeholder="Base de produção..."
+                          rows={2}
+                          className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                          disabled={!canEditField('licenses', 'descDb')}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="edit-qtLicencasAdicionais" className="text-[#0c151f] font-medium">Licenças Adicionais</Label>
-                        <OptimizedInput
-                          id="edit-qtLicencasAdicionais"
-                          type="number"
-                          value={editingLicense.qtLicencasAdicionais || ''}
-                          onChange={(e) => handleFieldChange('qtLicencasAdicionais', parseInt(e.target.value) || 0)}
-                          placeholder="0"
-                          className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                    )}
+                    {canViewField('licenses', 'observacao') && (
+                      <div className="mt-4">
+                        <Label htmlFor="edit-observacao" className="text-[#0c151f] font-medium">Observações</Label>
+                        <OptimizedTextarea
+                          id="edit-observacao"
+                          value={editingLicense.observacao || ''}
+                          onChange={(e) => handleFieldChange('observacao', e.target.value)}
+                          placeholder="Observações adicionais..."
+                          rows={3}
+                          className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
+                          disabled={!canEditField('licenses', 'observacao')}
                         />
                       </div>
-                    </div>
-                    <div className="mt-4">
-                      <Label htmlFor="edit-descDb" className="text-[#0c151f] font-medium">Descrição do Database</Label>
-                      <OptimizedTextarea
-                        id="edit-descDb"
-                        value={editingLicense.descDb || ''}
-                        onChange={(e) => handleFieldChange('descDb', e.target.value)}
-                        placeholder="Base de produção..."
-                        rows={2}
-                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
-                      />
-                    </div>
-                    <div className="mt-4">
-                      <Label htmlFor="edit-observacao" className="text-[#0c151f] font-medium">Observações</Label>
-                      <OptimizedTextarea
-                        id="edit-observacao"
-                        value={editingLicense.observacao || ''}
-                        onChange={(e) => handleFieldChange('observacao', e.target.value)}
-                        placeholder="Observações adicionais..."
-                        rows={3}
-                        className="border-[#e0e0e0] focus:border-[#0095da] resize-none mt-1"
-                      />
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
