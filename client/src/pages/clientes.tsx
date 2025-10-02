@@ -155,7 +155,20 @@ export default function Clientes() {
     setSelectedClient: setSelectedCliente
   } = useClientSearch(clientes);
 
-  
+  // Efeito para buscar cliente via URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const codigoClienteParam = urlParams.get('search');
+    if (codigoClienteParam && clientes) {
+      const clienteEncontrado = clientes.find((c: Cliente) => c.code === codigoClienteParam);
+      if (clienteEncontrado) {
+        setSelectedCliente(clienteEncontrado.code);
+        // Opcional: remover o parâmetro da URL para evitar re-execução
+        // window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, [clientes, setSelectedCliente]);
+
 
   // Buscar histórico do cliente selecionado
   const { data: historico, isLoading, error, refetch } = useQuery({
@@ -461,7 +474,7 @@ export default function Clientes() {
     reportContent += `Cliente: ${clienteNome} (${selectedCliente})\n`;
     reportContent += `Data de Geração: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n`;
     reportContent += `Total de Registros: ${filteredHistorico.length}\n\n`;
-    
+
     // Adicionar filtros aplicados
     reportContent += `FILTROS APLICADOS:\n`;
     reportContent += `${"-".repeat(60)}\n`;
@@ -494,12 +507,12 @@ export default function Clientes() {
       reportContent += `Status: ${item.statusAtual === 'CONCLUIDO' ? 'Concluído' : item.statusAtual === 'EM_ANDAMENTO' ? 'Em Andamento' : 'Pendente'}\n`;
       reportContent += `Data: ${format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n`;
       reportContent += `Responsável: ${item.responsavel}\n`;
-      
+
       const atendenteNome = item.atendenteSuporteId && Array.isArray(usuarios)
         ? usuarios.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
         : 'N/A';
       reportContent += `Atendente Suporte: ${atendenteNome}\n`;
-      
+
       if (item.ambiente) reportContent += `Ambiente: ${item.ambiente}\n`;
       if (item.versaoInstalada) reportContent += `Versão Instalada: ${item.versaoInstalada}\n`;
       if (item.versaoAnterior) reportContent += `Versão Anterior: ${item.versaoAnterior}\n`;
@@ -1567,7 +1580,7 @@ export default function Clientes() {
                     <Grid3X3 className="w-4 h-4" />
                   </Button>
                 </div>
-                
+
                 {filteredHistorico && filteredHistorico.length > 0 && (
                   <Button
                     variant="default"
@@ -1930,7 +1943,7 @@ export default function Clientes() {
                                 </p>
                               </div>
                             )}
-                            
+
                             {item.problemas && (
                               <div>
                                 <h4 className="text-sm font-medium text-red-700 mb-1 flex items-center space-x-1">
@@ -1942,7 +1955,7 @@ export default function Clientes() {
                                 </p>
                               </div>
                             )}
-                            
+
                             {item.solucoes && (
                               <div>
                                 <h4 className="text-sm font-medium text-green-700 mb-1 flex items-center space-x-1">
@@ -1975,7 +1988,7 @@ export default function Clientes() {
                             "relative w-full h-full transition-transform duration-700 transform-style-preserve-3d",
                             isFlipped ? "rotate-y-180" : ""
                           )}>
-                            
+
                             {/* Frente do Card */}
                             <Card className={cn(
                               "absolute inset-0 w-full h-full backface-hidden border-2 hover:shadow-xl transition-all duration-300",
@@ -2246,7 +2259,7 @@ export default function Clientes() {
               </div>
             </div>
           </DialogHeader>
-          
+
           {selectedHistorico && (
             <div className="space-y-6 mt-6">
               {/* Cabeçalho com Status */}
@@ -2377,10 +2390,10 @@ export default function Clientes() {
                     {(() => {
                       const checklist = formatChecklistData(selectedHistorico.checklistInstalacao);
                       if (!checklist) return <p className="text-blue-600">Dados do checklist não disponíveis</p>;
-                      
+
                       const completed = Object.values(checklist).filter(Boolean).length;
                       const total = Object.keys(checklist).length;
-                      
+
                       return (
                         <div>
                           <div className="flex items-center justify-between mb-3">
@@ -2412,10 +2425,10 @@ export default function Clientes() {
                     {(() => {
                       const checklist = formatChecklistData(selectedHistorico.checklistAtualizacao);
                       if (!checklist) return <p className="text-green-600">Dados do checklist não disponíveis</p>;
-                      
+
                       const completed = Object.values(checklist).filter(Boolean).length;
                       const total = Object.keys(checklist).length;
-                      
+
                       return (
                         <div>
                           <div className="flex items-center justify-between mb-3">
@@ -2485,7 +2498,7 @@ export default function Clientes() {
                     <p className="text-blue-800 whitespace-pre-wrap">{selectedHistorico.observacoes}</p>
                   </div>
                 )}
-                
+
                 {selectedHistorico.problemas && (
                   <div className="p-4 bg-red-50 rounded-lg border-l-4 border-red-400">
                     <h4 className="text-lg font-semibold text-red-700 mb-2 flex items-center space-x-2">
@@ -2495,7 +2508,7 @@ export default function Clientes() {
                     <p className="text-red-800 whitespace-pre-wrap">{selectedHistorico.problemas}</p>
                   </div>
                 )}
-                
+
                 {selectedHistorico.solucoes && (
                   <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-400">
                     <h4 className="text-lg font-semibold text-green-700 mb-2 flex items-center space-x-2">
