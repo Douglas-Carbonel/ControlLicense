@@ -51,7 +51,13 @@ export default function NewLicenseModal() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", "/api/licenses", data);
+      // Remover campos restritos se usuário for técnico
+      let licenseData = { ...data };
+      if (user?.role === 'support') {
+        delete licenseData.qtLicencas;
+        delete licenseData.listaCnpj;
+      }
+      const response = await apiRequest("POST", "/api/licenses", licenseData);
       return response.json();
     },
     onSuccess: () => {

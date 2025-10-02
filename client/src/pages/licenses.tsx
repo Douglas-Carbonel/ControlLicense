@@ -240,7 +240,13 @@ export default function Licenses() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number; license: any }) => {
-      return await apiRequest("PUT", `/api/licenses/${data.id}`, data.license);
+      // Remover campos restritos se usuário for técnico
+      let licenseData = { ...data.license };
+      if (user?.role === 'support') {
+        delete licenseData.qtLicencas;
+        delete licenseData.listaCnpj;
+      }
+      return await apiRequest("PUT", `/api/licenses/${data.id}`, licenseData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/licenses?limit=1000"] });
