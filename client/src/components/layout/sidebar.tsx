@@ -52,7 +52,7 @@ function Sidebar() {
 
     // Escutar eventos customizados
     window.addEventListener('activityUpdate', handleActivityUpdate as EventListener);
-    
+
     return () => {
       window.removeEventListener('activityUpdate', handleActivityUpdate as EventListener);
     };
@@ -312,9 +312,9 @@ function Sidebar() {
                   </div>
                 </DropdownMenuLabel>
                 <div className="p-2">
-                  <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3 mb-1">
-                    <User className="mr-3 h-5 w-5" />
-                    <span className="font-medium">Perfil do Usuário</span>
+                  <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Meus Atendimentos</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-white hover:bg-[#3a3a3c]/50 hover:text-[#0095da] transition-all duration-200 rounded-xl p-3 mb-1">
                     <Database className="mr-3 h-5 w-5" />
