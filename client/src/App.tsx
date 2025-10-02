@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,14 +31,14 @@ function Router() {
     return <Login />;
   }
 
-  // Usuários técnicos só podem acessar licenças
+  // Usuários técnicos podem acessar licenças e clientes
   if (user.role === 'support') {
     return (
       <AppLayout>
         <Switch>
           <Route path="/licenses" component={Licenses} />
-          <Route path="/" component={() => <Licenses />} />
-          <Route component={() => <Licenses />} />
+          <Route path="/clientes" component={Clientes} />
+          <Route component={() => <Redirect to="/licenses" />} />
         </Switch>
       </AppLayout>
     );

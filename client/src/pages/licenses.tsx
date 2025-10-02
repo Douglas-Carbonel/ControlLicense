@@ -92,6 +92,8 @@ export default function Licenses() {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   // Estado para configuração de colunas
   const [visibleColumns, setVisibleColumns] = useState(DEFAULT_VISIBLE_COLUMNS);
+  // Estado para ordenação
+  const [sortConfig, setSortConfig] = useState<{ columnId: string; direction: 'asc' | 'desc' } | null>(null);
   const [columnOrder, setColumnOrder] = useState(AVAILABLE_COLUMNS.map(col => col.id));
   const [isColumnConfigOpen, setIsColumnConfigOpen] = useState(false);
   const [savedConfigs, setSavedConfigs] = useState<{name: string, config: any}[]>([]);
@@ -146,8 +148,43 @@ export default function Licenses() {
       }
     });
 
+    // Aplicar ordenação se configurada
+    if (sortConfig) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a[sortConfig.columnId];
+        const bValue = b[sortConfig.columnId];
+        
+        // Tratamento especial para valores nulos/undefined
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortConfig.direction === 'asc' ? 1 : -1;
+        if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1;
+        
+        // Ordenação numérica para campos de quantidade
+        if (sortConfig.columnId === 'qtLicencas' || sortConfig.columnId === 'qtLicencasAdicionais') {
+          const numA = Number(aValue) || 0;
+          const numB = Number(bValue) || 0;
+          return sortConfig.direction === 'asc' ? numA - numB : numB - numA;
+        }
+        
+        // Ordenação para boolean
+        if (sortConfig.columnId === 'ativo') {
+          return sortConfig.direction === 'asc' 
+            ? (aValue === bValue ? 0 : aValue ? -1 : 1)
+            : (aValue === bValue ? 0 : aValue ? 1 : -1);
+        }
+        
+        // Ordenação alfabética padrão
+        const strA = String(aValue).toLowerCase();
+        const strB = String(bValue).toLowerCase();
+        
+        if (strA < strB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (strA > strB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     return filtered;
-  }, [allLicenses, debouncedColumnFilters]);
+  }, [allLicenses, debouncedColumnFilters, sortConfig]);
 
   // PAGINAÇÃO LOCAL - Otimizada para performance
   const paginatedLicenses = useMemo(() => {
@@ -289,6 +326,21 @@ export default function Licenses() {
   const clearAllFilters = useCallback(() => {
     setColumnFilters({});
     setCurrentPage(1);
+  }, []);
+
+  const handleColumnDoubleClick = useCallback((columnId: string) => {
+    if (columnId === 'acoes') return; // Não ordenar coluna de ações
+    
+    setSortConfig(prevConfig => {
+      // Se já está ordenando por essa coluna, inverte a direção
+      if (prevConfig?.columnId === columnId) {
+        return prevConfig.direction === 'asc' 
+          ? { columnId, direction: 'desc' }
+          : null; // Remove ordenação na terceira clique
+      }
+      // Nova ordenação ascendente
+      return { columnId, direction: 'asc' };
+    });
   }, []);
 
   // Pagination handlers
@@ -1186,7 +1238,18 @@ export default function Licenses() {
                           }}
                         >
                           <div className="space-y-2">
-                            <div>{column.label}</div>
+                            <div 
+                              className={`flex items-center space-x-1 ${column.id !== 'acoes' ? 'cursor-pointer hover:text-blue-600' : ''}`}
+                              onDoubleClick={() => handleColumnDoubleClick(column.id)}
+                              title={column.id !== 'acoes' ? 'Clique duplo para ordenar' : ''}
+                            >
+                              <span>{column.label}</span>
+                              {sortConfig?.columnId === column.id && (
+                                <span className="text-blue-600">
+                                  {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                </span>
+                              )}
+                            </div>
                             {column.id !== 'acoes' && (
                               <div className="relative search-container">
                                 <Input
