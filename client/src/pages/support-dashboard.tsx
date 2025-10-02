@@ -1,11 +1,13 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { ClipboardList, Clock, CheckCircle, AlertCircle, ChevronRight } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle, AlertCircle, ChevronRight, TrendingUp, Target, Zap, Timer, Award } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useLocation } from "wouter";
+import { Progress } from "@/components/ui/progress";
 
 interface ClienteHistorico {
   id: number;
@@ -42,6 +44,22 @@ export default function SupportDashboard() {
   const pendentes = historicos.filter(h => h.statusAtual === 'PENDENTE');
   const emAndamento = historicos.filter(h => h.statusAtual === 'EM_ANDAMENTO');
   const concluidos = historicos.filter(h => h.statusAtual === 'CONCLUIDO');
+  const criticos = historicos.filter(h => h.casoCritico && h.statusAtual !== 'CONCLUIDO');
+
+  // Calcular métricas de desempenho
+  const totalHorasTrabalhadas = historicos
+    .filter(h => h.tempoGasto)
+    .reduce((acc, h) => acc + (h.tempoGasto || 0), 0);
+  
+  const tempoMedioAtendimento = concluidos.length > 0
+    ? Math.round(concluidos.filter(h => h.tempoGasto).reduce((acc, h) => acc + (h.tempoGasto || 0), 0) / concluidos.length)
+    : 0;
+
+  // Distribuição por tipo de atendimento
+  const tiposDistribuicao = historicos.reduce((acc, h) => {
+    acc[h.tipoAtualizacao] = (acc[h.tipoAtualizacao] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   const tipoMap: Record<string, string> = {
     'INSTALACAO': 'Instalação',
@@ -50,6 +68,15 @@ export default function SupportDashboard() {
     'ACESSO_REMOTO': 'Acesso Remoto',
     'ATENDIMENTO_WHATSAPP': 'Atendimento WhatsApp',
     'REUNIAO_CLIENTE': 'Reunião com Cliente'
+  };
+
+  const tipoColors: Record<string, string> = {
+    'INSTALACAO': 'bg-purple-500',
+    'ATUALIZACAO_MOBILE': 'bg-blue-500',
+    'ATUALIZACAO_PORTAL': 'bg-green-500',
+    'ACESSO_REMOTO': 'bg-yellow-500',
+    'ATENDIMENTO_WHATSAPP': 'bg-pink-500',
+    'REUNIAO_CLIENTE': 'bg-indigo-500'
   };
 
   const handleCardClick = (codigoCliente: string) => {
@@ -75,7 +102,7 @@ export default function SupportDashboard() {
           </p>
         </div>
         {historico.casoCritico && (
-          <Badge variant="destructive" data-testid={`badge-critico-${historico.id}`}>
+          <Badge variant="destructive" className="animate-pulse" data-testid={`badge-critico-${historico.id}`}>
             Crítico
           </Badge>
         )}
@@ -123,66 +150,190 @@ export default function SupportDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Meus Atendimentos</h1>
+      {/* Header com saudação personalizada */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-xl border border-primary/20">
+        <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <Award className="h-6 w-6 text-primary" />
+          Olá, {user?.name}!
+        </h1>
         <p className="text-slate-600 mt-1">
-          Olá, {user?.name}! Aqui estão seus históricos de atendimento organizados por status.
+          Aqui está um resumo da sua performance e atendimentos
         </p>
       </div>
 
-      {/* Cards de estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card data-testid="card-pendentes">
+      {/* Cards de estatísticas principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card data-testid="card-pendentes" className="border-orange-200 bg-gradient-to-br from-orange-50 to-white">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">
               Pendentes
             </CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-500" />
+            <AlertCircle className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600" data-testid="count-pendentes">
+            <div className="text-3xl font-bold text-orange-600" data-testid="count-pendentes">
               {pendentes.length}
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Atendimentos aguardando início
+              Aguardando início
             </p>
           </CardContent>
         </Card>
 
-        <Card data-testid="card-em-andamento">
+        <Card data-testid="card-em-andamento" className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">
               Em Andamento
             </CardTitle>
-            <Clock className="h-4 w-4 text-blue-500" />
+            <Clock className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600" data-testid="count-em-andamento">
+            <div className="text-3xl font-bold text-blue-600" data-testid="count-em-andamento">
               {emAndamento.length}
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Atendimentos em execução
+              Em execução
             </p>
           </CardContent>
         </Card>
 
-        <Card data-testid="card-concluidos">
+        <Card data-testid="card-concluidos" className="border-green-200 bg-gradient-to-br from-green-50 to-white">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">
               Concluídos
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="count-concluidos">
+            <div className="text-3xl font-bold text-green-600" data-testid="count-concluidos">
               {concluidos.length}
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Atendimentos finalizados
+              Finalizados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-criticos" className="border-red-200 bg-gradient-to-br from-red-50 to-white">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">
+              Casos Críticos
+            </CardTitle>
+            <Zap className="h-5 w-5 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-600">
+              {criticos.length}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Requerem atenção
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Métricas de Performance */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="bg-gradient-to-br from-slate-50 to-white">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+              <Timer className="h-5 w-5 text-primary" />
+              Métricas de Tempo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-slate-600">Total de Horas Trabalhadas</span>
+                <span className="text-lg font-bold text-primary">
+                  {Math.floor(totalHorasTrabalhadas / 60)}h {totalHorasTrabalhadas % 60}min
+                </span>
+              </div>
+              <Progress value={Math.min((totalHorasTrabalhadas / 2400) * 100, 100)} className="h-2" />
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-slate-600">Tempo Médio por Atendimento</span>
+                <span className="text-lg font-bold text-primary">{tempoMedioAtendimento} min</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-slate-50 to-white">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Distribuição por Tipo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {Object.entries(tiposDistribuicao).map(([tipo, count]) => (
+                <div key={tipo} className="space-y-1">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-600">{tipoMap[tipo] || tipo}</span>
+                    <span className="font-semibold text-slate-800">{count}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className={`h-full ${tipoColors[tipo] || 'bg-slate-400'} transition-all duration-500`}
+                        style={{ width: `${(count / historicos.length) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-slate-500 w-12 text-right">
+                      {Math.round((count / historicos.length) * 100)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Meta do Dia (exemplo de gamificação) */}
+      {historicos.length > 0 && (
+        <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Meta de Atendimentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-600">Objetivo do dia: 10 atendimentos</span>
+                <span className="text-lg font-bold text-primary">{historicos.length}/10</span>
+              </div>
+              <Progress value={(historicos.length / 10) * 100} className="h-3" />
+              {historicos.length >= 10 && (
+                <p className="text-sm text-green-600 font-medium flex items-center gap-1 mt-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Parabéns! Meta alcançada! 🎉
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Casos Críticos em Destaque */}
+      {criticos.length > 0 && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+          <h2 className="text-lg font-semibold text-red-800 mb-3 flex items-center gap-2">
+            <Zap className="h-5 w-5 text-red-600 animate-pulse" />
+            ⚠️ Casos Críticos Requerem Atenção Imediata ({criticos.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {criticos.map(historico => (
+              <HistoricoCard key={historico.id} historico={historico} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Lista de Pendentes */}
       {pendentes.length > 0 && (
