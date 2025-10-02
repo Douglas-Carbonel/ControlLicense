@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
+import { storage, db } from "./storage";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -10,9 +10,7 @@ import { readFileSync } from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { db } from "./db"; // Assuming db is your database connection object
-import { clienteHistoricoTable } from "./schema"; // Assuming schema defines clienteHistoricoTable
-import { eq, desc } from "drizzle-orm"; // Assuming drizzle-orm for queries
+import { eq, desc } from "drizzle-orm";
 
 // Extend Request interface to include multer file and user info
 interface MulterRequest extends Request {
@@ -935,9 +933,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const historico = await db
         .select()
-        .from(clienteHistoricoTable)
-        .where(eq(clienteHistoricoTable.atendenteSuporteId, req.user.id.toString()))
-        .orderBy(desc(clienteHistoricoTable.dataUltimoAcesso));
+        .from(clienteHistorico)
+        .where(eq(clienteHistorico.atendenteSuporteId, req.user.id.toString()))
+        .orderBy(desc(clienteHistorico.dataUltimoAcesso));
 
       return res.json(historico);
     } catch (error) {
