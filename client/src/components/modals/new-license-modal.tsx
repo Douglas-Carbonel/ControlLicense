@@ -187,15 +187,12 @@ export default function NewLicenseModal() {
                           <FormItem>
                             <FormLabel className="text-[#0c151f] font-medium">
                               Lista de CNPJ
-                              {user?.role === 'support' && (
-                                <span className="ml-2 text-xs text-amber-600">(somente leitura)</span>
-                              )}
                             </FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="12.345.678/0001-90" 
                                 {...field} 
-                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                                 disabled={user?.role === 'support'}
                               />
                             </FormControl>
@@ -253,9 +250,6 @@ export default function NewLicenseModal() {
                           <FormItem>
                             <FormLabel className="text-[#0c151f] font-medium">
                               Quantidade de Licenças
-                              {user?.role === 'support' && (
-                                <span className="ml-2 text-xs text-amber-600">(somente leitura)</span>
-                              )}
                             </FormLabel>
                             <FormControl>
                               <Input 
@@ -263,7 +257,7 @@ export default function NewLicenseModal() {
                                 placeholder="1" 
                                 {...field} 
                                 onChange={(e) => field.onChange(parseInt(e.target.value))} 
-                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                                 disabled={user?.role === 'support'}
                               />
                             </FormControl>
