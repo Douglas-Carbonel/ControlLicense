@@ -65,6 +65,12 @@ function Sidebar() {
     if (user?.role === 'support') {
       items.push(
         { 
+          href: "/", 
+          label: "Painel", 
+          icon: Home,
+          description: "Meus atendimentos"
+        },
+        { 
           href: "/licenses", 
           label: "Licenças", 
           icon: FileText,

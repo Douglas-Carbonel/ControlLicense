@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { ClipboardList, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle, AlertCircle, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useLocation } from "wouter";
 
 interface ClienteHistorico {
   id: number;
@@ -30,6 +31,7 @@ interface ClienteHistorico {
 
 export default function SupportDashboard() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   const { data: historicos = [], isLoading } = useQuery<ClienteHistorico[]>({
     queryKey: ["/api/my-historico"],
@@ -50,16 +52,24 @@ export default function SupportDashboard() {
     'REUNIAO_CLIENTE': 'Reunião com Cliente'
   };
 
+  const handleCardClick = (codigoCliente: string) => {
+    setLocation(`/clientes?search=${codigoCliente}`);
+  };
+
   const HistoricoCard = ({ historico }: { historico: ClienteHistorico }) => (
     <div 
-      className="p-4 border border-slate-200 rounded-lg hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer"
+      onClick={() => handleCardClick(historico.codigoCliente)}
+      className="group p-4 border border-slate-200 rounded-lg hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-white hover:bg-slate-50"
       data-testid={`historico-card-${historico.id}`}
     >
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
-          <h4 className="font-semibold text-slate-800" data-testid={`text-cliente-${historico.id}`}>
-            {historico.nomeCliente}
-          </h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-slate-800 group-hover:text-primary transition-colors" data-testid={`text-cliente-${historico.id}`}>
+              {historico.nomeCliente}
+            </h4>
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          </div>
           <p className="text-sm text-slate-500" data-testid={`text-codigo-${historico.id}`}>
             {historico.codigoCliente}
           </p>
