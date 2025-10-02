@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard";
+import SupportDashboard from "@/pages/support-dashboard";
 import Licenses from "@/pages/licenses";
 import ActivityHistory from "@/pages/activity-history";
 import UsersPage from "@/pages/users";
@@ -31,14 +32,15 @@ function Router() {
     return <Login />;
   }
 
-  // Usuários técnicos podem acessar licenças e clientes
+  // Usuários técnicos têm acesso ao dashboard personalizado, licenças e clientes
   if (user.role === 'support') {
     return (
       <AppLayout>
         <Switch>
+          <Route path="/" component={SupportDashboard} />
           <Route path="/licenses" component={Licenses} />
           <Route path="/clientes" component={Clientes} />
-          <Route component={() => <Redirect to="/licenses" />} />
+          <Route component={() => <Redirect to="/" />} />
         </Switch>
       </AppLayout>
     );

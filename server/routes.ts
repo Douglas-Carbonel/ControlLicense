@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
+import { storage, db } from "./storage";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -10,6 +10,7 @@ import { readFileSync } from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { eq, desc } from "drizzle-orm";
 
 // Extend Request interface to include multer file and user info
 interface MulterRequest extends Request {
@@ -198,6 +199,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Logout realizado com sucesso" });
     } catch (error) {
       console.error("Error during logout:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Endpoint para verificar token e obter dados do usuário atual
+  app.get("/api/auth/me", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+      
+      res.json({
+        user: {
+          id: req.user.id,
+          username: req.user.username,
+          name: req.user.name,
+          role: req.user.role
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching user info:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
@@ -1093,6 +1115,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete histórico" });
+    }
+  });
+
+  // Rota para buscar históricos do usuário técnico logado
+  app.get("/api/my-historico", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autorizado" });
+      }
+
+      const historico = await db
+        .select()
+        .from(clienteHistorico)
+        .where(eq(clienteHistorico.atendenteSuporteId, req.user.id.toString()))
+        .orderBy(desc(clienteHistorico.dataUltimoAcesso));
+
+      res.json(historico);
+    } catch (error) {
+      console.error("Erro ao buscar históricos do usuário:", error);
+      res.status(500).json({ message: "Failed to fetch históricos" });
     }
   });
 

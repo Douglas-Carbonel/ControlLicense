@@ -76,7 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const token = localStorage.getItem("token");
     if (token) {
       // Verificar se o token é válido fazendo uma requisição simples
-      fetch("/api/licenses/stats", {
+      fetch("/api/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const token = localStorage.getItem("token");
       if (token && user) {
         // Fazer uma requisição simples para verificar se o token ainda é válido
-        fetch("/api/licenses/stats", {
+        fetch("/api/auth/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
