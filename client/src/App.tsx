@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard";
 import Licenses from "@/pages/licenses";
 import ActivityHistory from "@/pages/activity-history";
-import Profile from "@/pages/profile";
 import UsersPage from "@/pages/users";
 import Login from "@/pages/login";
 import AppLayout from "@/components/layout/app-layout";
@@ -51,7 +50,6 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/licenses" component={Licenses} />
         <Route path="/activities" component={ActivityHistory} />
-        <Route path="/profile" component={Profile} />
         <Route path="/users" component={UsersPage} />
         <Route path="/mensagens" component={Mensagens} />
         <Route path="/clientes" component={Clientes} />

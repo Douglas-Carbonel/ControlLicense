@@ -15,8 +15,6 @@ if (!connectionString) {
 const client = postgres(connectionString);
 const db = drizzle(client);
 
-export { db };
-
 export interface IStorage {
   // License operations
   getLicenses(): Promise<License[]>;

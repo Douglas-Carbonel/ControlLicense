@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage, db } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse } from "@shared/schema";
+import { storage } from "./storage";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -10,7 +10,6 @@ import { readFileSync } from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { eq, desc } from "drizzle-orm";
 
 // Extend Request interface to include multer file and user info
 interface MulterRequest extends Request {
@@ -418,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/licenses", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const validatedData = insertLicenseSchema.parse(req.body);
-
+      
       // Se o usuário for técnico (support), não permitir definir qtLicencas e listaCnpj
       if (req.user?.role === 'support') {
         if (validatedData.qtLicencas !== undefined || validatedData.listaCnpj !== undefined) {
@@ -427,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-
+      
       const license = await storage.createLicense(validatedData);
 
       // Log activity
@@ -453,10 +452,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/licenses/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-
+      
       // Validar dados recebidos
       const validatedData = insertLicenseSchema.partial().parse(req.body);
-
+      
       // Se o usuário for técnico (support), não permitir edição de qtLicencas e listaCnpj
       if (req.user?.role === 'support') {
         if (validatedData.qtLicencas !== undefined || validatedData.listaCnpj !== undefined) {
@@ -465,7 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-
+      
       const license = await storage.updateLicense(id, validatedData);
 
       // Log activity
@@ -728,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/mensagens", authenticateToken, async (req: AuthRequest, res) => {
     try {
       console.log("Received data:", req.body);
-
+      
       const validatedData = insertMensagemSistemaSchema.parse(req.body);
       console.log("Validated data:", validatedData);
 
@@ -772,17 +771,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertMensagemSistemaSchema.partial().parse(req.body);
-
+      
       // Se estão sendo atualizados base ou hardware_key, validar a combinação
       if (validatedData.base || validatedData.hardwareKey) {
         const mensagemExistente = await storage.getMensagem(id);
         if (!mensagemExistente) {
           return res.status(404).json({ message: "Mensagem not found" });
         }
-
+        
         const baseToValidate = validatedData.base || mensagemExistente.base;
         const hardwareKeyToValidate = validatedData.hardwareKey || mensagemExistente.hardwareKey;
-
+        
         const isValidReference = await storage.validateMensagemLicenseReference(
           baseToValidate, 
           hardwareKeyToValidate
@@ -794,7 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-
+      
       const mensagem = await storage.updateMensagem(id, validatedData);
 
       // Log activity
@@ -847,7 +846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mensagens/validate/:base/:hardwareKey", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const { base, hardwareKey } = req.params;
-
+      
       const isValid = await storage.validateMensagemLicenseReference(base, hardwareKey);
       const licenseInfo = isValid ? await storage.getLicenseInfoByBaseAndHardware(base, hardwareKey) : null;
 
@@ -894,7 +893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const mensagem = await storage.getMensagemByBaseAndHardware(nome_db, hardware_key);
-
+      
       if (!mensagem) {
         return res.status(404).json({ 
           message: "Nenhuma mensagem encontrada para os dados fornecidos" 
@@ -924,44 +923,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cliente Histórico routes (requer autenticação)
-  // Buscar atendimentos do usuário logado
-  app.get("/api/clientes-historico/my-tasks", async (req: AuthRequest, res) => {
-    if (!req.user) {
-      return res.status(401).send({ message: "Não autorizado" });
-    }
-
-    try {
-      const historico = await db
-        .select()
-        .from(clienteHistorico)
-        .where(eq(clienteHistorico.atendenteSuporteId, req.user.id.toString()))
-        .orderBy(desc(clienteHistorico.dataUltimoAcesso));
-
-      return res.json(historico);
-    } catch (error) {
-      console.error("Erro ao buscar atendimentos do usuário:", error);
-      return res.status(500).send({ message: "Erro ao buscar atendimentos" });
-    }
-  });
-
-  // Buscar histórico de um cliente específico
   app.get("/api/clientes-historico", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const codigoCliente = req.query.codigoCliente as string;
-
+      
       if (!codigoCliente) {
         return res.status(400).json({ message: "codigoCliente é obrigatório" });
       }
-
+      
       console.log(`Fetching historico for cliente: ${codigoCliente}`);
       const historico = await storage.getClienteHistorico(codigoCliente);
-
+      
       // Garantir que sempre enviamos um array
       const result = Array.isArray(historico) ? historico : [];
       console.log(`Cliente histórico for ${codigoCliente}:`, result.length, 'records found');
       console.log(`Sending response:`, result);
       console.log(`Response stringified:`, JSON.stringify(result));
-
+      
       // Fazer o set do header para garantir que é JSON
       res.setHeader('Content-Type', 'application/json');
       res.status(200).json(result);
@@ -1032,7 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/clientes-historico/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-
+      
       // Buscar dados antigos para comparação
       const oldData = await storage.getClienteHistoricoById(id);
       if (!oldData) {
@@ -1044,7 +1022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Detectar mudanças
       const changes: string[] = [];
-
+      
       if (validatedData.statusAtual && validatedData.statusAtual !== oldData.statusAtual) {
         changes.push(`Status: ${oldData.statusAtual} → ${validatedData.statusAtual}`);
       }
