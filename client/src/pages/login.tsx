@@ -44,6 +44,7 @@ export default function Login() {
                 required
                 disabled={isLoading}
                 className="diamond-input"
+                autoComplete="username"
               />
             </div>
 
@@ -60,6 +61,7 @@ export default function Login() {
                 required
                 disabled={isLoading}
                 className="diamond-input"
+                autoComplete="current-password"
               />
             </div>
 
