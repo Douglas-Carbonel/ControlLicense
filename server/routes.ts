@@ -634,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity routes (only for admins)
   app.get("/api/activities", authenticateToken, blockSupportUsers, async (req: AuthRequest, res) => {
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 1000;
       const activities = await storage.getActivities(limit);
       res.json(activities);
     } catch (error) {
