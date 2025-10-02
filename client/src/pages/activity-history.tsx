@@ -102,6 +102,11 @@ export default function ActivityHistory() {
           activity.action.startsWith('USER_')
         );
         break;
+      case "client_history":
+        filtered = filtered.filter((activity: any) =>
+          activity.action.startsWith('CLIENT_HISTORY_')
+        );
+        break;
       case "errors":
         filtered = filtered.filter((activity: any) =>
           activity.action === 'ERROR' || activity.description?.includes("(ERRO)") || activity.description?.includes("ERROR")
@@ -184,10 +189,13 @@ export default function ActivityHistory() {
   const getActivityIcon = (action: string) => {
     switch (action) {
       case "CREATE":
+      case "CLIENT_HISTORY_CREATE":
         return Plus;
       case "UPDATE":
+      case "CLIENT_HISTORY_UPDATE":
         return Edit;
       case "DELETE":
+      case "CLIENT_HISTORY_DELETE":
         return Trash2;
       case "IMPORT":
         return Upload;
@@ -203,10 +211,13 @@ export default function ActivityHistory() {
   const getActivityColor = (action: string) => {
     switch (action) {
       case "CREATE":
+      case "CLIENT_HISTORY_CREATE":
         return "default";
       case "UPDATE":
+      case "CLIENT_HISTORY_UPDATE":
         return "secondary";
       case "DELETE":
+      case "CLIENT_HISTORY_DELETE":
         return "outline";
       case "IMPORT":
         return "default";
@@ -247,12 +258,12 @@ export default function ActivityHistory() {
         return "Atualização de Licença";
       case "LICENSE_DELETE":
         return "Exclusão de Licença";
-      case "CLIENT_CREATE":
-        return "Criação de Cliente";
-      case "CLIENT_UPDATE":
-        return "Atualização de Cliente";
-      case "CLIENT_DELETE":
-        return "Exclusão de Cliente";
+      case "CLIENT_HISTORY_CREATE":
+        return "Novo Registro Cliente";
+      case "CLIENT_HISTORY_UPDATE":
+        return "Atualização Cliente";
+      case "CLIENT_HISTORY_DELETE":
+        return "Exclusão Registro Cliente";
       case "MESSAGE_SEND":
         return "Envio de Mensagem";
       case "USER_CREATE":

@@ -945,14 +945,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertClienteHistoricoSchema.parse(req.body);
       const historico = await storage.createClienteHistorico(validatedData);
 
+      // Criar descrição detalhada
+      const tipoMap: Record<string, string> = {
+        'INSTALACAO': 'Instalação',
+        'ATUALIZACAO_MOBILE': 'Atualização Mobile',
+        'ATUALIZACAO_PORTAL': 'Atualização Portal',
+        'ACESSO_REMOTO': 'Acesso Remoto',
+        'ATENDIMENTO_WHATSAPP': 'Atendimento WhatsApp',
+        'REUNIAO_CLIENTE': 'Reunião com Cliente'
+      };
+
+      const tipoTexto = tipoMap[historico.tipoAtualizacao] || historico.tipoAtualizacao;
+      const detalhes = [
+        `Tipo: ${tipoTexto}`,
+        historico.ambiente ? `Ambiente: ${historico.ambiente}` : null,
+        historico.versaoInstalada ? `Versão: ${historico.versaoInstalada}` : null,
+        historico.statusAtual ? `Status: ${historico.statusAtual}` : null,
+        historico.casoCritico ? '⚠️ Caso Crítico' : null
+      ].filter(Boolean).join(' | ');
+
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
         userName: req.user!.name,
-        action: "CREATE",
+        action: "CLIENT_HISTORY_CREATE",
         resourceType: "cliente_historico",
         resourceId: historico.id,
-        description: `${req.user!.name} criou histórico para cliente ${historico.codigoCliente}`,
+        description: `Novo registro para ${historico.nomeCliente} (${historico.codigoCliente}) - ${detalhes}`,
       });
 
       res.status(201).json(historico);
@@ -969,17 +988,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/clientes-historico/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Buscar dados antigos para comparação
+      const oldData = await storage.getClienteHistoricoById(id);
+      if (!oldData) {
+        return res.status(404).json({ message: "Histórico not found" });
+      }
+
       const validatedData = insertClienteHistoricoSchema.partial().parse(req.body);
       const historico = await storage.updateClienteHistorico(id, validatedData);
+
+      // Detectar mudanças
+      const changes: string[] = [];
+      
+      if (validatedData.statusAtual && validatedData.statusAtual !== oldData.statusAtual) {
+        changes.push(`Status: ${oldData.statusAtual} → ${validatedData.statusAtual}`);
+      }
+      if (validatedData.versaoInstalada && validatedData.versaoInstalada !== oldData.versaoInstalada) {
+        changes.push(`Versão: ${oldData.versaoInstalada || 'N/A'} → ${validatedData.versaoInstalada}`);
+      }
+      if (validatedData.ambiente && validatedData.ambiente !== oldData.ambiente) {
+        changes.push(`Ambiente: ${oldData.ambiente || 'N/A'} → ${validatedData.ambiente}`);
+      }
+      if (validatedData.tempoGasto !== undefined && validatedData.tempoGasto !== oldData.tempoGasto) {
+        changes.push(`Tempo: ${oldData.tempoGasto || 0}min → ${validatedData.tempoGasto}min`);
+      }
+      if (validatedData.casoCritico !== undefined && validatedData.casoCritico !== oldData.casoCritico) {
+        changes.push(`Criticidade: ${oldData.casoCritico ? 'Sim' : 'Não'} → ${validatedData.casoCritico ? 'Sim' : 'Não'}`);
+      }
+
+      const changesText = changes.length > 0 ? ` - Alterações: ${changes.join(', ')}` : '';
 
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
         userName: req.user!.name,
-        action: "UPDATE",
+        action: "CLIENT_HISTORY_UPDATE",
         resourceType: "cliente_historico",
         resourceId: historico.id,
-        description: `${req.user!.name} atualizou histórico do cliente ${historico.codigoCliente}`,
+        description: `Atualização em ${historico.nomeCliente} (${historico.codigoCliente})${changesText}`,
       });
 
       res.json(historico);
@@ -1000,16 +1047,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Histórico not found" });
       }
 
+      const tipoMap: Record<string, string> = {
+        'INSTALACAO': 'Instalação',
+        'ATUALIZACAO_MOBILE': 'Atualização Mobile',
+        'ATUALIZACAO_PORTAL': 'Atualização Portal',
+        'ACESSO_REMOTO': 'Acesso Remoto',
+        'ATENDIMENTO_WHATSAPP': 'Atendimento WhatsApp',
+        'REUNIAO_CLIENTE': 'Reunião com Cliente'
+      };
+
       await storage.deleteClienteHistorico(id);
 
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
         userName: req.user!.name,
-        action: "DELETE",
+        action: "CLIENT_HISTORY_DELETE",
         resourceType: "cliente_historico",
         resourceId: id,
-        description: `${req.user!.name} excluiu histórico do cliente ${historico.codigoCliente}`,
+        description: `Excluído registro de ${historico.nomeCliente} (${historico.codigoCliente}) - ${tipoMap[historico.tipoAtualizacao] || historico.tipoAtualizacao} do dia ${new Date(historico.createdAt).toLocaleDateString('pt-BR')}`,
       });
 
       res.status(204).send();

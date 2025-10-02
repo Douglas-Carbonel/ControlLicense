@@ -33,10 +33,13 @@ export default function ActivityLog() {
   const getActivityIcon = (action: string) => {
     switch (action) {
       case "CREATE":
+      case "CLIENT_HISTORY_CREATE":
         return Plus;
       case "UPDATE":
+      case "CLIENT_HISTORY_UPDATE":
         return Edit;
       case "DELETE":
+      case "CLIENT_HISTORY_DELETE":
         return Trash2;
       case "IMPORT":
         return Upload;
@@ -52,10 +55,13 @@ export default function ActivityLog() {
   const getActivityColor = (action: string) => {
     switch (action) {
       case "CREATE":
+      case "CLIENT_HISTORY_CREATE":
         return "bg-[#0095da]";
       case "UPDATE":
+      case "CLIENT_HISTORY_UPDATE":
         return "bg-[#313d5a]";
       case "DELETE":
+      case "CLIENT_HISTORY_DELETE":
         return "bg-[#3a3a3c]";
       case "IMPORT":
         return "bg-[#0095da]";
@@ -98,6 +104,22 @@ export default function ActivityLog() {
         isError
       };
     }
+
+    // Formatar logs de histórico de cliente com destaque para alterações
+    if (activity.action?.startsWith('CLIENT_HISTORY_')) {
+      const description = activity.description || "";
+      const changesMatch = description.match(/Alterações: (.+)$/);
+      
+      if (changesMatch) {
+        const mainDesc = description.replace(/\s*-\s*Alterações:.+$/, '');
+        return {
+          title: mainDesc,
+          details: `📝 ${changesMatch[1]}`,
+          isError: false,
+          isChange: true
+        };
+      }
+    }
     
     return {
       title: activity.description || "Sem descrição",
@@ -137,7 +159,11 @@ export default function ActivityLog() {
                                 <>
                                   <p className={`text-sm font-medium ${formatted.isError ? 'text-red-600' : 'text-gray-900'}`}>{formatted.title}</p>
                                   {formatted.details && (
-                                    <p className={`text-xs mt-0.5 ${formatted.isError ? 'text-red-500' : 'text-gray-600'}`}>{formatted.details}</p>
+                                    <p className={`text-xs mt-0.5 ${
+                                      formatted.isError ? 'text-red-500' : 
+                                      (formatted as any).isChange ? 'text-blue-600 font-medium' : 
+                                      'text-gray-600'
+                                    }`}>{formatted.details}</p>
                                   )}
                                   <p className="text-xs text-gray-500 mt-1">
                                     {activity.timestamp ? 
