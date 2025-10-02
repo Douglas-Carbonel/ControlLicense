@@ -192,14 +192,14 @@ export default function NewLicenseModal() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-[#0c151f] font-medium">
-                              Lista de CNPJ
+                              Lista de CNPJ {user?.role === 'support' && <span className="text-xs text-gray-500">(Somente leitura)</span>}
                             </FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="12.345.678/0001-90" 
                                 {...field} 
-                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                                disabled={user?.role === 'support'}
+                                readOnly={user?.role === 'support'}
+                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed select-none' : ''}`}
                               />
                             </FormControl>
                             <FormMessage />
@@ -255,16 +255,16 @@ export default function NewLicenseModal() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-[#0c151f] font-medium">
-                              Quantidade de Licenças
+                              Quantidade de Licenças {user?.role === 'support' && <span className="text-xs text-gray-500">(Somente leitura)</span>}
                             </FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
                                 placeholder="1" 
                                 {...field} 
-                                onChange={(e) => field.onChange(parseInt(e.target.value))} 
-                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                                disabled={user?.role === 'support'}
+                                readOnly={user?.role === 'support'}
+                                onChange={(e) => !user?.role || user.role !== 'support' ? field.onChange(parseInt(e.target.value)) : null} 
+                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed select-none' : ''}`}
                               />
                             </FormControl>
                             <FormMessage />

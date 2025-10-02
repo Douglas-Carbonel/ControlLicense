@@ -1467,15 +1467,15 @@ export default function Licenses() {
                       </div>
                       <div>
                         <Label htmlFor="edit-listaCnpj" className="text-[#0c151f] font-medium">
-                          Lista de CNPJ
+                          Lista de CNPJ {user?.role === 'support' && <span className="text-xs text-gray-500">(Somente leitura)</span>}
                         </Label>
-                        <OptimizedInput
+                        <Input
                           id="edit-listaCnpj"
                           value={editingLicense.listaCnpj || ''}
-                          onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
+                          readOnly={user?.role === 'support'}
+                          onChange={(e) => !user?.role || user.role !== 'support' ? handleFieldChange('listaCnpj', e.target.value) : null}
                           placeholder="12.345.678/0001-90"
-                          className={`border-[#e0e0e0] focus:border-[#0095da] mt-1 ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                          disabled={user?.role === 'support'}
+                          className={`border-[#e0e0e0] focus:border-[#0095da] mt-1 ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed select-none' : ''}`}
                         />
                       </div>
                     </div>
@@ -1510,16 +1510,16 @@ export default function Licenses() {
                       </div>
                       <div>
                         <Label htmlFor="edit-qtLicencas" className="text-[#0c151f] font-medium">
-                          Quantidade de Licenças
+                          Quantidade de Licenças {user?.role === 'support' && <span className="text-xs text-gray-500">(Somente leitura)</span>}
                         </Label>
-                        <OptimizedInput
+                        <Input
                           id="edit-qtLicencas"
                           type="number"
                           value={editingLicense.qtLicencas || ''}
-                          onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
+                          readOnly={user?.role === 'support'}
+                          onChange={(e) => !user?.role || user.role !== 'support' ? handleFieldChange('qtLicencas', parseInt(e.target.value) || 0) : null}
                           placeholder="1"
-                          className={`border-[#e0e0e0] focus:border-[#0095da] mt-1 ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                          disabled={user?.role === 'support'}
+                          className={`border-[#e0e0e0] focus:border-[#0095da] mt-1 ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed select-none' : ''}`}
                         />
                       </div>
                       <div>
