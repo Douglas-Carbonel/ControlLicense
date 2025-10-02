@@ -16,6 +16,7 @@ import { Plus, Building2, Database, Settings, Code, User } from "lucide-react";
 import { insertLicenseSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { z } from "zod";
 
 const formSchema = insertLicenseSchema;
@@ -24,6 +25,7 @@ export default function NewLicenseModal() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -183,9 +185,19 @@ export default function NewLicenseModal() {
                         name="listaCnpj"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-[#0c151f] font-medium">Lista de CNPJ</FormLabel>
+                            <FormLabel className="text-[#0c151f] font-medium">
+                              Lista de CNPJ
+                              {user?.role === 'support' && (
+                                <span className="ml-2 text-xs text-amber-600">(somente leitura)</span>
+                              )}
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder="12.345.678/0001-90" {...field} className="border-[#e0e0e0] focus:border-[#0095da]" />
+                              <Input 
+                                placeholder="12.345.678/0001-90" 
+                                {...field} 
+                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                disabled={user?.role === 'support'}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -239,14 +251,20 @@ export default function NewLicenseModal() {
                         name="qtLicencas"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-[#0c151f] font-medium">Quantidade de Licenças</FormLabel>
+                            <FormLabel className="text-[#0c151f] font-medium">
+                              Quantidade de Licenças
+                              {user?.role === 'support' && (
+                                <span className="ml-2 text-xs text-amber-600">(somente leitura)</span>
+                              )}
+                            </FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
                                 placeholder="1" 
                                 {...field} 
                                 onChange={(e) => field.onChange(parseInt(e.target.value))} 
-                                className="border-[#e0e0e0] focus:border-[#0095da]"
+                                className={`border-[#e0e0e0] focus:border-[#0095da] ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                disabled={user?.role === 'support'}
                               />
                             </FormControl>
                             <FormMessage />

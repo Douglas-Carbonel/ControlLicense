@@ -417,6 +417,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/licenses", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const validatedData = insertLicenseSchema.parse(req.body);
+      
+      // Se o usuário for técnico (support), não permitir definir qtLicencas e listaCnpj
+      if (req.user?.role === 'support') {
+        if (validatedData.qtLicencas !== undefined || validatedData.listaCnpj !== undefined) {
+          return res.status(403).json({ 
+            message: "Usuários técnicos não podem definir Quantidade de Licenças ou Lista de CNPJ" 
+          });
+        }
+      }
+      
       const license = await storage.createLicense(validatedData);
 
       // Log activity
@@ -442,7 +452,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/licenses/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Validar dados recebidos
       const validatedData = insertLicenseSchema.partial().parse(req.body);
+      
+      // Se o usuário for técnico (support), não permitir edição de qtLicencas e listaCnpj
+      if (req.user?.role === 'support') {
+        if (validatedData.qtLicencas !== undefined || validatedData.listaCnpj !== undefined) {
+          return res.status(403).json({ 
+            message: "Usuários técnicos não podem editar Quantidade de Licenças ou Lista de CNPJ" 
+          });
+        }
+      }
+      
       const license = await storage.updateLicense(id, validatedData);
 
       // Log activity
