@@ -20,6 +20,7 @@ const NewLicenseModal = lazy(() => import("@/components/modals/new-license-modal
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useAuth } from "@/lib/auth";
 
 
 const AVAILABLE_COLUMNS = [
@@ -103,6 +104,7 @@ export default function Licenses() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // ABORDAGEM PROFISSIONAL: Carregar todos os dados uma vez
   const { data: allLicensesResponse, isLoading: isLoadingAll, error } = useQuery({
@@ -1402,6 +1404,7 @@ export default function Licenses() {
                           onChange={(e) => handleFieldChange('listaCnpj', e.target.value)}
                           placeholder="12.345.678/0001-90"
                           className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                          disabled={user?.role === 'support'}
                         />
                       </div>
                     </div>
@@ -1443,6 +1446,7 @@ export default function Licenses() {
                           onChange={(e) => handleFieldChange('qtLicencas', parseInt(e.target.value) || 0)}
                           placeholder="1"
                           className="border-[#e0e0e0] focus:border-[#0095da] mt-1"
+                          disabled={user?.role === 'support'}
                         />
                       </div>
                       <div>

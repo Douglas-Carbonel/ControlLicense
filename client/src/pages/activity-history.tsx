@@ -19,14 +19,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 const ITEMS_PER_PAGE = 50;
 
 export default function ActivityHistory() {
-  const [activeTab, setActiveTab] = useState("all");
-  const [searchText, setSearchText] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
-  const [selectedAction, setSelectedAction] = useState("");
   const [selectedMenu, setSelectedMenu] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [showOnlyErrors, setShowOnlyErrors] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: activities, isLoading, refetch } = useQuery({
@@ -61,61 +57,12 @@ export default function ActivityHistory() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, searchText, selectedUser, selectedAction, selectedMenu, dateFrom, dateTo, showOnlyErrors]);
+  }, [selectedUser, selectedMenu, dateFrom, dateTo]);
 
   const filteredActivities = useMemo(() => {
     if (!activities) return [];
 
     let filtered = activities;
-
-    // Filtro por aba
-    switch (activeTab) {
-      case "crud":
-        filtered = filtered.filter((activity: any) => 
-          ['CREATE', 'UPDATE', 'DELETE'].includes(activity.action)
-        );
-        break;
-      case "queries":
-        filtered = filtered.filter((activity: any) => 
-          ['QUERY', 'QUERY_ENCRYPTED'].includes(activity.action)
-        );
-        break;
-      case "imports":
-        filtered = filtered.filter((activity: any) => 
-          activity.action === 'IMPORT'
-        );
-        break;
-      case "auth":
-        filtered = filtered.filter((activity: any) => 
-          ['LOGIN', 'LOGOUT'].includes(activity.action)
-        );
-        break;
-      case "licenses":
-        filtered = filtered.filter((activity: any) =>
-          activity.action.startsWith('LICENSE_') || activity.resourceType === 'license'
-        );
-        break;
-      case "clients":
-        filtered = filtered.filter((activity: any) =>
-          activity.action.startsWith('CLIENT_HISTORY_') || activity.resourceType === 'cliente_historico'
-        );
-        break;
-      case "messages":
-        filtered = filtered.filter((activity: any) =>
-          activity.action.startsWith('MESSAGE_') || activity.resourceType === 'mensagem'
-        );
-        break;
-      case "users":
-        filtered = filtered.filter((activity: any) =>
-          activity.action.startsWith('USER_') || activity.resourceType === 'user'
-        );
-        break;
-      case "errors":
-        filtered = filtered.filter((activity: any) =>
-          activity.action === 'ERROR' || activity.description?.includes("(ERRO)") || activity.description?.includes("ERROR")
-        );
-        break;
-    }
 
     // Filtro por menu/recurso
     if (selectedMenu && selectedMenu !== "all") {
@@ -124,25 +71,10 @@ export default function ActivityHistory() {
       );
     }
 
-    // Filtro por texto de busca
-    if (searchText) {
-      filtered = filtered.filter((activity: any) => 
-        activity.description?.toLowerCase().includes(searchText.toLowerCase()) ||
-        activity.userName?.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
     // Filtro por usuário
     if (selectedUser && selectedUser !== "all") {
       filtered = filtered.filter((activity: any) => 
         activity.userName === selectedUser
-      );
-    }
-
-    // Filtro por ação
-    if (selectedAction && selectedAction !== "all") {
-      filtered = filtered.filter((activity: any) => 
-        activity.action === selectedAction
       );
     }
 
@@ -161,15 +93,8 @@ export default function ActivityHistory() {
       );
     }
 
-    // Filtro apenas erros
-    if (showOnlyErrors) {
-      filtered = filtered.filter((activity: any) => 
-        activity.description?.includes("(ERRO)") || activity.description?.includes("ERROR")
-      );
-    }
-
     return filtered;
-  }, [activities, activeTab, searchText, selectedUser, selectedAction, selectedMenu, dateFrom, dateTo, showOnlyErrors]);
+  }, [activities, selectedUser, selectedMenu, dateFrom, dateTo]);
 
   // Paginação
   const totalPages = Math.ceil(filteredActivities.length / ITEMS_PER_PAGE);
@@ -186,13 +111,6 @@ export default function ActivityHistory() {
     return users.filter(Boolean).sort();
   }, [activities]);
 
-  // Extrair ações únicas
-  const uniqueActions = useMemo(() => {
-    if (!activities) return [];
-    const actions = [...new Set(activities.map((activity: any) => activity.action))];
-    return actions.filter(Boolean).sort();
-  }, [activities]);
-
   // Extrair menus/recursos únicos
   const uniqueMenus = useMemo(() => {
     if (!activities) return [];
@@ -201,17 +119,13 @@ export default function ActivityHistory() {
   }, [activities]);
 
   const clearFilters = () => {
-    setSearchText("");
     setSelectedUser("all");
-    setSelectedAction("all");
     setSelectedMenu("all");
     setDateFrom(undefined);
     setDateTo(undefined);
-    setShowOnlyErrors(false);
-    setActiveTab("all");
   };
 
-  const hasActiveFilters = searchText || (selectedUser && selectedUser !== "all") || (selectedAction && selectedAction !== "all") || (selectedMenu && selectedMenu !== "all") || dateFrom || dateTo || showOnlyErrors || activeTab !== "all";
+  const hasActiveFilters = (selectedUser && selectedUser !== "all") || (selectedMenu && selectedMenu !== "all") || dateFrom || dateTo;
 
   const getActivityIcon = (action: string) => {
     switch (action) {
@@ -375,62 +289,30 @@ export default function ActivityHistory() {
         </div>
       </div>
 
-      {/* Filtros Avançados */}
+      {/* Filtros Simplificados */}
       <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="border-b border-gray-100 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Filter className="w-5 h-5 text-gray-500" />
-              <CardTitle className="text-lg font-semibold text-slate-800">Filtros Avançados</CardTitle>
+              <CardTitle className="text-lg font-semibold text-slate-800">Filtros</CardTitle>
             </div>
             {hasActiveFilters && (
               <Button onClick={clearFilters} variant="outline" size="sm">
                 <X className="w-4 h-4 mr-2" />
-                Limpar Todos os Filtros
+                Limpar Filtros
               </Button>
             )}
           </div>
         </CardHeader>
         <CardContent className="pt-4">
-          {/* Tabs de categorias */}
-          <div className="mb-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-5 lg:grid-cols-10 gap-1 h-auto">
-                <TabsTrigger value="all" className="text-xs">Todos</TabsTrigger>
-                <TabsTrigger value="licenses" className="text-xs">Licenças</TabsTrigger>
-                <TabsTrigger value="clients" className="text-xs">Clientes</TabsTrigger>
-                <TabsTrigger value="messages" className="text-xs">Mensagens</TabsTrigger>
-                <TabsTrigger value="users" className="text-xs">Usuários</TabsTrigger>
-                <TabsTrigger value="crud" className="text-xs">CRUD</TabsTrigger>
-                <TabsTrigger value="queries" className="text-xs">Consultas</TabsTrigger>
-                <TabsTrigger value="imports" className="text-xs">Importações</TabsTrigger>
-                <TabsTrigger value="auth" className="text-xs">Autenticação</TabsTrigger>
-                <TabsTrigger value="errors" className="text-xs">Erros</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            {/* Busca por texto */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Buscar</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Buscar por descrição ou usuário..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Filtro por menu/recurso */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Menu/Recurso</label>
+              <label className="text-sm font-medium text-gray-700">Menu</label>
               <Select value={selectedMenu} onValueChange={setSelectedMenu}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos os menus" />
+                  <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os menus</SelectItem>
@@ -446,7 +328,7 @@ export default function ActivityHistory() {
               <label className="text-sm font-medium text-gray-700">Usuário</label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos os usuários" />
+                  <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os usuários</SelectItem>
@@ -457,25 +339,6 @@ export default function ActivityHistory() {
               </Select>
             </div>
 
-            {/* Filtro por ação */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Tipo de Ação</label>
-              <Select value={selectedAction} onValueChange={setSelectedAction}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as ações" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as ações</SelectItem>
-                  {uniqueActions.map((action) => (
-                    <SelectItem key={action} value={action}>{getActionText(action)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Filtros de data */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Data inicial</label>
               <Popover>
@@ -488,7 +351,7 @@ export default function ActivityHistory() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFrom ? format(dateFrom, "PPP", { locale: ptBR }) : "Selecionar data"}
+                    {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -514,7 +377,7 @@ export default function ActivityHistory() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateTo ? format(dateTo, "PPP", { locale: ptBR }) : "Selecionar data"}
+                    {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -529,14 +392,10 @@ export default function ActivityHistory() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Filtros especiais</label>
-              <Button
-                variant={showOnlyErrors ? "default" : "outline"}
-                onClick={() => setShowOnlyErrors(!showOnlyErrors)}
-                className="w-full justify-start"
-              >
-                Apenas Erros
-              </Button>
+              <label className="text-sm font-medium text-gray-700">Total</label>
+              <div className="h-10 flex items-center justify-center bg-slate-50 border rounded-md px-3">
+                <span className="text-sm font-semibold text-slate-700">{filteredActivities?.length || 0} registros</span>
+              </div>
             </div>
           </div>
         </CardContent>

@@ -61,14 +61,22 @@ function Sidebar() {
   const navigationItems = useMemo(() => {
     const items = [];
 
-  // Usuários técnicos só podem ver licenças
+  // Usuários técnicos podem ver licenças e clientes
     if (user?.role === 'support') {
-      items.push({ 
-        href: "/licenses", 
-        label: "Licenças", 
-        icon: FileText,
-        description: "Gerenciar licenças"
-      });
+      items.push(
+        { 
+          href: "/licenses", 
+          label: "Licenças", 
+          icon: FileText,
+          description: "Gerenciar licenças"
+        },
+        { 
+          href: "/clientes", 
+          label: "Clientes", 
+          icon: Building2,
+          description: "Histórico e suporte aos clientes"
+        }
+      );
     } else {
       // Administradores podem ver tudo
       items.push(
