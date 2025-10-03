@@ -1367,40 +1367,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cliente-Consultoria methods
-  async getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]> {
-    try {
-      const result = await db
-        .select()
-        .from(clienteConsultoria)
-        .where(eq(clienteConsultoria.consultoriaId, consultoriaId))
-        .orderBy(desc(clienteConsultoria.dataInicio));
-      return result;
-    } catch (error) {
-      console.error("Erro ao buscar clientes da consultoria:", error);
-      throw error;
-    }
-  }
-
-  async createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria> {
-    try {
-      const result = await db.insert(clienteConsultoria).values(data).returning();
-      return result[0];
-    } catch (error) {
-      console.error("Erro ao criar cliente-consultoria:", error);
-      throw error;
-    }
-  }
-
-  async deleteClienteConsultoria(id: number): Promise<void> {
-    try {
-      await db.delete(clienteConsultoria).where(eq(clienteConsultoria.id, id));
-    } catch (error) {
-      console.error("Erro ao excluir cliente-consultoria:", error);
-      throw error;
-    }
-  }
-
   const httpServer = createServer(app);
   return httpServer;
 }
