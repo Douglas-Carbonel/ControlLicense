@@ -1,5 +1,5 @@
-import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
+import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
@@ -133,6 +133,8 @@ export const clienteHistorico = pgTable("cliente_historico", {
   // Observações do checklist
   observacoesChecklist: text("observacoes_checklist"),
   numeroChamado: text("numero_chamado"),
+  consultoriaId: integer("consultoria_id"), // Referencia consultorias.id - se atendimento veio via consultoria
+  chamadoConsultoria: text("chamado_consultoria"), // Número do chamado na consultoria (ex: UpperTools)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -166,6 +168,15 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
   checklistAtualizacao: z.string().optional().nullable(),
   observacoesChecklist: z.string().optional().nullable(),
   numeroChamado: z.string().optional().nullable(),
+  consultoriaId: z.union([z.string(), z.number()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
+    if (typeof val === 'string') {
+      const num = parseInt(val);
+      return isNaN(num) ? null : num;
+    }
+    return val;
+  }),
+  chamadoConsultoria: z.string().optional().nullable(),
 });
 
 export type License = typeof licenses.$inferSelect;
@@ -228,3 +239,58 @@ export type HardwareLicenseResponse = {
 };
 
 
+// Tabela de Consultorias/Parceiros
+export const consultorias = pgTable("consultorias", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  razaoSocial: text("razao_social"),
+  cnpj: text("cnpj"),
+  email: text("email"),
+  telefone: text("telefone"),
+  whatsapp: text("whatsapp"),
+  responsavel: text("responsavel"), // Pessoa de contato
+  ativo: boolean("ativo").notNull().default(true),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de relacionamento Cliente x Consultoria
+export const clienteConsultoria = pgTable("cliente_consultoria", {
+  id: serial("id").primaryKey(),
+  codigoCliente: text("codigo_cliente").notNull(), // Referencia licenses.code
+  consultoriaId: integer("consultoria_id").notNull().references(() => consultorias.id),
+  dataInicio: timestamp("data_inicio").defaultNow().notNull(),
+  dataFim: timestamp("data_fim"), // null = relacionamento ativo
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertConsultoriaSchema = createInsertSchema(consultorias).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClienteConsultoriaSchema = createInsertSchema(clienteConsultoria).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  dataInicio: z.union([z.string(), z.date()]).optional().transform((val) => {
+    if (!val) return new Date();
+    if (typeof val === 'string') return new Date(val);
+    return val;
+  }),
+  dataFim: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
+    if (typeof val === 'string') return new Date(val);
+    return val;
+  }),
+});
+
+export type Consultoria = InferSelectModel<typeof consultorias>;
+export type InsertConsultoria = z.infer<typeof insertConsultoriaSchema>;
+export type ClienteConsultoria = InferSelectModel<typeof clienteConsultoria>;
+export type InsertClienteConsultoria = z.infer<typeof insertClienteConsultoriaSchema>;
