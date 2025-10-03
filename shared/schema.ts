@@ -133,8 +133,6 @@ export const clienteHistorico = pgTable("cliente_historico", {
   // Observações do checklist
   observacoesChecklist: text("observacoes_checklist"),
   numeroChamado: text("numero_chamado"),
-  representanteId: integer("representante_id"), // Referencia representantes.id - se atendimento veio via representante
-  chamadoRepresentante: text("chamado_representante"), // Número do chamado no representante (ex: UpperTools)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -168,15 +166,6 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
   checklistAtualizacao: z.string().optional().nullable(),
   observacoesChecklist: z.string().optional().nullable(),
   numeroChamado: z.string().optional().nullable(),
-  representanteId: z.union([z.string(), z.number()]).optional().nullable().transform((val) => {
-    if (!val || val === '') return null;
-    if (typeof val === 'string') {
-      const num = parseInt(val);
-      return isNaN(num) ? null : num;
-    }
-    return val;
-  }),
-  chamadoRepresentante: z.string().optional().nullable(),
 });
 
 export type License = typeof licenses.$inferSelect;
@@ -239,54 +228,3 @@ export type HardwareLicenseResponse = {
 };
 
 
-// Tabela de Representantes (antigo Consultorias/Parceiros)
-export const representantes = pgTable("representantes", {
-  id: serial("id").primaryKey(),
-  nome: text("nome").notNull(),
-  razaoSocial: text("razao_social"),
-  cnpj: text("cnpj"),
-  email: text("email"),
-  telefone: text("telefone"),
-  whatsapp: text("whatsapp"),
-  responsavel: text("responsavel"), // Pessoa de contato
-  ativo: boolean("ativo").notNull().default(true),
-  observacoes: text("observacoes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Tabela de relacionamento cliente-representante
-export const clienteRepresentante = pgTable("cliente_representante", {
-  id: serial("id").primaryKey(),
-  codigoCliente: varchar("codigoCliente", { length: 50 }).notNull(),
-  representanteId: integer("representanteId").notNull().references(() => representantes.id),
-});
-
-export const insertRepresentanteSchema = createInsertSchema(representantes).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const selectRepresentanteSchema = createSelectSchema(representantes).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertClienteRepresentanteSchema = createInsertSchema(clienteRepresentante).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const selectClienteRepresentanteSchema = createSelectSchema(clienteRepresentante).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type Representante = InferSelectModel<typeof representantes>;
-export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;
-export type ClienteRepresentante = InferSelectModel<typeof clienteRepresentante>;
-export type InsertClienteRepresentante = z.infer<typeof insertClienteRepresentanteSchema>;

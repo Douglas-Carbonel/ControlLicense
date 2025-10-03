@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse, insertConsultoriaSchema, insertClienteConsultoriaSchema, insertRepresentanteSchema, licenses, clientes, clienteHistorico, users, activities, mensagensSistema, modulosLicenca, representantes, clienteRepresentante } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse, licenses, users, activities } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -1306,119 +1306,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     return importedCount;
   }
-
-  // Representante routes (requer autenticação)
-  app.get("/api/representantes", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const representantes = await storage.getRepresentantes();
-      res.json(representantes);
-    } catch (error) {
-      console.error("Error fetching representantes:", error);
-      res.status(500).json({ message: "Failed to fetch representantes" });
-    }
-  });
-
-  app.get("/api/representantes/:id", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const representante = await storage.getRepresentante(id);
-      if (!representante) {
-        return res.status(404).json({ message: "Representante not found" });
-      }
-      res.json(representante);
-    } catch (error) {
-      console.error("Error fetching representante:", error);
-      res.status(500).json({ message: "Failed to fetch representante" });
-    }
-  });
-
-  app.post("/api/representantes", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const validatedData = insertRepresentanteSchema.parse(req.body);
-      const representante = await storage.createRepresentante(validatedData);
-
-      // Log activity
-      await storage.createActivity({
-        userId: req.user!.id.toString(),
-        userName: req.user!.name,
-        action: "CREATE",
-        resourceType: "representante",
-        resourceId: representante.id,
-        description: `${req.user!.name} criou o representante ${representante.nome}`,
-      });
-
-      res.status(201).json(representante);
-    } catch (error) {
-      console.error("Error creating representante:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid data", errors: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to create representante" });
-      }
-    }
-  });
-
-  app.put("/api/representantes/:id", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertRepresentanteSchema.partial().parse(req.body);
-      const representante = await storage.updateRepresentante(id, validatedData);
-
-      // Log activity
-      await storage.createActivity({
-        userId: req.user!.id.toString(),
-        userName: req.user!.name,
-        action: "UPDATE",
-        resourceType: "representante",
-        resourceId: representante.id,
-        description: `${req.user!.name} atualizou o representante ${representante.nome}`,
-      });
-
-      res.json(representante);
-    } catch (error) {
-      console.error("Error updating representante:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid data", errors: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to update representante" });
-      }
-    }
-  });
-
-  app.delete("/api/representantes/:id", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteRepresentante(id);
-
-      // Log activity
-      await storage.createActivity({
-        userId: req.user!.id.toString(),
-        userName: req.user!.name,
-        action: "DELETE",
-        resourceType: "representante",
-        resourceId: id,
-        description: `${req.user!.name} excluiu um representante`,
-      });
-
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting representante:", error);
-      res.status(500).json({ message: "Failed to delete representante" });
-    }
-  });
-
-  // Rota para buscar clientes vinculados a um representante
-  app.get("/api/representantes/:id/clientes", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const representanteId = parseInt(req.params.id);
-      const tipo = req.query.tipo as 'principal' | 'secundario' || 'principal';
-      const clientes = await storage.getClientesByRepresentante(representanteId, tipo);
-      res.json(clientes);
-    } catch (error) {
-      console.error("Error fetching clientes by representante:", error);
-      res.status(500).json({ message: "Failed to fetch clientes" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

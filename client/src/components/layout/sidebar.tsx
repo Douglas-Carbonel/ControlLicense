@@ -274,51 +274,6 @@ function Sidebar() {
               </Link>
             );
           })}
-          {/* Consultorias Menu Item */}
-          <Link 
-            href="/consultorias" 
-            className={`group flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3.5 text-sm font-medium rounded-xl transition-all duration-300 ease-out relative overflow-hidden ${
-              location === "/consultorias" 
-                ? 'bg-gradient-to-r from-[#0095da] to-[#0075b0] text-white shadow-lg shadow-blue-500/25 scale-[1.02]' 
-                : 'text-[#a1b3d3] hover:bg-[#3a3a3c]/40 hover:text-white hover:shadow-md hover:scale-[1.01]'
-            }`}
-            title={isCollapsed ? "Consultorias" : ''}
-          >
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-              <div className={`relative p-2 rounded-lg transition-all duration-300 ${
-                location === "/consultorias" 
-                  ? 'bg-white/20 shadow-inner' 
-                  : 'group-hover:bg-[#0095da]/20'
-              }`}>
-                <Users className="w-5 h-5 flex-shrink-0" />
-              </div>
-              {!isCollapsed && (
-                <div className="flex items-center justify-between flex-1">
-                  <span className="font-medium tracking-wide">Consultorias</span>
-                </div>
-              )}
-            </div>
-
-            {/* Active indicator */}
-            {location === "/consultorias" && !isCollapsed && (
-              <div className="w-2 h-2 bg-white rounded-full shadow-sm animate-pulse"></div>
-            )}
-
-            {/* Hover indicator */}
-            {location !== "/consultorias" && !isCollapsed && (
-              <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
-            )}
-
-            {/* Active indicator for collapsed state */}
-            {location === "/consultorias" && isCollapsed && (
-              <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-full shadow-sm"></div>
-            )}
-
-            {/* Background decoration */}
-            <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ${
-              location === "/consultorias" ? 'hidden' : ''
-            }`}></div>
-          </Link>
         </nav>
       </div>
 

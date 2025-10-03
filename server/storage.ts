@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, consultorias, clienteConsultoria, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertConsultoria, type InsertClienteConsultoria, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Consultoria, type ClienteConsultoria, type HardwareLicenseQuery, representantes, type InsertRepresentante, type Representante } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -70,16 +70,7 @@ export interface IStorage {
   getClientesList(): Promise<{code: string, nomeCliente: string}[]>;
   getAmbientesByCliente(codigoCliente: string): Promise<string[]>;
 
-  // Representante operations
-  getRepresentantes(): Promise<Representante[]>;
-  getRepresentante(id: number): Promise<Representante | undefined>;
-  createRepresentante(representante: InsertRepresentante): Promise<Representante>;
-  updateRepresentante(id: number, data: Partial<InsertRepresentante>): Promise<Representante>;
-  deleteRepresentante(id: number): Promise<void>;
-
-  // Methods related to linking clients to representatives
-  getClientesByRepresentante(representanteId: number, tipo?: 'principal' | 'secundario'): Promise<License[]>;
-}
+  }
 
 export class DbStorage implements IStorage {
   private lastSeenActivityAt: Map<string, Date> = new Map();
@@ -677,45 +668,6 @@ export class DbStorage implements IStorage {
     }
   }
 
-  // Representante operations
-  async getRepresentantes(): Promise<Representante[]> {
-    return await db.select().from(representantes).orderBy(desc(representantes.id));
   }
-
-  async getRepresentante(id: number): Promise<Representante | undefined> {
-    const result = await db.select().from(representantes).where(eq(representantes.id, id));
-    return result[0];
-  }
-
-  async createRepresentante(representante: InsertRepresentante): Promise<Representante> {
-    const result = await db.insert(representantes).values(representante).returning();
-    return result[0];
-  }
-
-  async updateRepresentante(id: number, data: Partial<InsertRepresentante>): Promise<Representante> {
-    const result = await db
-      .update(representantes)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(representantes.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async deleteRepresentante(id: number): Promise<void> {
-    await db.delete(representantes).where(eq(representantes.id, id));
-  }
-
-  // Methods related to linking clients to representatives
-  async getClientesByRepresentante(representanteId: number, tipo: 'principal' | 'secundario' = 'principal'): Promise<License[]> {
-    const column = tipo === 'principal'
-      ? licenses.representantePrincipalId
-      : licenses.representanteSecundarioId;
-
-    return await db
-      .select()
-      .from(licenses)
-      .where(eq(column, representanteId));
-  }
-}
 
 export const storage = new DbStorage();
