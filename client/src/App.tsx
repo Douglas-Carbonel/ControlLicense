@@ -12,7 +12,8 @@ import UsersPage from "@/pages/users";
 import Login from "@/pages/login";
 import AppLayout from "@/components/layout/app-layout";
 import Mensagens from "@/pages/mensagens";
-import Clientes from "@/pages/clientes";
+import Clientes from "./pages/clientes";
+import Consultorias from "./pages/consultorias";
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -55,6 +56,7 @@ function Router() {
         <Route path="/users" component={UsersPage} />
         <Route path="/mensagens" component={Mensagens} />
         <Route path="/clientes" component={Clientes} />
+        <Route path="/consultorias" component={Consultorias} />
       </Switch>
     </AppLayout>
   );
