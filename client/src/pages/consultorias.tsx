@@ -62,7 +62,10 @@ export default function Consultorias() {
   });
 
   const { data: clientesConsultoria } = useQuery({
-    queryKey: [`/api/cliente-consultoria/${editingConsultoria?.id}`],
+    queryKey: ["/api/cliente-consultoria", editingConsultoria?.id],
+    queryFn: () => editingConsultoria?.id 
+      ? apiRequest("GET", `/api/cliente-consultoria/${editingConsultoria.id}`)
+      : Promise.resolve([]),
     enabled: !!editingConsultoria?.id,
   });
 

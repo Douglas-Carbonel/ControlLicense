@@ -1307,6 +1307,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return importedCount;
   }
 
+  // Rota para buscar clientes vinculados a uma consultoria
+  app.get("/api/cliente-consultoria/:consultoriaId", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const consultoriaId = parseInt(req.params.consultoriaId);
+      const clientes = await storage.getClientesByConsultoria(consultoriaId);
+      res.json(clientes);
+    } catch (error) {
+      console.error("Error fetching clientes by consultoria:", error);
+      res.status(500).json({ message: "Failed to fetch clientes" });
+    }
+  });
+
+  app.post("/api/cliente-consultoria", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertClienteConsultoriaSchema.parse(req.body);
+      const clienteConsultoria = await storage.createClienteConsultoria(validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "CREATE",
+        resourceType: "cliente_consultoria",
+        resourceId: clienteConsultoria.id,
+        description: `${req.user!.name} vinculou cliente ${clienteConsultoria.codigoCliente} à consultoria`,
+      });
+
+      res.status(201).json(clienteConsultoria);
+    } catch (error) {
+      console.error("Error creating cliente-consultoria:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create cliente-consultoria" });
+      }
+    }
+  });
+
+  app.delete("/api/cliente-consultoria/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteClienteConsultoria(id);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "cliente_consultoria",
+        resourceId: id,
+        description: `${req.user!.name} desvinculou cliente de consultoria`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting cliente-consultoria:", error);
+      res.status(500).json({ message: "Failed to delete cliente-consultoria" });
+    }
+  });
+
+  // Cliente-Consultoria methods
+  async getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]> {
+    try {
+      const result = await db
+        .select()
+        .from(clienteConsultoria)
+        .where(eq(clienteConsultoria.consultoriaId, consultoriaId))
+        .orderBy(desc(clienteConsultoria.dataInicio));
+      return result;
+    } catch (error) {
+      console.error("Erro ao buscar clientes da consultoria:", error);
+      throw error;
+    }
+  }
+
+  async createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria> {
+    try {
+      const result = await db.insert(clienteConsultoria).values(data).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Erro ao criar cliente-consultoria:", error);
+      throw error;
+    }
+  }
+
+  async deleteClienteConsultoria(id: number): Promise<void> {
+    try {
+      await db.delete(clienteConsultoria).where(eq(clienteConsultoria.id, id));
+    } catch (error) {
+      console.error("Erro ao excluir cliente-consultoria:", error);
+      throw error;
+    }
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }
