@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, consultorias, clienteConsultoria, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertConsultoria, type InsertClienteConsultoria, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Consultoria, type ClienteConsultoria, type HardwareLicenseQuery } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, consultorias, clienteConsultoria, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertConsultoria, type InsertClienteConsultoria, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Consultoria, type ClienteConsultoria, type HardwareLicenseQuery, representantes, type InsertRepresentante, type Representante } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -70,18 +70,15 @@ export interface IStorage {
   getClientesList(): Promise<{code: string, nomeCliente: string}[]>;
   getAmbientesByCliente(codigoCliente: string): Promise<string[]>;
 
-  // Consultoria operations
-  getConsultorias(): Promise<Consultoria[]>;
-  getConsultoria(id: number): Promise<Consultoria | undefined>;
-  createConsultoria(consultoria: InsertConsultoria): Promise<Consultoria>;
-  updateConsultoria(id: number, consultoria: Partial<InsertConsultoria>): Promise<Consultoria>;
-  deleteConsultoria(id: number): Promise<void>;
+  // Representante operations
+  getRepresentantes(): Promise<Representante[]>;
+  getRepresentante(id: number): Promise<Representante | undefined>;
+  createRepresentante(representante: InsertRepresentante): Promise<Representante>;
+  updateRepresentante(id: number, data: Partial<InsertRepresentante>): Promise<Representante>;
+  deleteRepresentante(id: number): Promise<void>;
 
-  // Cliente-Consultoria methods
-  getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]>;
-  createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria>;
-  deleteClienteConsultoria(id: number): Promise<void>;
-  getConsultoriaByCliente(codigoCliente: string): Promise<ClienteConsultoria | undefined>;
+  // Methods related to linking clients to representatives
+  getClientesByRepresentante(representanteId: number, tipo?: 'principal' | 'secundario'): Promise<License[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -440,338 +437,285 @@ export class DbStorage implements IStorage {
 
     return result[0];
   }
-    // Função para buscar mensagens com dados da licença relacionada
-    async getMensagensWithLicense() {
-        try {
-            const result = await db
-                .select({
-                    id: mensagemSistema.id,
-                    mensagem: mensagemSistema.mensagem,
-                    base: mensagemSistema.base,
-                    emailUsuario: mensagemSistema.emailUsuario,
-                    dataValidade: mensagemSistema.dataValidade,
-                    hardwareKey: mensagemSistema.hardwareKey,
-                    createdAt: mensagemSistema.createdAt,
-                    updatedAt: mensagemSistema.updatedAt,
-                    // Dados da licença relacionada
-                    licenseId: licenses.id,
-                    code: licenses.code,
-                    linha: licenses.linha,
-                    nomeCliente: licenses.nomeCliente,
-                    ativo: licenses.ativo,
-                })
-                .from(mensagemSistema)
-                .leftJoin(
-                    licenses,
-                    and(
-                        eq(mensagemSistema.base, licenses.nomeDb),
-                        eq(mensagemSistema.hardwareKey, licenses.hardwareKey)
-                    )
-                )
-                .orderBy(desc(mensagemSistema.createdAt));
+  // Função para buscar mensagens com dados da licença relacionada
+  async getMensagensWithLicense() {
+    try {
+      const result = await db
+        .select({
+          id: mensagemSistema.id,
+          mensagem: mensagemSistema.mensagem,
+          base: mensagemSistema.base,
+          emailUsuario: mensagemSistema.emailUsuario,
+          dataValidade: mensagemSistema.dataValidade,
+          hardwareKey: mensagemSistema.hardwareKey,
+          createdAt: mensagemSistema.createdAt,
+          updatedAt: mensagemSistema.updatedAt,
+          // Dados da licença relacionada
+          licenseId: licenses.id,
+          code: licenses.code,
+          linha: licenses.linha,
+          nomeCliente: licenses.nomeCliente,
+          ativo: licenses.ativo,
+        })
+        .from(mensagemSistema)
+        .leftJoin(
+          licenses,
+          and(
+            eq(mensagemSistema.base, licenses.nomeDb),
+            eq(mensagemSistema.hardwareKey, licenses.hardwareKey)
+          )
+        )
+        .orderBy(desc(mensagemSistema.createdAt));
 
-            return result;
-        } catch (error) {
-            console.error("Erro ao buscar mensagens com licenças:", error);
-            throw error;
-        }
+      return result;
+    } catch (error) {
+      console.error("Erro ao buscar mensagens com licenças:", error);
+      throw error;
     }
+  }
 
-    // Função para validar se base e hardware_key existem em licenses
-    async validateMensagemLicenseReference(base: string, hardwareKey: string): Promise<boolean> {
-        try {
-            const result = await db
-                .select({ id: licenses.id })
-                .from(licenses)
-                .where(and(eq(licenses.nomeDb, base), eq(licenses.hardwareKey, hardwareKey)))
-                .limit(1);
+  // Função para validar se base e hardware_key existem em licenses
+  async validateMensagemLicenseReference(base: string, hardwareKey: string): Promise<boolean> {
+    try {
+      const result = await db
+        .select({ id: licenses.id })
+        .from(licenses)
+        .where(and(eq(licenses.nomeDb, base), eq(licenses.hardwareKey, hardwareKey)))
+        .limit(1);
 
-            return result.length > 0;
-        } catch (error) {
-            console.error("Erro ao validar referência de licença:", error);
-            return false;
-        }
+      return result.length > 0;
+    } catch (error) {
+      console.error("Erro ao validar referência de licença:", error);
+      return false;
     }
+  }
 
-    // Função para buscar todas as bases disponíveis nas licenças
-    async getAvailableBases(): Promise<string[]> {
-        try {
-            console.log("Fetching available bases...");
-            const result = await db
-                .selectDistinct({ nomeDb: licenses.nomeDb })
-                .from(licenses)
-                .where(and(
-                    not(isNull(licenses.nomeDb)),
-                    eq(licenses.ativo, true)
-                ))
-                .orderBy(asc(licenses.nomeDb));
+  // Função para buscar todas as bases disponíveis nas licenças
+  async getAvailableBases(): Promise<string[]> {
+    try {
+      console.log("Fetching available bases...");
+      const result = await db
+        .selectDistinct({ nomeDb: licenses.nomeDb })
+        .from(licenses)
+        .where(and(
+          not(isNull(licenses.nomeDb)),
+          eq(licenses.ativo, true)
+        ))
+        .orderBy(asc(licenses.nomeDb));
 
-            console.log("Raw bases result:", result);
-            const bases = result.map(row => row.nomeDb).filter(Boolean) as string[];
-            console.log("Filtered bases:", bases);
-            return bases;
-        } catch (error) {
-            console.error("Erro ao buscar bases disponíveis:", error);
-            throw error; // Re-throw to see the actual error
-        }
+      console.log("Raw bases result:", result);
+      const bases = result.map(row => row.nomeDb).filter(Boolean) as string[];
+      console.log("Filtered bases:", bases);
+      return bases;
+    } catch (error) {
+      console.error("Erro ao buscar bases disponíveis:", error);
+      throw error; // Re-throw to see the actual error
     }
+  }
 
-    // Função para buscar hardware keys por base
-    async getHardwareKeysByBase(base: string): Promise<string[]> {
-        try {
-            console.log("Fetching hardware keys for base:", base);
-            const result = await db
-                .selectDistinct({ hardwareKey: licenses.hardwareKey })
-                .from(licenses)
-                .where(and(
-                    eq(licenses.nomeDb, base),
-                    not(isNull(licenses.hardwareKey)),
-                    eq(licenses.ativo, true)
-                ))
-                .orderBy(asc(licenses.hardwareKey));
+  // Função para buscar hardware keys por base
+  async getHardwareKeysByBase(base: string): Promise<string[]> {
+    try {
+      console.log("Fetching hardware keys for base:", base);
+      const result = await db
+        .selectDistinct({ hardwareKey: licenses.hardwareKey })
+        .from(licenses)
+        .where(and(
+          eq(licenses.nomeDb, base),
+          not(isNull(licenses.hardwareKey)),
+          eq(licenses.ativo, true)
+        ))
+        .orderBy(asc(licenses.hardwareKey));
 
-            console.log("Raw hardware keys result:", result);
-            const keys = result.map(row => row.hardwareKey).filter(Boolean) as string[];
-            console.log("Filtered hardware keys:", keys);
-            return keys;
-        } catch (error) {
-            console.error("Erro ao buscar hardware keys por base:", error);
-            throw error; // Re-throw to see the actual error
-        }
+      console.log("Raw hardware keys result:", result);
+      const keys = result.map(row => row.hardwareKey).filter(Boolean) as string[];
+      console.log("Filtered hardware keys:", keys);
+      return keys;
+    } catch (error) {
+      console.error("Erro ao buscar hardware keys por base:", error);
+      throw error; // Re-throw to see the actual error
     }
+  }
 
-    // Função para buscar informações completas de uma licença por base e hardware key
-    async getLicenseInfoByBaseAndHardware(base: string, hardwareKey: string) {
-        try {
-            const result = await db
-                .select({
-                    id: licenses.id,
-                    code: licenses.code,
-                    nomeCliente: licenses.nomeCliente,
-                    nomeDb: licenses.nomeDb,
-                    hardwareKey: licenses.hardwareKey,
-                    ativo: licenses.ativo
-                })
-                .from(licenses)
-                .where(and(eq(licenses.nomeDb, base), eq(licenses.hardwareKey, hardwareKey)))
-                .limit(1);
+  // Função para buscar informações completas de uma licença por base e hardware key
+  async getLicenseInfoByBaseAndHardware(base: string, hardwareKey: string) {
+    try {
+      const result = await db
+        .select({
+          id: licenses.id,
+          code: licenses.code,
+          nomeCliente: licenses.nomeCliente,
+          nomeDb: licenses.nomeDb,
+          hardwareKey: licenses.hardwareKey,
+          ativo: licenses.ativo
+        })
+        .from(licenses)
+        .where(and(eq(licenses.nomeDb, base), eq(licenses.hardwareKey, hardwareKey)))
+        .limit(1);
 
-            return result[0];
-        } catch (error) {
-            console.error("Erro ao buscar informações da licença:", error);
-            return null;
-        }
+      return result[0];
+    } catch (error) {
+      console.error("Erro ao buscar informações da licença:", error);
+      return null;
     }
+  }
 
-    // Cliente Histórico methods
-    async getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]> {
-        try {
-            console.log(`Buscando histórico para cliente: ${codigoCliente}`);
+  // Cliente Histórico methods
+  async getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]> {
+    try {
+      console.log(`Buscando histórico para cliente: ${codigoCliente}`);
 
-            let query = db.select().from(clienteHistorico);
+      let query = db.select().from(clienteHistorico);
 
-            if (codigoCliente) {
-                query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente)) as any;
-            }
-
-            const result = await query.orderBy(desc(clienteHistorico.createdAt));
-            console.log(`Resultado da busca: ${result.length} registros encontrados`);
-            console.log(`Dados do resultado:`, JSON.stringify(result, null, 2));
-
-            // Garantir que sempre retorna um array
-            const finalResult = Array.isArray(result) ? result : [];
-            console.log(`Retornando array final:`, finalResult.length, 'items');
-            return finalResult;
-        } catch (error) {
-            console.error("Erro ao buscar histórico de clientes:", error);
-            // Em caso de erro, retornar array vazio em vez de lançar exceção
-            return [];
-        }
-    }
-
-    async getClienteHistoricoById(id: number): Promise<ClienteHistorico | undefined> {
-        try {
-            const result = await db
-                .select()
-                .from(clienteHistorico)
-                .where(eq(clienteHistorico.id, id))
-                .limit(1);
-            return result[0];
-        } catch (error) {
-            console.error("Erro ao buscar histórico por ID:", error);
-            throw error;
-        }
-    }
-
-    async createClienteHistorico(data: InsertClienteHistorico): Promise<ClienteHistorico> {
-        try {
-            const result = await db
-                .insert(clienteHistorico)
-                .values(data)
-                .returning();
-            return result[0];
-        } catch (error) {
-            console.error("Erro ao criar histórico do cliente:", error);
-            throw error;
-        }
-    }
-
-    async updateClienteHistorico(id: number, data: Partial<InsertClienteHistorico>): Promise<ClienteHistorico> {
-        try {
-            const result = await db
-                .update(clienteHistorico)
-                .set({ ...data, updatedAt: new Date() })
-                .where(eq(clienteHistorico.id, id))
-                .returning();
-            return result[0];
-        } catch (error) {
-            console.error("Erro ao atualizar histórico do cliente:", error);
-            throw error;
-        }
-    }
-
-    async deleteClienteHistorico(id: number): Promise<void> {
-        try {
-            await db
-                .delete(clienteHistorico)
-                .where(eq(clienteHistorico.id, id));
-        } catch (error) {
-            console.error("Erro ao deletar histórico do cliente:", error);
-            throw error;
-        }
-    }
-
-    async getClientesList(): Promise<{code: string, nomeCliente: string}[]> {
-        try {
-            const result = await db
-                .selectDistinct({
-                    code: licenses.code,
-                    nomeCliente: licenses.nomeCliente
-                })
-                .from(licenses)
-                .where(and(
-                    not(isNull(licenses.code)),
-                    not(isNull(licenses.nomeCliente))
-                ))
-                .orderBy(asc(licenses.code));
-
-            return result.filter(item => item.code && item.nomeCliente);
-        } catch (error) {
-            console.error("Erro ao buscar lista de clientes:", error);
-            throw error;
-        }
-    }
-
-    async getAmbientesByCliente(codigoCliente: string): Promise<string[]> {
-        try {
-            const result = await db
-                .selectDistinct({ nomeDb: licenses.nomeDb })
-                .from(licenses)
-                .where(and(
-                    eq(licenses.code, codigoCliente),
-                    not(isNull(licenses.nomeDb))
-                ))
-                .orderBy(asc(licenses.nomeDb));
-
-            return result.map(row => row.nomeDb).filter(Boolean) as string[];
-        } catch (error) {
-            console.error("Erro ao buscar ambientes do cliente:", error);
-            throw error;
-        }
-    }
-
-    // Consultoria operations
-    async getConsultorias(): Promise<Consultoria[]> {
-        return await db.select().from(consultorias).orderBy(desc(consultorias.id));
-    }
-
-    async getConsultoria(id: number): Promise<Consultoria | undefined> {
-        const result = await db.select().from(consultorias).where(eq(consultorias.id, id));
-        return result[0];
-    }
-
-    async createConsultoria(consultoria: InsertConsultoria): Promise<Consultoria> {
-        const result = await db.insert(consultorias).values(consultoria).returning();
-        return result[0];
-    }
-
-    async updateConsultoria(id: number, consultoria: Partial<InsertConsultoria>): Promise<Consultoria> {
-        const result = await db
-            .update(consultorias)
-            .set(consultoria)
-            .where(eq(consultorias.id, id))
-            .returning();
-        return result[0];
-    }
-
-    async deleteConsultoria(id: number): Promise<void> {
-        try {
-            await db
-                .delete(consultorias)
-                .where(eq(consultorias.id, id));
-        } catch (error) {
-            console.error("Erro ao deletar consultoria:", error);
-            throw error;
-        }
-    }
-
-    // Cliente-Consultoria methods
-    async getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]> {
-        try {
-            const result = await db
-                .select()
-                .from(clienteConsultoria)
-                .where(eq(clienteConsultoria.consultoriaId, consultoriaId))
-                .orderBy(desc(clienteConsultoria.dataInicio));
-            return result;
-        } catch (error) {
-            console.error("Erro ao buscar clientes da consultoria:", error);
-            throw error;
-        }
-    }
-
-    async createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria> {
-        try {
-            const result = await db
-                .insert(clienteConsultoria)
-                .values(data)
-                .returning();
-            return result[0];
-        } catch (error) {
-            console.error("Erro ao vincular cliente à consultoria:", error);
-            throw error;
-        }
-    }
-
-    async deleteClienteConsultoria(id: number): Promise<void> {
-        try {
-            // Marca como finalizado ao invés de deletar
-            await db
-                .update(clienteConsultoria)
-                .set({ dataFim: new Date() })
-                .where(eq(clienteConsultoria.id, id));
-        } catch (error) {
-            console.error("Erro ao desvincular cliente da consultoria:", error);
-            throw error;
-        }
-    }
-
-    async getConsultoriaByCliente(codigoCliente: string): Promise<ClienteConsultoria | undefined> {
-      try {
-        const result = await db
-          .select()
-          .from(clienteConsultoria)
-          .where(and(
-            eq(clienteConsultoria.codigoCliente, codigoCliente),
-            isNull(clienteConsultoria.dataFim)
-          ))
-          .limit(1);
-        return result[0];
-      } catch (error) {
-        console.error("Erro ao buscar consultoria do cliente:", error);
-        throw error;
+      if (codigoCliente) {
+        query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente)) as any;
       }
+
+      const result = await query.orderBy(desc(clienteHistorico.createdAt));
+      console.log(`Resultado da busca: ${result.length} registros encontrados`);
+      console.log(`Dados do resultado:`, JSON.stringify(result, null, 2));
+
+      // Garantir que sempre retorna um array
+      const finalResult = Array.isArray(result) ? result : [];
+      console.log(`Retornando array final:`, finalResult.length, 'items');
+      return finalResult;
+    } catch (error) {
+      console.error("Erro ao buscar histórico de clientes:", error);
+      // Em caso de erro, retornar array vazio em vez de lançar exceção
+      return [];
     }
+  }
+
+  async getClienteHistoricoById(id: number): Promise<ClienteHistorico | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(clienteHistorico)
+        .where(eq(clienteHistorico.id, id))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Erro ao buscar histórico por ID:", error);
+      throw error;
+    }
+  }
+
+  async createClienteHistorico(data: InsertClienteHistorico): Promise<ClienteHistorico> {
+    try {
+      const result = await db
+        .insert(clienteHistorico)
+        .values(data)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Erro ao criar histórico do cliente:", error);
+      throw error;
+    }
+  }
+
+  async updateClienteHistorico(id: number, data: Partial<InsertClienteHistorico>): Promise<ClienteHistorico> {
+    try {
+      const result = await db
+        .update(clienteHistorico)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(clienteHistorico.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Erro ao atualizar histórico do cliente:", error);
+      throw error;
+    }
+  }
+
+  async deleteClienteHistorico(id: number): Promise<void> {
+    try {
+      await db
+        .delete(clienteHistorico)
+        .where(eq(clienteHistorico.id, id));
+    } catch (error) {
+      console.error("Erro ao deletar histórico do cliente:", error);
+      throw error;
+    }
+  }
+
+  async getClientesList(): Promise<{code: string, nomeCliente: string}[]> {
+    try {
+      const result = await db
+        .selectDistinct({
+          code: licenses.code,
+          nomeCliente: licenses.nomeCliente
+        })
+        .from(licenses)
+        .where(and(
+          not(isNull(licenses.code)),
+          not(isNull(licenses.nomeCliente))
+        ))
+        .orderBy(asc(licenses.code));
+
+      return result.filter(item => item.code && item.nomeCliente);
+    } catch (error) {
+      console.error("Erro ao buscar lista de clientes:", error);
+      throw error;
+    }
+  }
+
+  async getAmbientesByCliente(codigoCliente: string): Promise<string[]> {
+    try {
+      const result = await db
+        .selectDistinct({ nomeDb: licenses.nomeDb })
+        .from(licenses)
+        .where(and(
+          eq(licenses.code, codigoCliente),
+          not(isNull(licenses.nomeDb))
+        ))
+        .orderBy(asc(licenses.nomeDb));
+
+      return result.map(row => row.nomeDb).filter(Boolean) as string[];
+    } catch (error) {
+      console.error("Erro ao buscar ambientes do cliente:", error);
+      throw error;
+    }
+  }
+
+  // Representante operations
+  async getRepresentantes(): Promise<Representante[]> {
+    return await db.select().from(representantes).orderBy(desc(representantes.id));
+  }
+
+  async getRepresentante(id: number): Promise<Representante | undefined> {
+    const result = await db.select().from(representantes).where(eq(representantes.id, id));
+    return result[0];
+  }
+
+  async createRepresentante(representante: InsertRepresentante): Promise<Representante> {
+    const result = await db.insert(representantes).values(representante).returning();
+    return result[0];
+  }
+
+  async updateRepresentante(id: number, data: Partial<InsertRepresentante>): Promise<Representante> {
+    const result = await db
+      .update(representantes)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(representantes.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteRepresentante(id: number): Promise<void> {
+    await db.delete(representantes).where(eq(representantes.id, id));
+  }
+
+  // Methods related to linking clients to representatives
+  async getClientesByRepresentante(representanteId: number, tipo: 'principal' | 'secundario' = 'principal'): Promise<License[]> {
+    const column = tipo === 'principal'
+      ? licenses.representantePrincipalId
+      : licenses.representanteSecundarioId;
+
+    return await db
+      .select()
+      .from(licenses)
+      .where(eq(column, representanteId));
+  }
 }
 
 export const storage = new DbStorage();

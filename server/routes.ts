@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse, insertConsultoriaSchema, insertClienteConsultoriaSchema } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse, insertConsultoriaSchema, insertClienteConsultoriaSchema, insertRepresentanteSchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -1307,163 +1307,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return importedCount;
   }
 
-  // Consultorias routes
-  app.get("/api/consultorias", authenticateToken, async (req: AuthRequest, res) => {
+  // Representante routes (requer autenticação)
+  app.get("/api/representantes", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const consultorias = await storage.getConsultorias();
-      res.json(consultorias);
+      const representantes = await storage.getRepresentantes();
+      res.json(representantes);
     } catch (error) {
-      console.error("Error fetching consultorias:", error);
-      res.status(500).json({ message: "Failed to fetch consultorias" });
+      console.error("Error fetching representantes:", error);
+      res.status(500).json({ message: "Failed to fetch representantes" });
     }
   });
 
-  app.get("/api/consultorias/:id", authenticateToken, async (req: AuthRequest, res) => {
+  app.get("/api/representantes/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      const consultoria = await storage.getConsultoria(id);
-      if (!consultoria) {
-        return res.status(404).json({ message: "Consultoria not found" });
+      const representante = await storage.getRepresentante(id);
+      if (!representante) {
+        return res.status(404).json({ message: "Representante not found" });
       }
-      res.json(consultoria);
+      res.json(representante);
     } catch (error) {
-      console.error("Error fetching consultoria:", error);
-      res.status(500).json({ message: "Failed to fetch consultoria" });
+      console.error("Error fetching representante:", error);
+      res.status(500).json({ message: "Failed to fetch representante" });
     }
   });
 
-  app.post("/api/consultorias", authenticateToken, async (req: AuthRequest, res) => {
+  app.post("/api/representantes", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const validatedData = insertConsultoriaSchema.parse(req.body);
-      const consultoria = await storage.createConsultoria(validatedData);
+      const validatedData = insertRepresentanteSchema.parse(req.body);
+      const representante = await storage.createRepresentante(validatedData);
 
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
         userName: req.user!.name,
         action: "CREATE",
-        resourceType: "consultoria",
-        resourceId: consultoria.id,
-        description: `${req.user!.name} criou consultoria ${consultoria.nome}`,
+        resourceType: "representante",
+        resourceId: representante.id,
+        description: `${req.user!.name} criou o representante ${representante.nome}`,
       });
 
-      res.status(201).json(consultoria);
+      res.status(201).json(representante);
     } catch (error) {
-      console.error("Error creating consultoria:", error);
+      console.error("Error creating representante:", error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ message: "Failed to create consultoria" });
+        res.status(500).json({ message: "Failed to create representante" });
       }
     }
   });
 
-  app.patch("/api/consultorias/:id", authenticateToken, async (req: AuthRequest, res) => {
+  app.put("/api/representantes/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertConsultoriaSchema.partial().parse(req.body);
-      const consultoria = await storage.updateConsultoria(id, validatedData);
+      const validatedData = insertRepresentanteSchema.partial().parse(req.body);
+      const representante = await storage.updateRepresentante(id, validatedData);
 
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
         userName: req.user!.name,
         action: "UPDATE",
-        resourceType: "consultoria",
-        resourceId: id,
-        description: `${req.user!.name} atualizou consultoria`,
+        resourceType: "representante",
+        resourceId: representante.id,
+        description: `${req.user!.name} atualizou o representante ${representante.nome}`,
       });
 
-      res.json(consultoria);
+      res.json(representante);
     } catch (error) {
-      console.error("Error updating consultoria:", error);
+      console.error("Error updating representante:", error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid data", errors: error.errors });
       } else {
-        res.status(500).json({ message: "Failed to update consultoria" });
+        res.status(500).json({ message: "Failed to update representante" });
       }
     }
   });
 
-  app.delete("/api/consultorias/:id", authenticateToken, async (req: AuthRequest, res) => {
+  app.delete("/api/representantes/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteConsultoria(id);
+      await storage.deleteRepresentante(id);
 
       // Log activity
       await storage.createActivity({
         userId: req.user!.id.toString(),
         userName: req.user!.name,
         action: "DELETE",
-        resourceType: "consultoria",
+        resourceType: "representante",
         resourceId: id,
-        description: `${req.user!.name} deletou consultoria`,
+        description: `${req.user!.name} excluiu um representante`,
       });
 
       res.status(204).send();
     } catch (error) {
-      console.error("Error deleting consultoria:", error);
-      res.status(500).json({ message: "Failed to delete consultoria" });
+      console.error("Error deleting representante:", error);
+      res.status(500).json({ message: "Failed to delete representante" });
     }
   });
 
-  // Rota para buscar clientes vinculados a uma consultoria
-  app.get("/api/cliente-consultoria/:consultoriaId", authenticateToken, async (req: AuthRequest, res) => {
+  // Rota para buscar clientes vinculados a um representante
+  app.get("/api/representantes/:id/clientes", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const consultoriaId = parseInt(req.params.consultoriaId);
-      const clientes = await storage.getClientesByConsultoria(consultoriaId);
+      const representanteId = parseInt(req.params.id);
+      const tipo = req.query.tipo as 'principal' | 'secundario' || 'principal';
+      const clientes = await storage.getClientesByRepresentante(representanteId, tipo);
       res.json(clientes);
     } catch (error) {
-      console.error("Error fetching clientes by consultoria:", error);
+      console.error("Error fetching clientes by representante:", error);
       res.status(500).json({ message: "Failed to fetch clientes" });
-    }
-  });
-
-  app.post("/api/cliente-consultoria", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const validatedData = insertClienteConsultoriaSchema.parse(req.body);
-      const clienteConsultoria = await storage.createClienteConsultoria(validatedData);
-
-      // Log activity
-      await storage.createActivity({
-        userId: req.user!.id.toString(),
-        userName: req.user!.name,
-        action: "CREATE",
-        resourceType: "cliente_consultoria",
-        resourceId: clienteConsultoria.id,
-        description: `${req.user!.name} vinculou cliente ${clienteConsultoria.codigoCliente} à consultoria`,
-      });
-
-      res.status(201).json(clienteConsultoria);
-    } catch (error) {
-      console.error("Error creating cliente-consultoria:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid data", errors: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to create cliente-consultoria" });
-      }
-    }
-  });
-
-  app.delete("/api/cliente-consultoria/:id", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteClienteConsultoria(id);
-
-      // Log activity
-      await storage.createActivity({
-        userId: req.user!.id.toString(),
-        userName: req.user!.name,
-        action: "DELETE",
-        resourceType: "cliente_consultoria",
-        resourceId: id,
-        description: `${req.user!.name} desvinculou cliente de consultoria`,
-      });
-
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting cliente-consultoria:", error);
-      res.status(500).json({ message: "Failed to delete cliente-consultoria" });
     }
   });
 

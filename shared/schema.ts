@@ -133,8 +133,8 @@ export const clienteHistorico = pgTable("cliente_historico", {
   // Observações do checklist
   observacoesChecklist: text("observacoes_checklist"),
   numeroChamado: text("numero_chamado"),
-  consultoriaId: integer("consultoria_id"), // Referencia consultorias.id - se atendimento veio via consultoria
-  chamadoConsultoria: text("chamado_consultoria"), // Número do chamado na consultoria (ex: UpperTools)
+  representanteId: integer("representante_id"), // Referencia representantes.id - se atendimento veio via representante
+  chamadoRepresentante: text("chamado_representante"), // Número do chamado no representante (ex: UpperTools)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -168,7 +168,7 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
   checklistAtualizacao: z.string().optional().nullable(),
   observacoesChecklist: z.string().optional().nullable(),
   numeroChamado: z.string().optional().nullable(),
-  consultoriaId: z.union([z.string(), z.number()]).optional().nullable().transform((val) => {
+  representanteId: z.union([z.string(), z.number()]).optional().nullable().transform((val) => {
     if (!val || val === '') return null;
     if (typeof val === 'string') {
       const num = parseInt(val);
@@ -176,7 +176,7 @@ export const insertClienteHistoricoSchema = createInsertSchema(clienteHistorico)
     }
     return val;
   }),
-  chamadoConsultoria: z.string().optional().nullable(),
+  chamadoRepresentante: z.string().optional().nullable(),
 });
 
 export type License = typeof licenses.$inferSelect;
@@ -239,8 +239,8 @@ export type HardwareLicenseResponse = {
 };
 
 
-// Tabela de Consultorias/Parceiros
-export const consultorias = pgTable("consultorias", {
+// Tabela de Representantes (antigo Consultorias/Parceiros)
+export const representantes = pgTable("representantes", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
   razaoSocial: text("razao_social"),
@@ -255,42 +255,15 @@ export const consultorias = pgTable("consultorias", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Tabela de relacionamento Cliente x Consultoria
-export const clienteConsultoria = pgTable("cliente_consultoria", {
-  id: serial("id").primaryKey(),
-  codigoCliente: text("codigo_cliente").notNull(), // Referencia licenses.code
-  consultoriaId: integer("consultoria_id").notNull().references(() => consultorias.id),
-  dataInicio: timestamp("data_inicio").defaultNow().notNull(),
-  dataFim: timestamp("data_fim"), // null = relacionamento ativo
-  observacoes: text("observacoes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+// Adicionar colunas de representantes à tabela licenses
+// Estas colunas referenciam a tabela representantes
+// representantePrincipalId é obrigatório, representanteSecundarioId é opcional
 
-export const insertConsultoriaSchema = createInsertSchema(consultorias).omit({
+export const insertRepresentanteSchema = createInsertSchema(representantes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertClienteConsultoriaSchema = createInsertSchema(clienteConsultoria).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  dataInicio: z.union([z.string(), z.date()]).optional().transform((val) => {
-    if (!val) return new Date();
-    if (typeof val === 'string') return new Date(val);
-    return val;
-  }),
-  dataFim: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
-    if (!val || val === '') return null;
-    if (typeof val === 'string') return new Date(val);
-    return val;
-  }),
-});
-
-export type Consultoria = InferSelectModel<typeof consultorias>;
-export type InsertConsultoria = z.infer<typeof insertConsultoriaSchema>;
-export type ClienteConsultoria = InferSelectModel<typeof clienteConsultoria>;
-export type InsertClienteConsultoria = z.infer<typeof insertClienteConsultoriaSchema>;
+export type Representante = InferSelectModel<typeof representantes>;
+export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;

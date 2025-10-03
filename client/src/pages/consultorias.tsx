@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,13 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Building2, Plus, Edit, Trash2, Users, Phone, Mail, MessageSquare, X, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Phone, Mail, MessageSquare, ChevronDown, ChevronRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-interface Consultoria {
+interface Representante {
   id: number;
   nome: string;
   razaoSocial?: string;
@@ -32,107 +29,93 @@ interface Consultoria {
   updatedAt: string;
 }
 
-interface Cliente {
-  code: string;
-  nomeCliente: string;
-}
-
-interface ClienteConsultoria {
-  id: number;
-  codigoCliente: string;
-  consultoriaId: number;
-  dataInicio: string;
-  dataFim?: string;
-  observacoes?: string;
-}
-
-export default function Consultorias() {
+export default function Representantes() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingConsultoria, setEditingConsultoria] = useState<Consultoria | null>(null);
+  const [editingRepresentante, setEditingRepresentante] = useState<Representante | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: consultorias, isLoading } = useQuery({
-    queryKey: ["/api/consultorias"],
+  const { data: representantes, isLoading } = useQuery({
+    queryKey: ["/api/representantes"],
   });
 
-  const { data: todosClientes } = useQuery({
-    queryKey: ["/api/clientes/lista"],
-  });
-
-  const { data: clientesConsultoria } = useQuery({
-    queryKey: ["/api/cliente-consultoria", editingConsultoria?.id],
-    queryFn: () => editingConsultoria?.id 
-      ? apiRequest("GET", `/api/cliente-consultoria/${editingConsultoria.id}`)
-      : Promise.resolve([]),
-    enabled: !!editingConsultoria?.id,
-  });
-
-  const toggleRowExpansion = (consultoriaId: number) => {
+  const toggleRowExpansion = (representanteId: number) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(consultoriaId)) {
-        newSet.delete(consultoriaId);
+      if (newSet.has(representanteId)) {
+        newSet.delete(representanteId);
       } else {
-        newSet.add(consultoriaId);
+        newSet.add(representanteId);
       }
       return newSet;
     });
   };
 
-  const ClientesVinculadosRow = ({ consultoriaId }: { consultoriaId: number }) => {
-    const { data: clientesData } = useQuery({
-      queryKey: ["/api/cliente-consultoria", consultoriaId],
-      queryFn: () => apiRequest("GET", `/api/cliente-consultoria/${consultoriaId}`),
-      enabled: expandedRows.has(consultoriaId),
+  const ClientesVinculadosRow = ({ representanteId }: { representanteId: number }) => {
+    const { data: clientesPrincipais } = useQuery({
+      queryKey: ["/api/representantes", representanteId, "clientes", "principal"],
+      queryFn: () => apiRequest("GET", `/api/representantes/${representanteId}/clientes?tipo=principal`),
+      enabled: expandedRows.has(representanteId),
     });
 
-    const clientesAtivos = clientesData?.filter((cc: ClienteConsultoria) => !cc.dataFim) || [];
+    const { data: clientesSecundarios } = useQuery({
+      queryKey: ["/api/representantes", representanteId, "clientes", "secundario"],
+      queryFn: () => apiRequest("GET", `/api/representantes/${representanteId}/clientes?tipo=secundario`),
+      enabled: expandedRows.has(representanteId),
+    });
 
-    if (!expandedRows.has(consultoriaId)) return null;
+    if (!expandedRows.has(representanteId)) return null;
+
+    const totalClientes = (clientesPrincipais?.length || 0) + (clientesSecundarios?.length || 0);
 
     return (
       <TableRow className="bg-slate-50 hover:bg-slate-50">
         <TableCell colSpan={5} className="p-0">
-          <div className="p-4 border-l-4 border-blue-400">
+          <div className="p-4 border-l-4 border-purple-400">
             <div className="flex items-center gap-2 mb-3">
-              <Users className="w-4 h-4 text-blue-600" />
+              <Users className="w-4 h-4 text-purple-600" />
               <span className="font-semibold text-sm text-slate-700">
-                Clientes Vinculados ({clientesAtivos.length})
+                Clientes Vinculados ({totalClientes})
               </span>
             </div>
-            {clientesAtivos.length === 0 ? (
-              <div className="text-sm text-slate-500 italic pl-6">
-                Nenhum cliente vinculado a esta consultoria
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pl-6">
-                {clientesAtivos.map((cc: ClienteConsultoria) => {
-                  const cliente = todosClientes?.find((c: Cliente) => c.code === cc.codigoCliente);
-                  return (
-                    <div 
-                      key={cc.id} 
-                      className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-slate-800 truncate">
-                          {cc.codigoCliente}
-                        </div>
-                        <div className="text-xs text-slate-600 truncate">
-                          {cliente?.nomeCliente || 'Nome não encontrado'}
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          Desde: {new Date(cc.dataInicio).toLocaleDateString('pt-BR')}
-                        </div>
+
+            {clientesPrincipais && clientesPrincipais.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-xs font-semibold text-purple-700 mb-2">Representante Principal ({clientesPrincipais.length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 pl-4">
+                  {clientesPrincipais.map((cliente: any) => (
+                    <div key={`principal-${cliente.code}`} className="flex items-center gap-2 p-2 bg-purple-50 rounded border border-purple-200">
+                      <div className="text-sm">
+                        <div className="font-medium text-purple-900">{cliente.code}</div>
+                        <div className="text-xs text-purple-700">{cliente.nomeCliente}</div>
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {clientesSecundarios && clientesSecundarios.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-slate-600 mb-2">Representante Secundário ({clientesSecundarios.length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 pl-4">
+                  {clientesSecundarios.map((cliente: any) => (
+                    <div key={`secundario-${cliente.code}`} className="flex items-center gap-2 p-2 bg-slate-100 rounded border border-slate-200">
+                      <div className="text-sm">
+                        <div className="font-medium text-slate-800">{cliente.code}</div>
+                        <div className="text-xs text-slate-600">{cliente.nomeCliente}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {totalClientes === 0 && (
+              <div className="text-sm text-slate-500 italic pl-6">
+                Nenhum cliente vinculado a este representante
               </div>
             )}
           </div>
@@ -142,71 +125,38 @@ export default function Consultorias() {
   };
 
   const createMutation = useMutation({
-    mutationFn: async ({ consultoria, clientes }: { consultoria: any; clientes: string[] }) => {
-      const consultoriaCriada = await apiRequest("POST", "/api/consultorias", consultoria);
-      
-      // Vincular clientes se houver
-      if (clientes.length > 0) {
-        for (const codigoCliente of clientes) {
-          await apiRequest("POST", "/api/cliente-consultoria", {
-            codigoCliente,
-            consultoriaId: consultoriaCriada.id,
-          });
-        }
-      }
-      
-      return consultoriaCriada;
+    mutationFn: async (representante: any) => {
+      return await apiRequest("POST", "/api/representantes", representante);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/consultorias"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/cliente-consultoria"] });
-      toast({ title: "Sucesso", description: "Consultoria criada com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/representantes"] });
+      toast({ title: "Sucesso", description: "Representante criado com sucesso!" });
       setIsCreateModalOpen(false);
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: number; consultoria: any }) => {
-      return await apiRequest("PUT", `/api/consultorias/${data.id}`, data.consultoria);
+    mutationFn: async (data: { id: number; representante: any }) => {
+      return await apiRequest("PUT", `/api/representantes/${data.id}`, data.representante);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/consultorias"] });
-      toast({ title: "Sucesso", description: "Consultoria atualizada com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/representantes"] });
+      toast({ title: "Sucesso", description: "Representante atualizado com sucesso!" });
       setIsEditModalOpen(false);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/consultorias/${id}`);
+      await apiRequest("DELETE", `/api/representantes/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/consultorias"] });
-      toast({ title: "Sucesso", description: "Consultoria excluída com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/representantes"] });
+      toast({ title: "Sucesso", description: "Representante excluído com sucesso!" });
     },
   });
 
-  const addClienteMutation = useMutation({
-    mutationFn: async (data: { codigoCliente: string; consultoriaId: number }) => {
-      return await apiRequest("POST", "/api/cliente-consultoria", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cliente-consultoria"] });
-      toast({ title: "Sucesso", description: "Cliente vinculado com sucesso!" });
-    },
-  });
-
-  const removeClienteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/cliente-consultoria/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cliente-consultoria"] });
-      toast({ title: "Sucesso", description: "Cliente desvinculado com sucesso!" });
-    },
-  });
-
-  const ConsultoriaForm = ({ isEdit = false, initialData = null, onSubmit }: any) => {
+  const RepresentanteForm = ({ isEdit = false, initialData = null, onSubmit }: any) => {
     const [formData, setFormData] = useState({
       nome: initialData?.nome || "",
       razaoSocial: initialData?.razaoSocial || "",
@@ -219,58 +169,16 @@ export default function Consultorias() {
       observacoes: initialData?.observacoes || "",
     });
 
-    const [selectedCliente, setSelectedCliente] = useState("");
-    const [searchCliente, setSearchCliente] = useState("");
-    const [clientesParaVincular, setClientesParaVincular] = useState<string[]>([]);
-
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      onSubmit(formData, clientesParaVincular);
+      onSubmit(formData);
     };
-
-    const handleAddCliente = () => {
-      if (isEdit && initialData?.id) {
-        // Modo edição: adiciona direto no banco
-        if (!selectedCliente) return;
-        
-        addClienteMutation.mutate({
-          codigoCliente: selectedCliente,
-          consultoriaId: initialData.id,
-        });
-        setSelectedCliente("");
-        setSearchCliente("");
-      } else {
-        // Modo criação: adiciona na lista temporária
-        if (!selectedCliente) return;
-        if (!clientesParaVincular.includes(selectedCliente)) {
-          setClientesParaVincular([...clientesParaVincular, selectedCliente]);
-        }
-        setSelectedCliente("");
-        setSearchCliente("");
-      }
-    };
-
-    const handleRemoveClienteTemporario = (codigo: string) => {
-      setClientesParaVincular(clientesParaVincular.filter(c => c !== codigo));
-    };
-
-    const clientesVinculados = clientesConsultoria?.filter((cc: ClienteConsultoria) => !cc.dataFim) || [];
-    const clientesDisponiveis = todosClientes?.filter((cliente: Cliente) => {
-      const jaVinculado = clientesVinculados.some((cc: ClienteConsultoria) => cc.codigoCliente === cliente.code);
-      const naListaTemp = clientesParaVincular.includes(cliente.code);
-      return !jaVinculado && !naListaTemp;
-    }) || [];
-
-    const filteredClientes = clientesDisponiveis.filter((cliente: Cliente) => 
-      cliente.code.toLowerCase().includes(searchCliente.toLowerCase()) ||
-      cliente.nomeCliente.toLowerCase().includes(searchCliente.toLowerCase())
-    );
 
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="nome">Nome da Consultoria *</Label>
+            <Label htmlFor="nome">Nome do Representante *</Label>
             <Input
               id="nome"
               value={formData.nome}
@@ -333,7 +241,7 @@ export default function Consultorias() {
               checked={formData.ativo}
               onCheckedChange={(checked) => setFormData(prev => ({ ...prev, ativo: checked }))}
             />
-            <Label htmlFor="ativo">Consultoria Ativa</Label>
+            <Label htmlFor="ativo">Representante Ativo</Label>
           </div>
         </div>
         <div>
@@ -346,146 +254,12 @@ export default function Consultorias() {
           />
         </div>
 
-        <div className="border-t pt-4 mt-4">
-          <Label className="text-base font-semibold mb-3 block">Clientes Vinculados</Label>
-          
-          {/* Adicionar Cliente */}
-          <div className="flex gap-2 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start pl-10">
-                    {selectedCliente ? (
-                      <span>
-                        {todosClientes?.find((c: Cliente) => c.code === selectedCliente)?.code} - {todosClientes?.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente}
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">Selecionar cliente...</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[500px] p-0">
-                  <div className="p-2 border-b">
-                    <Input
-                      placeholder="Buscar cliente..."
-                      value={searchCliente}
-                      onChange={(e) => setSearchCliente(e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    {filteredClientes.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-gray-500">
-                        Nenhum cliente disponível
-                      </div>
-                    ) : (
-                      filteredClientes.map((cliente: Cliente) => (
-                        <Button
-                          key={cliente.code}
-                          variant="ghost"
-                          className="w-full justify-start p-2 h-auto"
-                          onClick={() => {
-                            setSelectedCliente(cliente.code);
-                          }}
-                        >
-                          <div className="text-left">
-                            <div className="font-medium">{cliente.code}</div>
-                            <div className="text-xs text-gray-500">{cliente.nomeCliente}</div>
-                          </div>
-                        </Button>
-                      ))
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <Button type="button" onClick={handleAddCliente} disabled={!selectedCliente}>
-              <Plus className="w-4 h-4 mr-1" />
-              Adicionar
-            </Button>
-          </div>
-
-          {/* Lista de Clientes Vinculados */}
-          {isEdit && initialData?.id ? (
-            // Modo edição: mostra clientes do banco
-            clientesVinculados.length > 0 ? (
-              <div className="space-y-2">
-                {clientesVinculados.map((cc: ClienteConsultoria) => {
-                  const cliente = todosClientes?.find((c: Cliente) => c.code === cc.codigoCliente);
-                  return (
-                    <div key={cc.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
-                      <div>
-                        <div className="font-medium">{cc.codigoCliente}</div>
-                        <div className="text-sm text-gray-600">{cliente?.nomeCliente}</div>
-                      </div>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Desvincular Cliente</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja desvincular este cliente da consultoria?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => removeClienteMutation.mutate(cc.id)}>
-                              Desvincular
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-sm text-gray-500">
-                Nenhum cliente vinculado ainda
-              </div>
-            )
-          ) : (
-            // Modo criação: mostra lista temporária
-            clientesParaVincular.length > 0 ? (
-              <div className="space-y-2">
-                {clientesParaVincular.map((codigo) => {
-                  const cliente = todosClientes?.find((c: Cliente) => c.code === codigo);
-                  return (
-                    <div key={codigo} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div>
-                        <div className="font-medium">{codigo}</div>
-                        <div className="text-sm text-gray-600">{cliente?.nomeCliente}</div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleRemoveClienteTemporario(codigo)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-sm text-gray-500">
-                Nenhum cliente selecionado. Os clientes serão vinculados após criar a consultoria.
-              </div>
-            )
-          )}
-        </div>
-
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={() => isEdit ? setIsEditModalOpen(false) : setIsCreateModalOpen(false)}>
             Cancelar
           </Button>
           <Button type="submit">
-            {isEdit ? "Atualizar" : "Criar"} Consultoria
+            {isEdit ? "Atualizar" : "Criar"} Representante
           </Button>
         </div>
       </form>
@@ -497,32 +271,32 @@ export default function Consultorias() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="p-3 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg">
-            <Building2 className="w-6 h-6" />
+            <Users className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Consultorias/Parceiros</h1>
-            <p className="text-slate-600 mt-1">Gerencie as consultorias que vendem e dão suporte aos clientes</p>
+            <h1 className="text-2xl font-bold text-slate-800">Representantes</h1>
+            <p className="text-slate-600 mt-1">Gerencie os representantes que vendem e dão suporte aos clientes</p>
           </div>
         </div>
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              Nova Consultoria
+              Novo Representante
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Criar Nova Consultoria</DialogTitle>
+              <DialogTitle>Criar Novo Representante</DialogTitle>
             </DialogHeader>
-            <ConsultoriaForm onSubmit={(consultoria: any, clientes: string[]) => createMutation.mutate({ consultoria, clientes })} />
+            <RepresentanteForm onSubmit={(representante: any) => createMutation.mutate(representante)} />
           </DialogContent>
         </Dialog>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Consultorias</CardTitle>
+          <CardTitle>Lista de Representantes</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -540,17 +314,17 @@ export default function Consultorias() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {consultorias?.map((consultoria: Consultoria) => (
+                {representantes?.map((representante: Representante) => (
                   <>
-                    <TableRow key={consultoria.id}>
+                    <TableRow key={representante.id}>
                       <TableCell className="p-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleRowExpansion(consultoria.id)}
+                          onClick={() => toggleRowExpansion(representante.id)}
                           className="h-8 w-8 p-0"
                         >
-                          {expandedRows.has(consultoria.id) ? (
+                          {expandedRows.has(representante.id) ? (
                             <ChevronDown className="w-4 h-4" />
                           ) : (
                             <ChevronRight className="w-4 h-4" />
@@ -559,42 +333,40 @@ export default function Consultorias() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{consultoria.nome}</div>
-                          {consultoria.razaoSocial && (
-                            <div className="text-sm text-slate-500">{consultoria.razaoSocial}</div>
+                          <div className="font-medium">{representante.nome}</div>
+                          {representante.razaoSocial && (
+                            <div className="text-sm text-slate-500">{representante.razaoSocial}</div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{consultoria.responsavel || '-'}</TableCell>
+                      <TableCell>{representante.responsavel || '-'}</TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          {consultoria.email && (
+                          {representante.email && (
                             <div className="flex items-center text-sm">
                               <Mail className="w-3 h-3 mr-1" />
-                              {consultoria.email}
+                              {representante.email}
                             </div>
                           )}
-                          {consultoria.whatsapp && (
+                          {representante.whatsapp && (
                             <div className="flex items-center text-sm">
                               <MessageSquare className="w-3 h-3 mr-1" />
-                              {consultoria.whatsapp}
+                              {representante.whatsapp}
                             </div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          <Badge variant={consultoria.ativo ? "default" : "secondary"}>
-                            {consultoria.ativo ? "Ativa" : "Inativa"}
-                          </Badge>
-                        </div>
+                        <Badge variant={representante.ativo ? "default" : "secondary"}>
+                          {representante.ativo ? "Ativo" : "Inativo"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setEditingConsultoria(consultoria);
+                            setEditingRepresentante(representante);
                             setIsEditModalOpen(true);
                           }}
                         >
@@ -610,12 +382,12 @@ export default function Consultorias() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Tem certeza que deseja excluir esta consultoria?
+                                Tem certeza que deseja excluir este representante?
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteMutation.mutate(consultoria.id)}>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(representante.id)}>
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>
@@ -623,7 +395,7 @@ export default function Consultorias() {
                         </AlertDialog>
                       </TableCell>
                     </TableRow>
-                    <ClientesVinculadosRow consultoriaId={consultoria.id} />
+                    <ClientesVinculadosRow representanteId={representante.id} />
                   </>
                 ))}
               </TableBody>
@@ -635,13 +407,13 @@ export default function Consultorias() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Consultoria</DialogTitle>
+            <DialogTitle>Editar Representante</DialogTitle>
           </DialogHeader>
-          {editingConsultoria && (
-            <ConsultoriaForm
+          {editingRepresentante && (
+            <RepresentanteForm
               isEdit={true}
-              initialData={editingConsultoria}
-              onSubmit={(data: any) => updateMutation.mutate({ id: editingConsultoria.id, consultoria: data })}
+              initialData={editingRepresentante}
+              onSubmit={(data: any) => updateMutation.mutate({ id: editingRepresentante.id, representante: data })}
             />
           )}
         </DialogContent>
