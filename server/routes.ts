@@ -1307,6 +1307,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return importedCount;
   }
 
+  // Consultorias routes
+  app.get("/api/consultorias", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const consultorias = await storage.getConsultorias();
+      res.json(consultorias);
+    } catch (error) {
+      console.error("Error fetching consultorias:", error);
+      res.status(500).json({ message: "Failed to fetch consultorias" });
+    }
+  });
+
+  app.get("/api/consultorias/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const consultoria = await storage.getConsultoria(id);
+      if (!consultoria) {
+        return res.status(404).json({ message: "Consultoria not found" });
+      }
+      res.json(consultoria);
+    } catch (error) {
+      console.error("Error fetching consultoria:", error);
+      res.status(500).json({ message: "Failed to fetch consultoria" });
+    }
+  });
+
+  app.post("/api/consultorias", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertConsultoriaSchema.parse(req.body);
+      const consultoria = await storage.createConsultoria(validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "CREATE",
+        resourceType: "consultoria",
+        resourceId: consultoria.id,
+        description: `${req.user!.name} criou consultoria ${consultoria.nome}`,
+      });
+
+      res.status(201).json(consultoria);
+    } catch (error) {
+      console.error("Error creating consultoria:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create consultoria" });
+      }
+    }
+  });
+
+  app.patch("/api/consultorias/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertConsultoriaSchema.partial().parse(req.body);
+      const consultoria = await storage.updateConsultoria(id, validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "UPDATE",
+        resourceType: "consultoria",
+        resourceId: id,
+        description: `${req.user!.name} atualizou consultoria`,
+      });
+
+      res.json(consultoria);
+    } catch (error) {
+      console.error("Error updating consultoria:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to update consultoria" });
+      }
+    }
+  });
+
+  app.delete("/api/consultorias/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteConsultoria(id);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "consultoria",
+        resourceId: id,
+        description: `${req.user!.name} deletou consultoria`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting consultoria:", error);
+      res.status(500).json({ message: "Failed to delete consultoria" });
+    }
+  });
+
   // Rota para buscar clientes vinculados a uma consultoria
   app.get("/api/cliente-consultoria/:consultoriaId", authenticateToken, async (req: AuthRequest, res) => {
     try {
