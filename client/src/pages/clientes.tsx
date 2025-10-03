@@ -468,77 +468,128 @@ export default function Clientes() {
       ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente 
       : "";
 
-    // Criar conteúdo do relatório em formato texto
-    let reportContent = `RELATÓRIO DE HISTÓRICO DO CLIENTE\n`;
-    reportContent += `${"=".repeat(60)}\n\n`;
-    reportContent += `Cliente: ${clienteNome} (${selectedCliente})\n`;
-    reportContent += `Data de Geração: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n`;
-    reportContent += `Total de Registros: ${filteredHistorico.length}\n\n`;
+    // Preparar dados para o Excel
+    const headers = [
+      'Nº',
+      'Data/Hora',
+      'Tipo de Ação',
+      'Status',
+      'Ambiente',
+      'Responsável',
+      'Atendente Suporte',
+      'Versão Anterior',
+      'Versão Instalada',
+      'Tempo Gasto (min)',
+      'Nº Chamado',
+      'Caso Crítico',
+      'Observações',
+      'Problemas',
+      'Soluções'
+    ];
 
-    // Adicionar filtros aplicados
-    reportContent += `FILTROS APLICADOS:\n`;
-    reportContent += `${"-".repeat(60)}\n`;
-    if (filterStatus !== "all") {
-      const statusLabel = STATUS_OPTIONS.find(s => s.value === filterStatus)?.label;
-      reportContent += `- Status: ${statusLabel}\n`;
-    }
-    if (filterTipo !== "all") {
-      const tipoLabel = TIPOS_ACAO.find(t => t.value === filterTipo)?.label;
-      reportContent += `- Tipo de Ação: ${tipoLabel}\n`;
-    }
-    if (filterAtendente !== "all") {
-      const atendenteNome = Array.isArray(usuarios) 
-        ? usuarios.find((u: any) => u.id.toString() === filterAtendente)?.name 
-        : "";
-      reportContent += `- Atendente: ${atendenteNome}\n`;
-    }
-    if (searchTerm) {
-      reportContent += `- Busca: "${searchTerm}"\n`;
-    }
-    reportContent += `\n`;
-
-    // Adicionar registros
-    reportContent += `HISTÓRICO DE ATENDIMENTOS:\n`;
-    reportContent += `${"=".repeat(60)}\n\n`;
-
-    filteredHistorico.forEach((item: ClienteHistorico, index: number) => {
-      reportContent += `[${index + 1}] ${getTipoAcaoLabel(item.tipoAtualizacao)}\n`;
-      reportContent += `${"-".repeat(60)}\n`;
-      reportContent += `Status: ${item.statusAtual === 'CONCLUIDO' ? 'Concluído' : item.statusAtual === 'EM_ANDAMENTO' ? 'Em Andamento' : 'Pendente'}\n`;
-      reportContent += `Data: ${format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n`;
-      reportContent += `Responsável: ${item.responsavel}\n`;
-
+    const data = filteredHistorico.map((item: ClienteHistorico, index: number) => {
       const atendenteNome = item.atendenteSuporteId && Array.isArray(usuarios)
         ? usuarios.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
         : 'N/A';
-      reportContent += `Atendente Suporte: ${atendenteNome}\n`;
 
-      if (item.ambiente) reportContent += `Ambiente: ${item.ambiente}\n`;
-      if (item.versaoInstalada) reportContent += `Versão Instalada: ${item.versaoInstalada}\n`;
-      if (item.versaoAnterior) reportContent += `Versão Anterior: ${item.versaoAnterior}\n`;
-      if (item.numeroChamado) reportContent += `Nº Chamado: ${item.numeroChamado}\n`;
-      if (item.tempoGasto) reportContent += `Tempo Gasto: ${item.tempoGasto} minutos\n`;
-      if (item.casoCritico) reportContent += `⚠️ CASO CRÍTICO\n`;
-      if (item.observacoes) reportContent += `Observações: ${item.observacoes}\n`;
-      if (item.problemas) reportContent += `Problemas: ${item.problemas}\n`;
-      if (item.solucoes) reportContent += `Soluções: ${item.solucoes}\n`;
-      reportContent += `\n`;
+      const statusLabel = item.statusAtual === 'CONCLUIDO' ? 'Concluído' : 
+                         item.statusAtual === 'EM_ANDAMENTO' ? 'Em Andamento' : 'Pendente';
+
+      return [
+        index + 1,
+        format(new Date(item.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }),
+        getTipoAcaoLabel(item.tipoAtualizacao),
+        statusLabel,
+        item.ambiente || '-',
+        item.responsavel,
+        atendenteNome,
+        item.versaoAnterior || '-',
+        item.versaoInstalada || '-',
+        item.tempoGasto || '-',
+        item.numeroChamado || '-',
+        item.casoCritico ? 'SIM' : 'NÃO',
+        item.observacoes || '-',
+        item.problemas || '-',
+        item.solucoes || '-'
+      ];
     });
 
-    // Criar e baixar arquivo
-    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+    // Criar informações do cabeçalho
+    const headerInfo = [
+      ['RELATÓRIO DE HISTÓRICO DO CLIENTE'],
+      [''],
+      ['Cliente:', clienteNome],
+      ['Código:', selectedCliente],
+      ['Data de Geração:', format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })],
+      ['Total de Registros:', filteredHistorico.length],
+      ['']
+    ];
+
+    // Adicionar filtros aplicados se houver
+    if (filterStatus !== "all" || filterTipo !== "all" || filterAtendente !== "all" || searchTerm) {
+      headerInfo.push(['FILTROS APLICADOS:']);
+      
+      if (filterStatus !== "all") {
+        const statusLabel = STATUS_OPTIONS.find(s => s.value === filterStatus)?.label;
+        headerInfo.push(['Status:', statusLabel || '']);
+      }
+      if (filterTipo !== "all") {
+        const tipoLabel = TIPOS_ACAO.find(t => t.value === filterTipo)?.label;
+        headerInfo.push(['Tipo de Ação:', tipoLabel || '']);
+      }
+      if (filterAtendente !== "all") {
+        const atendenteNome = Array.isArray(usuarios) 
+          ? usuarios.find((u: any) => u.id.toString() === filterAtendente)?.name 
+          : "";
+        headerInfo.push(['Atendente:', atendenteNome]);
+      }
+      if (searchTerm) {
+        headerInfo.push(['Busca:', searchTerm]);
+      }
+      
+      headerInfo.push(['']);
+    }
+
+    headerInfo.push(['HISTÓRICO DE ATENDIMENTOS:']);
+    headerInfo.push(['']);
+
+    // Criar workbook e worksheet
+    const ws_data = [
+      ...headerInfo,
+      headers,
+      ...data
+    ];
+
+    // Converter para formato TSV (Tab Separated Values) para simular Excel
+    const tsvContent = ws_data.map(row => 
+      row.map(cell => {
+        // Escapar caracteres especiais e adicionar aspas se necessário
+        const cellStr = String(cell || '');
+        if (cellStr.includes('\t') || cellStr.includes('\n') || cellStr.includes('"')) {
+          return '"' + cellStr.replace(/"/g, '""') + '"';
+        }
+        return cellStr;
+      }).join('\t')
+    ).join('\n');
+
+    // Adicionar BOM para UTF-8
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + tsvContent], { 
+      type: 'application/vnd.ms-excel;charset=utf-8' 
+    });
+
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `relatorio_historico_${selectedCliente}_${format(new Date(), "yyyyMMdd_HHmmss")}.txt`;
+    link.download = `relatorio_historico_${selectedCliente}_${format(new Date(), "yyyyMMdd_HHmmss")}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
     toast({
-      title: "Relatório gerado com sucesso!",
-      description: `${filteredHistorico.length} registro(s) exportado(s).`,
+      title: "Relatório Excel gerado com sucesso!",
+      description: `${filteredHistorico.length} registro(s) exportado(s) em formato Excel.`,
     });
   };
 
