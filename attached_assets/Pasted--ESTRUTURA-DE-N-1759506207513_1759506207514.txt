@@ -1,0 +1,71 @@
+┌─────────────────────────────────────────────────────────────┐
+│                    ESTRUTURA DE NEGÓCIO                      │
+└─────────────────────────────────────────────────────────────┘
+┌──────────────────┐
+│  REPRESENTANTES  │
+│                  │
+│ - ID             │
+│ - Nome           │
+│ - Razão Social   │
+│ - CNPJ           │
+│ - Contatos       │
+│ - Ativo          │
+└────────┬─────────┘
+         │
+         │ 1:N (um representante tem N clientes)
+         │
+         ▼
+┌──────────────────┐
+│    CLIENTES      │
+│                  │
+│ - Code           │
+│ - Nome           │
+│ - Repr. Principal│──┐
+│ - Repr. Secundár.│  │ (FK para Representantes)
+│ - Dados          │  │ (pode ser NULL)
+└────────┬─────────┘  │
+         │            │
+         └────────────┘
+         
+┌─────────────────────────────────────────────────────────────┐
+│                    TIPOS DE USUÁRIOS                         │
+└─────────────────────────────────────────────────────────────┘
+USUÁRIOS DO SISTEMA:
+1. DWU (Empresa - Internos)
+   ├── Administradores
+   └── Técnicos
+2. EXTERNOS (precisam ser criados)
+   ├── Representante
+   │   ├── Gerente/Supervisor (vê todos chamados do representante)
+   │   └── Analista (vê apenas seus próprios chamados)
+   │
+   └── Cliente Final
+       ├── Gerente/Supervisor (vê todos chamados do cliente)
+       └── Analista (vê apenas seus próprios chamados)
+┌─────────────────────────────────────────────────────────────┐
+│                 FLUXO DE ATENDIMENTO                         │
+└─────────────────────────────────────────────────────────────┘
+CENÁRIO 1: Atendimento via Representante
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│   Cliente    │─────▶│ Representante│─────▶│  DWU Suporte │
+│     XPTO     │      │      A       │      │   (Interno)  │
+└──────────────┘      └──────────────┘      └──────────────┘
+                           │
+                           └─ Informa qual cliente está
+                              com problema e o relato
+CENÁRIO 2: Atendimento Direto do Cliente
+┌──────────────┐                            ┌──────────────┐
+│   Cliente    │───────────────────────────▶│  DWU Suporte │
+│     XPTO     │  (Chamado/WhatsApp direto) │   (Interno)  │
+└──────────────┘                            └──────────────┘
+CENÁRIO 3: Cliente com múltiplos representantes
+┌──────────────┐
+│   Cliente    │
+│     ABC      │
+│              │
+│ Repr. Princ: │──────┐
+│ UpperTools   │      │
+│              │      ▼
+│ Repr. Secund:│  ┌──────────────┐
+│ Fernando     │  │Representantes│
+└──────────────┘  └──────────────┘

@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, insertRepresentanteSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -382,6 +382,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro ao excluir usuário" });
     }
   });
+
+  // Rotas de Representantes (apenas admin)
+  app.get("/api/representantes", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const representantes = await storage.getRepresentantes();
+      res.json(representantes);
+    } catch (error) {
+      console.error("Error fetching representantes:", error);
+      res.status(500).json({ message: "Erro ao buscar representantes" });
+    }
+  });
+
+  app.get("/api/representantes/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const representante = await storage.getRepresentante(id);
+      
+      if (!representante) {
+        return res.status(404).json({ message: "Representante não encontrado" });
+      }
+      
+      res.json(representante);
+    } catch (error) {
+      console.error("Error fetching representante:", error);
+      res.status(500).json({ message: "Erro ao buscar representante" });
+    }
+  });
+
+  app.post("/api/representantes", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const data = insertRepresentanteSchema.parse(req.body);
+      const newRepresentante = await storage.createRepresentante(data);
+
+      // Log da atividade
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "CREATE",
+        resourceType: "representante",
+        resourceId: newRepresentante.id,
+        description: `Representante ${newRepresentante.nome} criado por ${req.user!.name}`,
+      });
+
+      res.status(201).json(newRepresentante);
+    } catch (error) {
+      console.error("Error creating representante:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao criar representante" });
+    }
+  });
+
+  app.put("/api/representantes/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertRepresentanteSchema.partial().parse(req.body);
+      
+      const representante = await storage.getRepresentante(id);
+      if (!representante) {
+        return res.status(404).json({ message: "Representante não encontrado" });
+      }
+
+      const updatedRepresentante = await storage.updateRepresentante(id, data);
+
+      // Log da atividade
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "UPDATE",
+        resourceType: "representante",
+        resourceId: id,
+        description: `Representante ${updatedRepresentante.nome} atualizado por ${req.user!.name}`,
+      });
+
+      res.json(updatedRepresentante);
+    } catch (error) {
+      console.error("Error updating representante:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao atualizar representante" });
+    }
+  });
+
+  app.delete("/api/representantes/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const representante = await storage.getRepresentante(id);
+      if (!representante) {
+        return res.status(404).json({ message: "Representante não encontrado" });
+      }
+
+      await storage.deleteRepresentante(id);
+
+      // Log da atividade
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "representante",
+        resourceId: id,
+        description: `Representante ${representante.nome} excluído por ${req.user!.name}`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting representante:", error);
+      res.status(500).json({ message: "Erro ao excluir representante" });
+    }
+  });
+
   // License routes (requer autenticação)
   app.get("/api/licenses", authenticateToken, async (req: AuthRequest, res) => {
     try {

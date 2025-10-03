@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -118,6 +119,12 @@ export default function Licenses() {
   });
 
   const allLicenses = allLicensesResponse?.data || [];
+
+  // Buscar representantes para seleção
+  const { data: representantes = [] } = useQuery<any[]>({
+    queryKey: ["/api/representantes"],
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Debounce para filtros de coluna (400ms - otimizado para evitar travadas)
   const debouncedColumnFilters = useDebounce(columnFilters, 400);
@@ -1477,6 +1484,44 @@ export default function Licenses() {
                           placeholder="12.345.678/0001-90"
                           className={`border-[#e0e0e0] focus:border-[#0095da] mt-1 ${user?.role === 'support' ? 'bg-gray-100 cursor-not-allowed select-none' : ''}`}
                         />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-representantePrincipalId" className="text-[#0c151f] font-medium">Representante Principal</Label>
+                        <Select
+                          value={editingLicense.representantePrincipalId?.toString() || ''}
+                          onValueChange={(value) => handleFieldChange('representantePrincipalId', value ? parseInt(value) : null)}
+                        >
+                          <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da] mt-1">
+                            <SelectValue placeholder="Selecione um representante" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum</SelectItem>
+                            {representantes.filter(r => r.ativo).map((rep: any) => (
+                              <SelectItem key={rep.id} value={rep.id.toString()}>
+                                {rep.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-representanteSecundarioId" className="text-[#0c151f] font-medium">Representante Secundário</Label>
+                        <Select
+                          value={editingLicense.representanteSecundarioId?.toString() || ''}
+                          onValueChange={(value) => handleFieldChange('representanteSecundarioId', value ? parseInt(value) : null)}
+                        >
+                          <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da] mt-1">
+                            <SelectValue placeholder="Selecione um representante" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum</SelectItem>
+                            {representantes.filter(r => r.ativo).map((rep: any) => (
+                              <SelectItem key={rep.id} value={rep.id.toString()}>
+                                {rep.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="mt-4">

@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, representantes, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertRepresentante, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Representante, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -69,6 +69,13 @@ export interface IStorage {
   deleteClienteHistorico(id: number): Promise<void>;
   getClientesList(): Promise<{code: string, nomeCliente: string}[]>;
   getAmbientesByCliente(codigoCliente: string): Promise<string[]>;
+
+  // Representantes operations
+  getRepresentantes(): Promise<Representante[]>;
+  getRepresentante(id: number): Promise<Representante | undefined>;
+  createRepresentante(data: InsertRepresentante): Promise<Representante>;
+  updateRepresentante(id: number, data: Partial<InsertRepresentante>): Promise<Representante>;
+  deleteRepresentante(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -663,6 +670,76 @@ export class DbStorage implements IStorage {
             return result.map(row => row.nomeDb).filter(Boolean) as string[];
         } catch (error) {
             console.error("Erro ao buscar ambientes do cliente:", error);
+            throw error;
+        }
+    }
+
+    // Representantes methods
+    async getRepresentantes(): Promise<Representante[]> {
+        try {
+            return await db
+                .select()
+                .from(representantes)
+                .orderBy(asc(representantes.nome));
+        } catch (error) {
+            console.error("Erro ao buscar representantes:", error);
+            throw error;
+        }
+    }
+
+    async getRepresentante(id: number): Promise<Representante | undefined> {
+        try {
+            const result = await db
+                .select()
+                .from(representantes)
+                .where(eq(representantes.id, id))
+                .limit(1);
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao buscar representante:", error);
+            throw error;
+        }
+    }
+
+    async createRepresentante(data: InsertRepresentante): Promise<Representante> {
+        try {
+            const result = await db
+                .insert(representantes)
+                .values(data)
+                .returning();
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao criar representante:", error);
+            throw error;
+        }
+    }
+
+    async updateRepresentante(id: number, data: Partial<InsertRepresentante>): Promise<Representante> {
+        try {
+            const result = await db
+                .update(representantes)
+                .set({ ...data, updatedAt: new Date() })
+                .where(eq(representantes.id, id))
+                .returning();
+            
+            if (!result[0]) {
+                throw new Error("Representante não encontrado");
+            }
+            
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao atualizar representante:", error);
+            throw error;
+        }
+    }
+
+    async deleteRepresentante(id: number): Promise<void> {
+        try {
+            await db
+                .delete(representantes)
+                .where(eq(representantes.id, id));
+        } catch (error) {
+            console.error("Erro ao deletar representante:", error);
             throw error;
         }
     }

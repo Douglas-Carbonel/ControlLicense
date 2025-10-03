@@ -111,6 +111,12 @@ function Sidebar() {
           description: "Histórico e suporte aos clientes"
         },
         { 
+          href: "/representantes", 
+          label: "Representantes", 
+          icon: Users,
+          description: "Gerenciar representantes"
+        },
+        { 
           href: "/activities", 
           label: "Logs", 
           icon: Activity,
