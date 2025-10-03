@@ -62,7 +62,7 @@ export default function Consultorias() {
   });
 
   const { data: clientesConsultoria } = useQuery({
-    queryKey: ["/api/cliente-consultoria", editingConsultoria?.id],
+    queryKey: [`/api/cliente-consultoria/${editingConsultoria?.id}`],
     enabled: !!editingConsultoria?.id,
   });
 

@@ -10,7 +10,7 @@ import { readFileSync } from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 
 // Extend Request interface to include multer file and user info
 interface MulterRequest extends Request {
