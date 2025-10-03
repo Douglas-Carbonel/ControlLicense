@@ -1,5 +1,5 @@
-import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import { z } from "zod";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
@@ -255,9 +255,12 @@ export const representantes = pgTable("representantes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Adicionar colunas de representantes à tabela licenses
-// Estas colunas referenciam a tabela representantes
-// representantePrincipalId é obrigatório, representanteSecundarioId é opcional
+// Tabela de relacionamento cliente-representante
+export const clienteRepresentante = pgTable("cliente_representante", {
+  id: serial("id").primaryKey(),
+  codigoCliente: varchar("codigoCliente", { length: 50 }).notNull(),
+  representanteId: integer("representanteId").notNull().references(() => representantes.id),
+});
 
 export const insertRepresentanteSchema = createInsertSchema(representantes).omit({
   id: true,
@@ -265,5 +268,25 @@ export const insertRepresentanteSchema = createInsertSchema(representantes).omit
   updatedAt: true,
 });
 
+export const selectRepresentanteSchema = createSelectSchema(representantes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClienteRepresentanteSchema = createInsertSchema(clienteRepresentante).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const selectClienteRepresentanteSchema = createSelectSchema(clienteRepresentante).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Representante = InferSelectModel<typeof representantes>;
 export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;
+export type ClienteRepresentante = InferSelectModel<typeof clienteRepresentante>;
+export type InsertClienteRepresentante = z.infer<typeof insertClienteRepresentanteSchema>;

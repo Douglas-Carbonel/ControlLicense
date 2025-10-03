@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse, insertConsultoriaSchema, insertClienteConsultoriaSchema, insertRepresentanteSchema } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse, insertConsultoriaSchema, insertClienteConsultoriaSchema, insertRepresentanteSchema, licenses, clientes, clienteHistorico, users, activities, mensagensSistema, modulosLicenca, representantes, clienteRepresentante } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
