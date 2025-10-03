@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, consultorias, clienteConsultoria, type InsertLicense, type InsertUser, type Activity, type MensagemSistema, type ClienteHistorico, type Consultoria, type ClienteConsultoria, type HardwareLicenseQuery } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, consultorias, clienteConsultoria, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertConsultoria, type InsertClienteConsultoria, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Consultoria, type ClienteConsultoria, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
