@@ -1,0 +1,61 @@
+-- Migration: Sistema de Representantes e Usuários Externos
+
+-- 1. Renomear tabela consultorias para representantes (se existir)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'consultorias') THEN
+        ALTER TABLE consultorias RENAME TO representantes;
+    END IF;
+END $$;
+
+-- 2. Criar tabela representantes se não existir
+CREATE TABLE IF NOT EXISTS representantes (
+    id SERIAL PRIMARY KEY,
+    nome TEXT NOT NULL,
+    razao_social TEXT,
+    cnpj TEXT,
+    email TEXT,
+    telefone TEXT,
+    whatsapp TEXT,
+    responsavel TEXT,
+    ativo BOOLEAN NOT NULL DEFAULT true,
+    observacoes TEXT,
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+-- 3. Adicionar campos de representante na tabela licenses
+ALTER TABLE licenses 
+ADD COLUMN IF NOT EXISTS representante_principal_id INTEGER,
+ADD COLUMN IF NOT EXISTS representante_secundario_id INTEGER;
+
+-- 4. Atualizar tabela users para suportar usuários externos
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS tipo_usuario TEXT,
+ADD COLUMN IF NOT EXISTS representante_id INTEGER,
+ADD COLUMN IF NOT EXISTS cliente_id TEXT;
+
+-- 5. Atualizar comentários na coluna role
+COMMENT ON COLUMN users.role IS 'Tipo de usuário: admin, support, representante, cliente_final';
+COMMENT ON COLUMN users.tipo_usuario IS 'Nível de permissão: gerente (vê todos) ou analista (vê apenas seus)';
+COMMENT ON COLUMN users.representante_id IS 'ID do representante (se role = representante)';
+COMMENT ON COLUMN users.cliente_id IS 'Código do cliente (se role = cliente_final)';
+
+-- 6. Atualizar histórico de clientes para incluir tipo de abertura
+ALTER TABLE cliente_historico
+ADD COLUMN IF NOT EXISTS tipo_abertura TEXT, -- 'representante' ou 'cliente_direto'
+ADD COLUMN IF NOT EXISTS usuario_abertura_id INTEGER; -- ID do usuário que abriu (se externo)
+
+COMMENT ON COLUMN cliente_historico.tipo_abertura IS 'Como o chamado foi aberto: representante ou cliente_direto';
+COMMENT ON COLUMN cliente_historico.usuario_abertura_id IS 'ID do usuário externo que abriu o chamado';
+
+-- 7. Criar índices
+CREATE INDEX IF NOT EXISTS idx_licenses_repr_principal ON licenses(representante_principal_id);
+CREATE INDEX IF NOT EXISTS idx_licenses_repr_secundario ON licenses(representante_secundario_id);
+CREATE INDEX IF NOT EXISTS idx_users_representante ON users(representante_id) WHERE role = 'representante';
+CREATE INDEX IF NOT EXISTS idx_users_cliente ON users(cliente_id) WHERE role = 'cliente_final';
+CREATE INDEX IF NOT EXISTS idx_historico_tipo_abertura ON cliente_historico(tipo_abertura);
+CREATE INDEX IF NOT EXISTS idx_historico_usuario_abertura ON cliente_historico(usuario_abertura_id);
+
+-- 8. Remover tabelas antigas de relacionamento (se existirem)
+DROP TABLE IF EXISTS cliente_consultoria;
