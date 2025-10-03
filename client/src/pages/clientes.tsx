@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useClientSearch } from "@/hooks/use-client-search";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 interface ClienteHistorico {
   id: number;
@@ -468,26 +470,95 @@ export default function Clientes() {
       ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente 
       : "";
 
-    // Preparar dados para o Excel
-    const headers = [
-      'Nº',
-      'Data/Hora',
-      'Tipo de Ação',
-      'Status',
-      'Ambiente',
-      'Responsável',
-      'Atendente Suporte',
-      'Versão Anterior',
-      'Versão Instalada',
-      'Tempo Gasto (min)',
-      'Nº Chamado',
-      'Caso Crítico',
-      'Observações',
-      'Problemas',
-      'Soluções'
-    ];
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPos = 20;
 
-    const data = filteredHistorico.map((item: ClienteHistorico, index: number) => {
+    // Função auxiliar para adicionar nova página se necessário
+    const checkNewPage = (requiredSpace: number) => {
+      if (yPos + requiredSpace > pageHeight - 20) {
+        doc.addPage();
+        yPos = 20;
+        return true;
+      }
+      return false;
+    };
+
+    // Cabeçalho do Relatório
+    doc.setFillColor(0, 149, 218);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RELATÓRIO DE HISTÓRICO DO CLIENTE', pageWidth / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 25, { align: 'center' });
+
+    yPos = 50;
+
+    // Informações do Cliente
+    doc.setFillColor(245, 245, 245);
+    doc.rect(10, yPos, pageWidth - 20, 30, 'F');
+    
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INFORMAÇÕES DO CLIENTE', 15, yPos + 8);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Cliente: ${clienteNome}`, 15, yPos + 16);
+    doc.text(`Código: ${selectedCliente}`, 15, yPos + 23);
+    doc.text(`Total de Registros: ${filteredHistorico.length}`, pageWidth - 15, yPos + 16, { align: 'right' });
+
+    yPos += 40;
+
+    // Filtros Aplicados
+    if (filterStatus !== "all" || filterTipo !== "all" || filterAtendente !== "all" || searchTerm) {
+      checkNewPage(40);
+      
+      doc.setFillColor(255, 243, 205);
+      doc.rect(10, yPos, pageWidth - 20, 5, 'F');
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FILTROS APLICADOS', 15, yPos + 3.5);
+      
+      yPos += 8;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      
+      if (filterStatus !== "all") {
+        const statusLabel = STATUS_OPTIONS.find(s => s.value === filterStatus)?.label;
+        doc.text(`• Status: ${statusLabel}`, 15, yPos);
+        yPos += 5;
+      }
+      if (filterTipo !== "all") {
+        const tipoLabel = TIPOS_ACAO.find(t => t.value === filterTipo)?.label;
+        doc.text(`• Tipo de Ação: ${tipoLabel}`, 15, yPos);
+        yPos += 5;
+      }
+      if (filterAtendente !== "all") {
+        const atendenteNome = Array.isArray(usuarios) 
+          ? usuarios.find((u: any) => u.id.toString() === filterAtendente)?.name 
+          : "";
+        doc.text(`• Atendente: ${atendenteNome}`, 15, yPos);
+        yPos += 5;
+      }
+      if (searchTerm) {
+        doc.text(`• Busca: ${searchTerm}`, 15, yPos);
+        yPos += 5;
+      }
+      
+      yPos += 5;
+    }
+
+    // Histórico de Atendimentos
+    filteredHistorico.forEach((item: ClienteHistorico, index: number) => {
       const atendenteNome = item.atendenteSuporteId && Array.isArray(usuarios)
         ? usuarios.find((u: any) => u.id.toString() === item.atendenteSuporteId)?.name || 'N/A'
         : 'N/A';
@@ -495,101 +566,139 @@ export default function Clientes() {
       const statusLabel = item.statusAtual === 'CONCLUIDO' ? 'Concluído' : 
                          item.statusAtual === 'EM_ANDAMENTO' ? 'Em Andamento' : 'Pendente';
 
-      return [
-        index + 1,
-        format(new Date(item.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }),
-        getTipoAcaoLabel(item.tipoAtualizacao),
-        statusLabel,
-        item.ambiente || '-',
-        item.responsavel,
-        atendenteNome,
-        item.versaoAnterior || '-',
-        item.versaoInstalada || '-',
-        item.tempoGasto || '-',
-        item.numeroChamado || '-',
-        item.casoCritico ? 'SIM' : 'NÃO',
-        item.observacoes || '-',
-        item.problemas || '-',
-        item.solucoes || '-'
+      // Calcular espaço necessário para este registro
+      let recordHeight = 50;
+      if (item.observacoes) recordHeight += 15;
+      if (item.problemas) recordHeight += 15;
+      if (item.solucoes) recordHeight += 15;
+      
+      checkNewPage(recordHeight);
+
+      // Cabeçalho do Registro
+      const headerColor = item.statusAtual === 'CONCLUIDO' ? [220, 252, 231] : 
+                         item.statusAtual === 'EM_ANDAMENTO' ? [254, 243, 199] : [254, 226, 226];
+      
+      doc.setFillColor(...headerColor);
+      doc.rect(10, yPos, pageWidth - 20, 8, 'F');
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${index + 1}. ${getTipoAcaoLabel(item.tipoAtualizacao)}`, 15, yPos + 5.5);
+      
+      // Status e Data
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      const dataText = format(new Date(item.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR });
+      doc.text(`${statusLabel} | ${dataText}`, pageWidth - 15, yPos + 5.5, { align: 'right' });
+      
+      yPos += 10;
+
+      // Informações Principais
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      
+      const info: Array<[string, string]> = [
+        ['Ambiente:', item.ambiente || '-'],
+        ['Responsável:', item.responsavel || '-'],
+        ['Atendente:', atendenteNome],
+        ['Tempo Gasto:', item.tempoGasto ? `${item.tempoGasto} min` : '-'],
       ];
+
+      if (item.versaoAnterior || item.versaoInstalada) {
+        info.push(['Versão Anterior:', item.versaoAnterior || '-']);
+        info.push(['Versão Instalada:', item.versaoInstalada || '-']);
+      }
+
+      if (item.numeroChamado) {
+        info.push(['Nº Chamado:', item.numeroChamado]);
+      }
+
+      if (item.casoCritico) {
+        info.push(['⚠️ CASO CRÍTICO', '']);
+      }
+
+      info.forEach(([label, value], idx) => {
+        if (idx > 0 && idx % 2 === 0) yPos += 5;
+        const xPos = idx % 2 === 0 ? 15 : pageWidth / 2 + 5;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, xPos, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value, xPos + 35, yPos);
+      });
+
+      yPos += 8;
+
+      // Observações, Problemas e Soluções
+      if (item.observacoes) {
+        checkNewPage(15);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text('Observações:', 15, yPos);
+        yPos += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        const obsLines = doc.splitTextToSize(item.observacoes, pageWidth - 30);
+        doc.text(obsLines, 15, yPos);
+        yPos += obsLines.length * 4 + 3;
+      }
+
+      if (item.problemas) {
+        checkNewPage(15);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(220, 38, 38);
+        doc.text('Problemas:', 15, yPos);
+        yPos += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        const probLines = doc.splitTextToSize(item.problemas, pageWidth - 30);
+        doc.text(probLines, 15, yPos);
+        yPos += probLines.length * 4 + 3;
+      }
+
+      if (item.solucoes) {
+        checkNewPage(15);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(21, 128, 61);
+        doc.text('Soluções:', 15, yPos);
+        yPos += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        const solLines = doc.splitTextToSize(item.solucoes, pageWidth - 30);
+        doc.text(solLines, 15, yPos);
+        yPos += solLines.length * 4 + 3;
+      }
+
+      // Linha divisória
+      doc.setDrawColor(200, 200, 200);
+      doc.line(10, yPos, pageWidth - 10, yPos);
+      yPos += 8;
     });
 
-    // Criar informações do cabeçalho
-    const headerInfo = [
-      ['RELATÓRIO DE HISTÓRICO DO CLIENTE'],
-      [''],
-      ['Cliente:', clienteNome],
-      ['Código:', selectedCliente],
-      ['Data de Geração:', format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })],
-      ['Total de Registros:', filteredHistorico.length],
-      ['']
-    ];
-
-    // Adicionar filtros aplicados se houver
-    if (filterStatus !== "all" || filterTipo !== "all" || filterAtendente !== "all" || searchTerm) {
-      headerInfo.push(['FILTROS APLICADOS:']);
-      
-      if (filterStatus !== "all") {
-        const statusLabel = STATUS_OPTIONS.find(s => s.value === filterStatus)?.label;
-        headerInfo.push(['Status:', statusLabel || '']);
-      }
-      if (filterTipo !== "all") {
-        const tipoLabel = TIPOS_ACAO.find(t => t.value === filterTipo)?.label;
-        headerInfo.push(['Tipo de Ação:', tipoLabel || '']);
-      }
-      if (filterAtendente !== "all") {
-        const atendenteNome = Array.isArray(usuarios) 
-          ? usuarios.find((u: any) => u.id.toString() === filterAtendente)?.name 
-          : "";
-        headerInfo.push(['Atendente:', atendenteNome]);
-      }
-      if (searchTerm) {
-        headerInfo.push(['Busca:', searchTerm]);
-      }
-      
-      headerInfo.push(['']);
+    // Rodapé em todas as páginas
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        `Página ${i} de ${pageCount}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
     }
 
-    headerInfo.push(['HISTÓRICO DE ATENDIMENTOS:']);
-    headerInfo.push(['']);
-
-    // Criar workbook e worksheet
-    const ws_data = [
-      ...headerInfo,
-      headers,
-      ...data
-    ];
-
-    // Converter para formato TSV (Tab Separated Values) para simular Excel
-    const tsvContent = ws_data.map(row => 
-      row.map(cell => {
-        // Escapar caracteres especiais e adicionar aspas se necessário
-        const cellStr = String(cell || '');
-        if (cellStr.includes('\t') || cellStr.includes('\n') || cellStr.includes('"')) {
-          return '"' + cellStr.replace(/"/g, '""') + '"';
-        }
-        return cellStr;
-      }).join('\t')
-    ).join('\n');
-
-    // Adicionar BOM para UTF-8
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + tsvContent], { 
-      type: 'application/vnd.ms-excel;charset=utf-8' 
-    });
-
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `relatorio_historico_${selectedCliente}_${format(new Date(), "yyyyMMdd_HHmmss")}.xls`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    // Salvar PDF
+    doc.save(`relatorio_historico_${selectedCliente}_${format(new Date(), "yyyyMMdd_HHmmss")}.pdf`);
 
     toast({
-      title: "Relatório Excel gerado com sucesso!",
-      description: `${filteredHistorico.length} registro(s) exportado(s) em formato Excel.`,
+      title: "Relatório PDF gerado com sucesso!",
+      description: `${filteredHistorico.length} registro(s) exportado(s) em formato PDF.`,
     });
   };
 
