@@ -27,6 +27,11 @@ export const licenses = pgTable("licenses", {
   modulo3: boolean("modulo3").default(false), // Módulo 3
   modulo4: boolean("modulo4").default(false), // Módulo 4
   modulo5: boolean("modulo5").default(false), // Módulo 5
+  
+  // Relacionamento com Representantes
+  representantePrincipalId: integer("representante_principal_id"), // Pode ser NULL
+  representanteSecundarioId: integer("representante_secundario_id"), // Pode ser NULL
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -39,9 +44,15 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  role: text("role").notNull().default("support"), // 'admin' ou 'support'
+  role: text("role").notNull().default("support"), // 'admin', 'support', 'representante', 'cliente_final'
   name: text("name").notNull(),
   active: boolean("active").notNull().default(true),
+  
+  // Novos campos para usuários externos
+  tipoUsuario: text("tipo_usuario"), // 'gerente' ou 'analista' (apenas para representante/cliente_final)
+  representanteId: integer("representante_id"), // Se role = 'representante', referencia a qual representante pertence
+  clienteId: text("cliente_id"), // Se role = 'cliente_final', referencia a qual cliente pertence (licenses.code)
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -239,8 +250,8 @@ export type HardwareLicenseResponse = {
 };
 
 
-// Tabela de Consultorias/Parceiros
-export const consultorias = pgTable("consultorias", {
+// Tabela de Representantes (anteriormente Consultorias)
+export const representantes = pgTable("representantes", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
   razaoSocial: text("razao_social"),
@@ -255,42 +266,11 @@ export const consultorias = pgTable("consultorias", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Tabela de relacionamento Cliente x Consultoria
-export const clienteConsultoria = pgTable("cliente_consultoria", {
-  id: serial("id").primaryKey(),
-  codigoCliente: text("codigo_cliente").notNull(), // Referencia licenses.code
-  consultoriaId: integer("consultoria_id").notNull().references(() => consultorias.id),
-  dataInicio: timestamp("data_inicio").defaultNow().notNull(),
-  dataFim: timestamp("data_fim"), // null = relacionamento ativo
-  observacoes: text("observacoes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertConsultoriaSchema = createInsertSchema(consultorias).omit({
+export const insertRepresentanteSchema = createInsertSchema(representantes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertClienteConsultoriaSchema = createInsertSchema(clienteConsultoria).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  dataInicio: z.union([z.string(), z.date()]).optional().transform((val) => {
-    if (!val) return new Date();
-    if (typeof val === 'string') return new Date(val);
-    return val;
-  }),
-  dataFim: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
-    if (!val || val === '') return null;
-    if (typeof val === 'string') return new Date(val);
-    return val;
-  }),
-});
-
-export type Consultoria = InferSelectModel<typeof consultorias>;
-export type InsertConsultoria = z.infer<typeof insertConsultoriaSchema>;
-export type ClienteConsultoria = InferSelectModel<typeof clienteConsultoria>;
-export type InsertClienteConsultoria = z.infer<typeof insertClienteConsultoriaSchema>;
+export type Representante = InferSelectModel<typeof representantes>;
+export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;
