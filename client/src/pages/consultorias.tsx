@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Building2, Plus, Edit, Trash2, Users, Phone, Mail, MessageSquare, X, Search } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Users, Phone, Mail, MessageSquare, X, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,6 +50,7 @@ export default function Consultorias() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingConsultoria, setEditingConsultoria] = useState<Consultoria | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,6 +69,77 @@ export default function Consultorias() {
       : Promise.resolve([]),
     enabled: !!editingConsultoria?.id,
   });
+
+  const toggleRowExpansion = (consultoriaId: number) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(consultoriaId)) {
+        newSet.delete(consultoriaId);
+      } else {
+        newSet.add(consultoriaId);
+      }
+      return newSet;
+    });
+  };
+
+  const ClientesVinculadosRow = ({ consultoriaId }: { consultoriaId: number }) => {
+    const { data: clientesData } = useQuery({
+      queryKey: ["/api/cliente-consultoria", consultoriaId],
+      queryFn: () => apiRequest("GET", `/api/cliente-consultoria/${consultoriaId}`),
+      enabled: expandedRows.has(consultoriaId),
+    });
+
+    const clientesAtivos = clientesData?.filter((cc: ClienteConsultoria) => !cc.dataFim) || [];
+
+    if (!expandedRows.has(consultoriaId)) return null;
+
+    return (
+      <TableRow className="bg-slate-50 hover:bg-slate-50">
+        <TableCell colSpan={5} className="p-0">
+          <div className="p-4 border-l-4 border-blue-400">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-blue-600" />
+              <span className="font-semibold text-sm text-slate-700">
+                Clientes Vinculados ({clientesAtivos.length})
+              </span>
+            </div>
+            {clientesAtivos.length === 0 ? (
+              <div className="text-sm text-slate-500 italic pl-6">
+                Nenhum cliente vinculado a esta consultoria
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pl-6">
+                {clientesAtivos.map((cc: ClienteConsultoria) => {
+                  const cliente = todosClientes?.find((c: Cliente) => c.code === cc.codigoCliente);
+                  return (
+                    <div 
+                      key={cc.id} 
+                      className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-slate-800 truncate">
+                          {cc.codigoCliente}
+                        </div>
+                        <div className="text-xs text-slate-600 truncate">
+                          {cliente?.nomeCliente || 'Nome não encontrado'}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Desde: {new Date(cc.dataInicio).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   const createMutation = useMutation({
     mutationFn: async ({ consultoria, clientes }: { consultoria: any; clientes: string[] }) => {
@@ -459,6 +531,7 @@ export default function Consultorias() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12"></TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Responsável</TableHead>
                   <TableHead>Contatos</TableHead>
@@ -468,73 +541,90 @@ export default function Consultorias() {
               </TableHeader>
               <TableBody>
                 {consultorias?.map((consultoria: Consultoria) => (
-                  <TableRow key={consultoria.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{consultoria.nome}</div>
-                        {consultoria.razaoSocial && (
-                          <div className="text-sm text-slate-500">{consultoria.razaoSocial}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{consultoria.responsavel || '-'}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {consultoria.email && (
-                          <div className="flex items-center text-sm">
-                            <Mail className="w-3 h-3 mr-1" />
-                            {consultoria.email}
-                          </div>
-                        )}
-                        {consultoria.whatsapp && (
-                          <div className="flex items-center text-sm">
-                            <MessageSquare className="w-3 h-3 mr-1" />
-                            {consultoria.whatsapp}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Badge variant={consultoria.ativo ? "default" : "secondary"}>
-                          {consultoria.ativo ? "Ativa" : "Inativa"}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingConsultoria(consultoria);
-                          setIsEditModalOpen(true);
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja excluir esta consultoria?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteMutation.mutate(consultoria.id)}>
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    <TableRow key={consultoria.id}>
+                      <TableCell className="p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleRowExpansion(consultoria.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          {expandedRows.has(consultoria.id) ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{consultoria.nome}</div>
+                          {consultoria.razaoSocial && (
+                            <div className="text-sm text-slate-500">{consultoria.razaoSocial}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{consultoria.responsavel || '-'}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {consultoria.email && (
+                            <div className="flex items-center text-sm">
+                              <Mail className="w-3 h-3 mr-1" />
+                              {consultoria.email}
+                            </div>
+                          )}
+                          {consultoria.whatsapp && (
+                            <div className="flex items-center text-sm">
+                              <MessageSquare className="w-3 h-3 mr-1" />
+                              {consultoria.whatsapp}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <Badge variant={consultoria.ativo ? "default" : "secondary"}>
+                            {consultoria.ativo ? "Ativa" : "Inativa"}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingConsultoria(consultoria);
+                            setIsEditModalOpen(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir esta consultoria?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(consultoria.id)}>
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                    <ClientesVinculadosRow consultoriaId={consultoria.id} />
+                  </>
                 ))}
               </TableBody>
             </Table>
