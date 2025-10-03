@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, consultorias, clienteConsultoria, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertConsultoria, type InsertClienteConsultoria, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Consultoria, type ClienteConsultoria, type HardwareLicenseQuery } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -69,19 +69,6 @@ export interface IStorage {
   deleteClienteHistorico(id: number): Promise<void>;
   getClientesList(): Promise<{code: string, nomeCliente: string}[]>;
   getAmbientesByCliente(codigoCliente: string): Promise<string[]>;
-
-  // Consultoria operations
-  getConsultorias(): Promise<Consultoria[]>;
-  getConsultoria(id: number): Promise<Consultoria | undefined>;
-  createConsultoria(consultoria: InsertConsultoria): Promise<Consultoria>;
-  updateConsultoria(id: number, consultoria: Partial<InsertConsultoria>): Promise<Consultoria>;
-  deleteConsultoria(id: number): Promise<void>;
-
-  // Cliente-Consultoria methods
-  getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]>;
-  createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria>;
-  deleteClienteConsultoria(id: number): Promise<void>;
-  getConsultoriaByCliente(codigoCliente: string): Promise<ClienteConsultoria | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -678,99 +665,6 @@ export class DbStorage implements IStorage {
             console.error("Erro ao buscar ambientes do cliente:", error);
             throw error;
         }
-    }
-
-    // Consultoria operations
-    async getConsultorias(): Promise<Consultoria[]> {
-        return await db.select().from(consultorias).orderBy(desc(consultorias.id));
-    }
-
-    async getConsultoria(id: number): Promise<Consultoria | undefined> {
-        const result = await db.select().from(consultorias).where(eq(consultorias.id, id));
-        return result[0];
-    }
-
-    async createConsultoria(consultoria: InsertConsultoria): Promise<Consultoria> {
-        const result = await db.insert(consultorias).values(consultoria).returning();
-        return result[0];
-    }
-
-    async updateConsultoria(id: number, consultoria: Partial<InsertConsultoria>): Promise<Consultoria> {
-        const result = await db
-            .update(consultorias)
-            .set(consultoria)
-            .where(eq(consultorias.id, id))
-            .returning();
-        return result[0];
-    }
-
-    async deleteConsultoria(id: number): Promise<void> {
-        try {
-            await db
-                .delete(consultorias)
-                .where(eq(consultorias.id, id));
-        } catch (error) {
-            console.error("Erro ao deletar consultoria:", error);
-            throw error;
-        }
-    }
-
-    // Cliente-Consultoria methods
-    async getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]> {
-        try {
-            const result = await db
-                .select()
-                .from(clienteConsultoria)
-                .where(eq(clienteConsultoria.consultoriaId, consultoriaId))
-                .orderBy(desc(clienteConsultoria.dataInicio));
-            return result;
-        } catch (error) {
-            console.error("Erro ao buscar clientes da consultoria:", error);
-            throw error;
-        }
-    }
-
-    async createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria> {
-        try {
-            const result = await db
-                .insert(clienteConsultoria)
-                .values(data)
-                .returning();
-            return result[0];
-        } catch (error) {
-            console.error("Erro ao vincular cliente à consultoria:", error);
-            throw error;
-        }
-    }
-
-    async deleteClienteConsultoria(id: number): Promise<void> {
-        try {
-            // Marca como finalizado ao invés de deletar
-            await db
-                .update(clienteConsultoria)
-                .set({ dataFim: new Date() })
-                .where(eq(clienteConsultoria.id, id));
-        } catch (error) {
-            console.error("Erro ao desvincular cliente da consultoria:", error);
-            throw error;
-        }
-    }
-
-    async getConsultoriaByCliente(codigoCliente: string): Promise<ClienteConsultoria | undefined> {
-      try {
-        const result = await db
-          .select()
-          .from(clienteConsultoria)
-          .where(and(
-            eq(clienteConsultoria.codigoCliente, codigoCliente),
-            isNull(clienteConsultoria.dataFim)
-          ))
-          .limit(1);
-        return result[0];
-      } catch (error) {
-        console.error("Erro ao buscar consultoria do cliente:", error);
-        throw error;
-      }
     }
 }
 
