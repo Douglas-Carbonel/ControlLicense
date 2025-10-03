@@ -20,6 +20,7 @@ The system features a modern UI built with shadcn/ui components. It incorporates
 - **Performance**: Features include a 300ms debounce for optimized search functionality, batch processing of imports (50 records per batch), optimized query caching (5 min `staleTime`, 10 min `gcTime`), and memoization for filters to reduce re-renders. CSS optimizations (`will-change`, smooth transitions) enhance user experience.
 - **Core Features**:
     - **License Management**: Comprehensive CRUD operations for licenses with status tracking.
+    - **Representatives Management**: Full CRUD system for managing representatives (representantes) with ability to link licenses to principal and secondary representatives.
     - **Data Import**: Functionality for importing license data from CSV/Excel files.
     - **Activity Logging**: Detailed tracking and auditing of all system activities, categorized and filterable.
     - **Statistics Dashboard**: Provides real-time license statistics.
@@ -70,6 +71,43 @@ The system is optimized for the Replit environment, featuring a robust developme
 **Previous Setup History** (from earlier work sessions):
 - **Support Dashboard Implementation**: Specialized dashboard for technical support users
 - **Bug Fixes**: Various import and form field fixes in previous sessions
+
+### Representatives Management System Implementation (October 3, 2025)
+**Status**: ✅ Successfully implemented and tested
+
+**Implementation Details**:
+1. **Database Schema**: 
+   - Created `representantes` table in shared/schema.ts with fields: nome, razaoSocial, cnpj, email, telefone, whatsapp, responsavel, ativo, observacoes
+   - Added foreign key fields to licenses table: representantePrincipalId, representanteSecundarioId
+   - Schema synchronized with database using `drizzle-kit push`
+
+2. **Backend Implementation**:
+   - Added full CRUD methods to storage interface (IStorage) in server/storage.ts
+   - Implemented all representantes methods in DbStorage class
+   - Created RESTful API endpoints in server/routes.ts:
+     - GET /api/representantes (list all)
+     - GET /api/representantes/:id (get by ID)
+     - POST /api/representantes (create)
+     - PUT /api/representantes/:id (update)
+     - DELETE /api/representantes/:id (delete)
+   - All endpoints include authentication, admin authorization, and activity logging
+
+3. **Frontend Implementation**:
+   - Created dedicated representantes management page (client/src/pages/representantes.tsx)
+   - Added menu item "Representantes" in sidebar (visible to admin users only)
+   - Integrated representative selection in license edit modal with dropdown selects for principal and secondary representatives
+   - Implemented complete UI with create, edit, delete, and list functionality
+   - Added proper form validation and error handling with toast notifications
+
+4. **Code Cleanup**:
+   - Removed obsolete consultorias.tsx file
+   - Updated all references from "consultorias" to "representantes"
+   - No LSP errors, code compiles cleanly
+
+5. **Integration**:
+   - Licenses can now be linked to principal and secondary representatives
+   - Representative data is loaded via TanStack Query with proper caching
+   - Only active representatives are shown in selection dropdowns
 
 ## External Dependencies
 
