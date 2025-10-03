@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building2, Plus, Edit, Trash2, Users, Phone, Mail, MessageSquare } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Building2, Plus, Edit, Trash2, Users, Phone, Mail, MessageSquare, X, Search } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +32,20 @@ interface Consultoria {
   updatedAt: string;
 }
 
+interface Cliente {
+  code: string;
+  nomeCliente: string;
+}
+
+interface ClienteConsultoria {
+  id: number;
+  codigoCliente: string;
+  consultoriaId: number;
+  dataInicio: string;
+  dataFim?: string;
+  observacoes?: string;
+}
+
 export default function Consultorias() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -39,6 +55,15 @@ export default function Consultorias() {
 
   const { data: consultorias, isLoading } = useQuery({
     queryKey: ["/api/consultorias"],
+  });
+
+  const { data: todosClientes } = useQuery({
+    queryKey: ["/api/clientes/lista"],
+  });
+
+  const { data: clientesConsultoria } = useQuery({
+    queryKey: ["/api/cliente-consultoria", editingConsultoria?.id],
+    enabled: !!editingConsultoria?.id,
   });
 
   const createMutation = useMutation({
@@ -73,6 +98,26 @@ export default function Consultorias() {
     },
   });
 
+  const addClienteMutation = useMutation({
+    mutationFn: async (data: { codigoCliente: string; consultoriaId: number }) => {
+      return await apiRequest("POST", "/api/cliente-consultoria", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cliente-consultoria"] });
+      toast({ title: "Sucesso", description: "Cliente vinculado com sucesso!" });
+    },
+  });
+
+  const removeClienteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/cliente-consultoria/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cliente-consultoria"] });
+      toast({ title: "Sucesso", description: "Cliente desvinculado com sucesso!" });
+    },
+  });
+
   const ConsultoriaForm = ({ isEdit = false, initialData = null, onSubmit }: any) => {
     const [formData, setFormData] = useState({
       nome: initialData?.nome || "",
@@ -86,10 +131,34 @@ export default function Consultorias() {
       observacoes: initialData?.observacoes || "",
     });
 
+    const [selectedCliente, setSelectedCliente] = useState("");
+    const [searchCliente, setSearchCliente] = useState("");
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       onSubmit(formData);
     };
+
+    const handleAddCliente = () => {
+      if (!selectedCliente || !initialData?.id) return;
+      
+      addClienteMutation.mutate({
+        codigoCliente: selectedCliente,
+        consultoriaId: initialData.id,
+      });
+      setSelectedCliente("");
+      setSearchCliente("");
+    };
+
+    const clientesVinculados = clientesConsultoria?.filter((cc: ClienteConsultoria) => !cc.dataFim) || [];
+    const clientesDisponiveis = todosClientes?.filter((cliente: Cliente) => 
+      !clientesVinculados.some((cc: ClienteConsultoria) => cc.codigoCliente === cliente.code)
+    ) || [];
+
+    const filteredClientes = clientesDisponiveis.filter((cliente: Cliente) => 
+      cliente.code.toLowerCase().includes(searchCliente.toLowerCase()) ||
+      cliente.nomeCliente.toLowerCase().includes(searchCliente.toLowerCase())
+    );
 
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -170,6 +239,112 @@ export default function Consultorias() {
             rows={3}
           />
         </div>
+
+        {isEdit && initialData?.id && (
+          <div className="border-t pt-4 mt-4">
+            <Label className="text-base font-semibold mb-3 block">Clientes Vinculados</Label>
+            
+            {/* Adicionar Cliente */}
+            <div className="flex gap-2 mb-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start pl-10">
+                      {selectedCliente ? (
+                        <span>
+                          {todosClientes?.find((c: Cliente) => c.code === selectedCliente)?.code} - {todosClientes?.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">Selecionar cliente...</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[500px] p-0">
+                    <div className="p-2 border-b">
+                      <Input
+                        placeholder="Buscar cliente..."
+                        value={searchCliente}
+                        onChange={(e) => setSearchCliente(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto">
+                      {filteredClientes.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-gray-500">
+                          Nenhum cliente disponível
+                        </div>
+                      ) : (
+                        filteredClientes.map((cliente: Cliente) => (
+                          <Button
+                            key={cliente.code}
+                            variant="ghost"
+                            className="w-full justify-start p-2 h-auto"
+                            onClick={() => {
+                              setSelectedCliente(cliente.code);
+                            }}
+                          >
+                            <div className="text-left">
+                              <div className="font-medium">{cliente.code}</div>
+                              <div className="text-xs text-gray-500">{cliente.nomeCliente}</div>
+                            </div>
+                          </Button>
+                        ))
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Button type="button" onClick={handleAddCliente} disabled={!selectedCliente}>
+                <Plus className="w-4 h-4 mr-1" />
+                Adicionar
+              </Button>
+            </div>
+
+            {/* Lista de Clientes Vinculados */}
+            {clientesVinculados.length > 0 ? (
+              <div className="space-y-2">
+                {clientesVinculados.map((cc: ClienteConsultoria) => {
+                  const cliente = todosClientes?.find((c: Cliente) => c.code === cc.codigoCliente);
+                  return (
+                    <div key={cc.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
+                      <div>
+                        <div className="font-medium">{cc.codigoCliente}</div>
+                        <div className="text-sm text-gray-600">{cliente?.nomeCliente}</div>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Desvincular Cliente</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja desvincular este cliente da consultoria?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => removeClienteMutation.mutate(cc.id)}>
+                              Desvincular
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-sm text-gray-500">
+                Nenhum cliente vinculado ainda
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={() => isEdit ? setIsEditModalOpen(false) : setIsCreateModalOpen(false)}>
             Cancelar
@@ -257,9 +432,11 @@ export default function Consultorias() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={consultoria.ativo ? "default" : "secondary"}>
-                        {consultoria.ativo ? "Ativa" : "Inativa"}
-                      </Badge>
+                      <div className="space-y-1">
+                        <Badge variant={consultoria.ativo ? "default" : "secondary"}>
+                          {consultoria.ativo ? "Ativa" : "Inativa"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button

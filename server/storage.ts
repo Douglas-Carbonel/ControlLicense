@@ -4,7 +4,7 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type HardwareLicenseQuery } from "@shared/schema";
+import { licenses, users, activities, mensagemSistema, clienteHistorico, consultorias, clienteConsultoria, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertConsultoria, type InsertClienteConsultoria, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Consultoria, type ClienteConsultoria, type HardwareLicenseQuery } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -69,6 +69,18 @@ export interface IStorage {
   deleteClienteHistorico(id: number): Promise<void>;
   getClientesList(): Promise<{code: string, nomeCliente: string}[]>;
   getAmbientesByCliente(codigoCliente: string): Promise<string[]>;
+
+  // Consultoria operations
+  getConsultorias(): Promise<Consultoria[]>;
+  getConsultoria(id: number): Promise<Consultoria | undefined>;
+  createConsultoria(consultoria: InsertConsultoria): Promise<Consultoria>;
+  updateConsultoria(id: number, consultoria: Partial<InsertConsultoria>): Promise<Consultoria>;
+  deleteConsultoria(id: number): Promise<void>;
+
+  // Cliente-Consultoria methods
+  getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]>;
+  createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria>;
+  deleteClienteConsultoria(id: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -80,9 +92,9 @@ export class DbStorage implements IStorage {
 
   async getPaginatedLicenses(offset: number, limit: number, search?: string): Promise<License[]> {
     const conditions = search ? this.buildSearchConditions(search) : [];
-    
+
     let query = db.select().from(licenses);
-    
+
     if (conditions.length > 0) {
       query = query.where(or(...conditions)) as any;
     }
@@ -97,9 +109,9 @@ export class DbStorage implements IStorage {
 
   async getLicensesCount(search?: string): Promise<number> {
     const conditions = search ? this.buildSearchConditions(search) : [];
-    
+
     let query = db.select({ count: count() }).from(licenses);
-    
+
     if (conditions.length > 0) {
       query = query.where(or(...conditions)) as any;
     }
@@ -179,15 +191,15 @@ export class DbStorage implements IStorage {
     const maxLinha = await db
       .select({ maxLinha: sql<number>`MAX(${licenses.linha})` })
       .from(licenses);
-    
+
     const nextLinha = (maxLinha[0]?.maxLinha || 0) + 1;
-    
+
     // Adicionar o campo linha automaticamente
     const licenseWithLinha = {
       ...license,
       linha: nextLinha
     };
-    
+
     const result = await db.insert(licenses).values(licenseWithLinha).returning();
     return result[0];
   }
@@ -291,9 +303,9 @@ export class DbStorage implements IStorage {
 
   async getUnreadActivityCount(userId: string): Promise<number> {
     const lastSeen = this.lastSeenActivityAt.get(userId);
-    
+
     console.log(`[UNREAD] Checking unread count for user ${userId}, lastSeen:`, lastSeen);
-    
+
     if (!lastSeen) {
       const [result] = await db.select({ count: count() }).from(activities);
       console.log(`[UNREAD] No lastSeen for user ${userId}, total activities: ${result.count}`);
@@ -304,7 +316,7 @@ export class DbStorage implements IStorage {
       .select({ count: count() })
       .from(activities)
       .where(sql`${activities.timestamp} > ${lastSeen.toISOString()}`);
-    
+
     console.log(`[UNREAD] User ${userId} has ${result.count} unread activities (since ${lastSeen.toISOString()})`);
     return result.count;
   }
@@ -488,7 +500,7 @@ export class DbStorage implements IStorage {
                 .selectDistinct({ nomeDb: licenses.nomeDb })
                 .from(licenses)
                 .where(and(
-                    not(isNull(licenses.nomeDb)), 
+                    not(isNull(licenses.nomeDb)),
                     eq(licenses.ativo, true)
                 ))
                 .orderBy(asc(licenses.nomeDb));
@@ -554,17 +566,17 @@ export class DbStorage implements IStorage {
     async getClienteHistorico(codigoCliente?: string): Promise<ClienteHistorico[]> {
         try {
             console.log(`Buscando histórico para cliente: ${codigoCliente}`);
-            
+
             let query = db.select().from(clienteHistorico);
-            
+
             if (codigoCliente) {
                 query = query.where(eq(clienteHistorico.codigoCliente, codigoCliente)) as any;
             }
-            
+
             const result = await query.orderBy(desc(clienteHistorico.createdAt));
             console.log(`Resultado da busca: ${result.length} registros encontrados`);
             console.log(`Dados do resultado:`, JSON.stringify(result, null, 2));
-            
+
             // Garantir que sempre retorna um array
             const finalResult = Array.isArray(result) ? result : [];
             console.log(`Retornando array final:`, finalResult.length, 'items');
@@ -663,6 +675,82 @@ export class DbStorage implements IStorage {
             return result.map(row => row.nomeDb).filter(Boolean) as string[];
         } catch (error) {
             console.error("Erro ao buscar ambientes do cliente:", error);
+            throw error;
+        }
+    }
+
+    // Consultoria operations
+    async getConsultorias(): Promise<Consultoria[]> {
+        return await db.select().from(consultorias).orderBy(desc(consultorias.id));
+    }
+
+    async getConsultoria(id: number): Promise<Consultoria | undefined> {
+        const result = await db.select().from(consultorias).where(eq(consultorias.id, id));
+        return result[0];
+    }
+
+    async createConsultoria(consultoria: InsertConsultoria): Promise<Consultoria> {
+        const result = await db.insert(consultorias).values(consultoria).returning();
+        return result[0];
+    }
+
+    async updateConsultoria(id: number, consultoria: Partial<InsertConsultoria>): Promise<Consultoria> {
+        const result = await db
+            .update(consultorias)
+            .set(consultoria)
+            .where(eq(consultorias.id, id))
+            .returning();
+        return result[0];
+    }
+
+    async deleteConsultoria(id: number): Promise<void> {
+        try {
+            await db
+                .delete(consultorias)
+                .where(eq(consultorias.id, id));
+        } catch (error) {
+            console.error("Erro ao deletar consultoria:", error);
+            throw error;
+        }
+    }
+
+    // Cliente-Consultoria methods
+    async getClientesByConsultoria(consultoriaId: number): Promise<ClienteConsultoria[]> {
+        try {
+            const result = await db
+                .select()
+                .from(clienteConsultoria)
+                .where(eq(clienteConsultoria.consultoriaId, consultoriaId))
+                .orderBy(desc(clienteConsultoria.dataInicio));
+            return result;
+        } catch (error) {
+            console.error("Erro ao buscar clientes da consultoria:", error);
+            throw error;
+        }
+    }
+
+    async createClienteConsultoria(data: InsertClienteConsultoria): Promise<ClienteConsultoria> {
+        try {
+            const result = await db
+                .insert(clienteConsultoria)
+                .values(data)
+                .returning();
+            return result[0];
+        } catch (error) {
+            console.error("Erro ao vincular cliente à consultoria:", error);
+            throw error;
+        }
+    }
+
+    async deleteClienteConsultoria(id: number): Promise<void> {
+        try {
+            // Marca como finalizado ao invés de deletar
+            await db
+                .update(clienteConsultoria)
+                .set({ dataFim: new Date() })
+                .where(eq(clienteConsultoria.id, id));
+        } catch (error) {
+            console.error("Erro ao desvincular cliente da consultoria:", error);
             throw error;
         }
     }

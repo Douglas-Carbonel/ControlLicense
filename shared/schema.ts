@@ -1,6 +1,7 @@
 import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
 export const licenses = pgTable("licenses", {
   id: serial("id").primaryKey(),
@@ -289,7 +290,7 @@ export const insertClienteConsultoriaSchema = createInsertSchema(clienteConsulto
   }),
 });
 
-export type Consultoria = typeof consultorias.$inferSelect;
+export type Consultoria = InferSelectModel<typeof consultorias>;
 export type InsertConsultoria = z.infer<typeof insertConsultoriaSchema>;
-export type ClienteConsultoria = typeof clienteConsultoria.$inferSelect;
+export type ClienteConsultoria = InferSelectModel<typeof clienteConsultoria>;
 export type InsertClienteConsultoria = z.infer<typeof insertClienteConsultoriaSchema>;
