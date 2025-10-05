@@ -358,7 +358,7 @@ export default function ChamadosPage() {
                 </div>
               )}
 
-              {user?.role === 'representante' && userData && (() => {
+              {user?.role === 'representante' && (() => {
                 const currentUser = Array.isArray(userData) 
                   ? userData.find((u: any) => u.id === user.id)
                   : userData;
@@ -396,7 +396,7 @@ export default function ChamadosPage() {
                   return temRepresentante;
                 });
 
-                console.log('Clientes filtrados:', clientesDoRepresentante.length);
+                console.log('Clientes filtrados para representante:', clientesDoRepresentante.length);
 
                 return (
                   <div className="space-y-2">
@@ -417,8 +417,8 @@ export default function ChamadosPage() {
                             Nenhum cliente vinculado a este representante
                           </div>
                         ) : (
-                          clientesDoRepresentante.map(cliente => (
-                            <SelectItem key={cliente.code} value={cliente.code}>
+                          clientesDoRepresentante.map((cliente, index) => (
+                            <SelectItem key={`${cliente.code}-${index}`} value={cliente.code}>
                               {cliente.code} - {cliente.nomeCliente}
                             </SelectItem>
                           ))
