@@ -1488,14 +1488,14 @@ export default function Licenses() {
                       <div>
                         <Label htmlFor="edit-representantePrincipalId" className="text-[#0c151f] font-medium">Representante Principal</Label>
                         <Select
-                          value={editingLicense.representantePrincipalId?.toString() || ''}
-                          onValueChange={(value) => handleFieldChange('representantePrincipalId', value ? parseInt(value) : null)}
+                          value={editingLicense.representantePrincipalId?.toString() || 'none'}
+                          onValueChange={(value) => handleFieldChange('representantePrincipalId', value === 'none' ? null : parseInt(value))}
                         >
                           <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da] mt-1">
                             <SelectValue placeholder="Selecione um representante" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {representantes.filter(r => r.ativo).map((rep: any) => (
                               <SelectItem key={rep.id} value={rep.id.toString()}>
                                 {rep.nome}
@@ -1507,14 +1507,14 @@ export default function Licenses() {
                       <div>
                         <Label htmlFor="edit-representanteSecundarioId" className="text-[#0c151f] font-medium">Representante Secundário</Label>
                         <Select
-                          value={editingLicense.representanteSecundarioId?.toString() || ''}
-                          onValueChange={(value) => handleFieldChange('representanteSecundarioId', value ? parseInt(value) : null)}
+                          value={editingLicense.representanteSecundarioId?.toString() || 'none'}
+                          onValueChange={(value) => handleFieldChange('representanteSecundarioId', value === 'none' ? null : parseInt(value))}
                         >
                           <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da] mt-1">
                             <SelectValue placeholder="Selecione um representante" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum</SelectItem>
                             {representantes.filter(r => r.ativo).map((rep: any) => (
                               <SelectItem key={rep.id} value={rep.id.toString()}>
                                 {rep.nome}
