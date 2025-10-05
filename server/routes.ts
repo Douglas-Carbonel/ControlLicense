@@ -225,28 +225,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rotas de gerenciamento de usuários (apenas admin)
-  app.get("/api/users", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+  app.get("/api/users", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const users = await storage.getUsers();
-      // Não enviar hash da senha
-      const safeUsers = users.map(user => ({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        active: user.active,
-        tipoUsuario: user.tipoUsuario,
-        representanteId: user.representanteId,
-        clienteId: user.clienteId,
-        setor: user.setor,
-        nivel: user.nivel,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      }));
-      res.json(safeUsers);
+      // Admin e interno podem ver todos os usuários
+      if (req.user?.role === 'admin' || req.user?.role === 'interno') {
+        const allUsers = await db.select().from(storage.schema.users); // Use storage.schema.users here
+        const usersWithoutPassword = allUsers.map(({ passwordHash, ...user }) => user); // Use passwordHash here
+        return res.json(usersWithoutPassword);
+      }
+
+      // Representantes e clientes podem ver apenas seus próprios dados
+      const user = await db.select()
+        .from(storage.schema.users) // Use storage.schema.users here
+        .where(eq(storage.schema.users.id, req.user!.id)) // Use storage.schema.users here
+        .limit(1);
+
+      if (user.length === 0) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      const { passwordHash, ...userWithoutPassword } = user[0]; // Use passwordHash here
+      res.json([userWithoutPassword]); // Retorna como array para manter compatibilidade
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Erro ao buscar usuários:", error);
       res.status(500).json({ message: "Erro ao buscar usuários" });
     }
   });
@@ -1535,7 +1536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clientes/lista", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const clientes = await storage.getClientesList();
-      
+
       // Debug para representantes
       if (req.user?.role === 'representante') {
         const currentUser = await storage.getUser(req.user.id);
@@ -1545,7 +1546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           representanteId: currentUser?.representanteId
         });
       }
-      
+
       res.json(clientes);
     } catch (error) {
       console.error("Error fetching clientes list:", error);
