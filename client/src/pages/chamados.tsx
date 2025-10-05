@@ -80,6 +80,7 @@ export default function ChamadosPage() {
     descricao: '',
     prioridade: 'MEDIA',
     clienteId: '',
+    solicitanteId: user?.id || null as number | null,
     representanteId: null as number | null,
     dataPrevisao: '',
     observacoes: ''
@@ -133,6 +134,7 @@ export default function ChamadosPage() {
         descricao: '',
         prioridade: 'MEDIA',
         clienteId: '',
+        solicitanteId: user?.id || null,
         representanteId: null,
         dataPrevisao: '',
         observacoes: ''
@@ -190,12 +192,27 @@ export default function ChamadosPage() {
   const handleCreateChamado = () => {
     // Determinar clienteId baseado no tipo de usuário
     let finalClienteId = newChamado.clienteId;
+    let finalRepresentanteId = newChamado.representanteId;
 
-    if (user?.role === 'cliente_final' && userData) {
-      const currentUser = Array.isArray(userData) 
-        ? userData.find((u: any) => u.id === user.id)
-        : userData;
-      finalClienteId = currentUser?.clienteId || '';
+    const currentUser = Array.isArray(userData) 
+      ? userData.find((u: any) => u.id === user?.id)
+      : userData;
+
+    // Se é cliente final sem representante, usa seu próprio clienteId
+    if (user?.role === 'cliente_final' && currentUser) {
+      finalClienteId = currentUser.clienteId || '';
+      
+      // Verificar se tem representante
+      const clienteLicense = clientes.find((c: Cliente) => c.code === finalClienteId);
+      if (clienteLicense) {
+        const licenseData = clientesData?.data?.find((l: any) => l.code === finalClienteId);
+        finalRepresentanteId = licenseData?.representantePrincipalId || licenseData?.representanteSecundarioId || null;
+      }
+    }
+
+    // Se é representante, usa o representanteId dele
+    if (user?.role === 'representante' && currentUser) {
+      finalRepresentanteId = currentUser.representanteId;
     }
 
     if (!newChamado.categoria || !newChamado.titulo || !newChamado.descricao || !finalClienteId) {
@@ -209,7 +226,9 @@ export default function ChamadosPage() {
 
     createChamadoMutation.mutate({
       ...newChamado,
-      clienteId: finalClienteId
+      clienteId: finalClienteId,
+      representanteId: finalRepresentanteId,
+      solicitanteId: user?.id || null
     });
   };
 
@@ -339,47 +358,49 @@ export default function ChamadosPage() {
                 </div>
               )}
 
-              {user?.role === 'representante' && (
-                <div className="space-y-2">
-                  <Label htmlFor="clienteId" className="text-base font-semibold flex items-center gap-2">
-                    Cliente
-                    <span className="text-red-500 text-lg">*</span>
-                  </Label>
-                  <Select
-                    value={newChamado.clienteId}
-                    onValueChange={(value) => setNewChamado({ ...newChamado, clienteId: value })}
-                  >
-                    <SelectTrigger className={`h-11 ${!newChamado.clienteId ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes
-                        .filter(cliente => {
-                          // Buscar dados do usuário representante
-                          const currentUser = Array.isArray(userData) 
-                            ? userData.find((u: any) => u.id === user.id)
-                            : userData;
+              {user?.role === 'representante' && userData && (() => {
+                const currentUser = Array.isArray(userData) 
+                  ? userData.find((u: any) => u.id === user.id)
+                  : userData;
 
-                          // Buscar licença do cliente para verificar representantes
-                          return clientesData?.data?.some((lic: any) => 
-                            lic.code === cliente.code && 
-                            (lic.representantePrincipalId === currentUser?.representanteId || 
-                             lic.representanteSecundarioId === currentUser?.representanteId)
-                          );
-                        })
-                        .map(cliente => (
+                const clientesDoRepresentante = clientes.filter(cliente => {
+                  return clientesData?.data?.some((lic: any) => 
+                    lic.code === cliente.code && 
+                    (lic.representantePrincipalId === currentUser?.representanteId || 
+                     lic.representanteSecundarioId === currentUser?.representanteId)
+                  );
+                });
+
+                return (
+                  <div className="space-y-2">
+                    <Label htmlFor="clienteId" className="text-base font-semibold flex items-center gap-2">
+                      Cliente que está solicitando
+                      <span className="text-red-500 text-lg">*</span>
+                    </Label>
+                    <Select
+                      value={newChamado.clienteId}
+                      onValueChange={(value) => setNewChamado({ ...newChamado, clienteId: value })}
+                    >
+                      <SelectTrigger className={`h-11 ${!newChamado.clienteId ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
+                        <SelectValue placeholder="Selecione qual cliente está solicitando" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clientesDoRepresentante.map(cliente => (
                           <SelectItem key={cliente.code} value={cliente.code}>
                             {cliente.code} - {cliente.nomeCliente}
                           </SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                  {!newChamado.clienteId && (
-                    <p className="text-xs text-red-500">Este campo é obrigatório</p>
-                  )}
-                </div>
-              )}
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!newChamado.clienteId && (
+                      <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                    )}
+                    <p className="text-xs text-slate-500">
+                      Você está abrindo este chamado em nome de um cliente
+                    </p>
+                  </div>
+                );
+              })()}
 
               {user?.role === 'cliente_final' && userData && (
                 <div className="space-y-2">

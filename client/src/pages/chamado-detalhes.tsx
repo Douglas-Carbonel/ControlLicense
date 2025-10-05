@@ -500,11 +500,19 @@ export default function ChamadoDetalhesPage() {
                 </div>
               )}
 
+              {/* Cliente */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Cliente</Label>
+                <div className="px-3 py-2 bg-slate-50 rounded-md text-sm text-slate-900" data-testid="text-cliente">
+                  {chamado.clienteId}
+                </div>
+              </div>
+
               {/* Solicitante */}
               <div className="mb-4">
                 <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Solicitante</Label>
                 <div className="px-3 py-2 bg-slate-50 rounded-md text-sm text-slate-900" data-testid="text-solicitante">
-                  {chamado.clienteId}
+                  {chamado.solicitante?.name || 'Não informado'}
                 </div>
               </div>
 

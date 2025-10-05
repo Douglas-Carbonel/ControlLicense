@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS chamados (
     status TEXT NOT NULL DEFAULT 'ABERTO',
     prioridade TEXT NOT NULL DEFAULT 'MEDIA',
     usuario_abertura_id INTEGER NOT NULL,
+    solicitante_id INTEGER NOT NULL,
     cliente_id TEXT NOT NULL,
     representante_id INTEGER,
     atendente_id INTEGER,

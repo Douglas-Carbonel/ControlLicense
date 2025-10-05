@@ -27,11 +27,11 @@ export const licenses = pgTable("licenses", {
   modulo3: boolean("modulo3").default(false), // Módulo 3
   modulo4: boolean("modulo4").default(false), // Módulo 4
   modulo5: boolean("modulo5").default(false), // Módulo 5
-  
+
   // Relacionamento com Representantes
   representantePrincipalId: integer("representante_principal_id"), // Pode ser NULL
   representanteSecundarioId: integer("representante_secundario_id"), // Pode ser NULL
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -47,16 +47,16 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("support"), // 'admin', 'support', 'representante', 'cliente_final', 'interno'
   name: text("name").notNull(),
   active: boolean("active").notNull().default(true),
-  
+
   // Campos para usuários externos (representante/cliente_final)
   tipoUsuario: text("tipo_usuario"), // 'gerente' ou 'analista' (apenas para representante/cliente_final)
   representanteId: integer("representante_id"), // Se role = 'representante', referencia a qual representante pertence
   clienteId: text("cliente_id"), // Se role = 'cliente_final', referencia a qual cliente pertence (licenses.code)
-  
+
   // Campos para usuários internos
   setor: text("setor"), // 'desenvolvimento', 'suporte', 'implantacao', 'comercial'
   nivel: text("nivel"), // Para suporte: 'analista_n1', 'analista_n2', 'analista_n3', 'gerente' | Para desenvolvimento: 'dev_web', 'dev_app'
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -291,24 +291,25 @@ export const chamados = pgTable("chamados", {
   descricao: text("descricao").notNull(),
   status: text("status").notNull().default('ABERTO'), // 'ABERTO', 'PENDENTE', 'SOLUCIONADO', 'FECHADO'
   prioridade: text("prioridade").notNull().default('MEDIA'), // 'BAIXA', 'MEDIA', 'ALTA', 'URGENTE'
-  
+
   // Relacionamentos
   usuarioAberturaId: integer("usuario_abertura_id").notNull(), // Quem abriu o chamado
+  solicitanteId: integer("solicitante_id").notNull(),
   clienteId: text("cliente_id").notNull(), // Cliente relacionado (licenses.code)
   representanteId: integer("representante_id"), // Se aplicável
-  
+
   // Atribuição interna
   atendenteId: integer("atendente_id"), // Usuário interno responsável
-  
+
   // Datas
   dataAbertura: timestamp("data_abertura").defaultNow().notNull(),
   dataPrevisao: timestamp("data_previsao"),
   dataFechamento: timestamp("data_fechamento"),
-  
+
   // Campos adicionais
   observacoes: text("observacoes"),
   anexos: text("anexos").array(),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -418,11 +418,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const representante = await storage.getRepresentante(id);
-      
+
       if (!representante) {
         return res.status(404).json({ message: "Representante não encontrado" });
       }
-      
+
       res.json(representante);
     } catch (error) {
       console.error("Error fetching representante:", error);
@@ -459,7 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const data = insertRepresentanteSchema.partial().parse(req.body);
-      
+
       const representante = await storage.getRepresentante(id);
       if (!representante) {
         return res.status(404).json({ message: "Representante não encontrado" });
@@ -490,7 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/representantes/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       const representante = await storage.getRepresentante(id);
       if (!representante) {
         return res.status(404).json({ message: "Representante não encontrado" });
@@ -1321,12 +1321,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const chamado = await storage.getChamado(id);
-      
+
       if (!chamado) {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
 
-      res.json(chamado);
+      // Buscar informações do solicitante
+      let solicitante = null;
+      if (chamado.solicitanteId) {
+        solicitante = await storage.getUserById(chamado.solicitanteId);
+      }
+
+      res.json({ ...chamado, solicitante });
     } catch (error) {
       console.error("Error fetching chamado:", error);
       res.status(500).json({ message: "Erro ao buscar chamado" });
@@ -1406,7 +1412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const chamado = await storage.getChamado(id);
-      
+
       if (!chamado) {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
