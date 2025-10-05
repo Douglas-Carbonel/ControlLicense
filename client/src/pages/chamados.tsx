@@ -100,9 +100,16 @@ export default function ChamadosPage() {
   const clientes = clientesData?.data || [];
 
   // Buscar dados do usuário atual
-  const { data: userData } = useQuery({
+  const { data: userData, isLoading: isLoadingUser } = useQuery({
     queryKey: ["/api/users"],
     enabled: !!user,
+  });
+
+  console.log('UserData completo:', {
+    userData,
+    isLoadingUser,
+    currentUserId: user?.id,
+    userRole: user?.role
   });
 
   // Criar chamado
@@ -359,18 +366,21 @@ export default function ChamadosPage() {
               )}
 
               {user?.role === 'representante' && (() => {
-                const currentUser = Array.isArray(userData) 
-                  ? userData.find((u: any) => u.id === user.id)
-                  : userData;
+                // Buscar dados do usuário logado
+                const allUsers = Array.isArray(userData) ? userData : (userData ? [userData] : []);
+                const currentUser = allUsers.find((u: any) => u.id === user.id);
 
                 const representanteIdDoUsuario = currentUser?.representanteId;
 
                 console.log('Debug filtro representante:', {
                   currentUserId: currentUser?.id,
                   currentUserName: currentUser?.name,
+                  currentUserRole: currentUser?.role,
                   representanteId: representanteIdDoUsuario,
+                  currentUserCompleto: currentUser,
                   totalClientes: clientes?.length,
-                  totalLicenses: clientesData?.data?.length
+                  totalLicenses: clientesData?.data?.length,
+                  allUsersCount: allUsers.length
                 });
 
                 // Se não tem representanteId, não mostra nenhum cliente
