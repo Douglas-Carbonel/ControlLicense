@@ -286,7 +286,7 @@ export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;
 // Tabela de Chamados
 export const chamados = pgTable("chamados", {
   id: serial("id").primaryKey(),
-  numero: serial("numero"), // Número sequencial do chamado (auto-gerado)
+  numero: integer("numero").notNull().default(sql`nextval('chamados_numero_seq')`), // Número sequencial do chamado (auto-gerado)
   categoria: text("categoria").notNull(), // 'INSTALACAO', 'MELHORIA', 'BUG', 'ATENDIMENTO'
   titulo: text("titulo").notNull(),
   descricao: text("descricao").notNull(),
