@@ -712,7 +712,8 @@ export default function UsersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              )}</old_str>
+              )}
+              <div className="flex items-center space-x-3 pt-2"></old_str>
               <div className="flex items-center space-x-3 pt-2">
                 <Switch
                   id="edit-active"
