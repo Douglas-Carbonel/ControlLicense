@@ -246,6 +246,24 @@ export class DbStorage implements IStorage {
   }
 
   async updateLicense(id: number, license: Partial<InsertLicense>): Promise<License> {
+    // Se os representantes foram modificados, atualizar todas as linhas do mesmo cliente
+    if (license.representantePrincipalId !== undefined || license.representanteSecundarioId !== undefined) {
+      // Primeiro, buscar o code da licença atual
+      const currentLicense = await this.getLicense(id);
+      
+      if (currentLicense?.code) {
+        // Atualizar TODAS as licenças com o mesmo code
+        await db
+          .update(licenses)
+          .set({
+            representantePrincipalId: license.representantePrincipalId,
+            representanteSecundarioId: license.representanteSecundarioId
+          })
+          .where(eq(licenses.code, currentLicense.code));
+      }
+    }
+    
+    // Atualizar a licença específica com todos os campos
     const result = await db
       .update(licenses)
       .set(license)
@@ -284,6 +302,8 @@ export class DbStorage implements IStorage {
         modulo3: licenses.modulo3,
         modulo4: licenses.modulo4,
         modulo5: licenses.modulo5,
+        representantePrincipalId: licenses.representantePrincipalId,
+        representanteSecundarioId: licenses.representanteSecundarioId,
         createdAt: licenses.createdAt,
         updatedAt: licenses.updatedAt,
       })
