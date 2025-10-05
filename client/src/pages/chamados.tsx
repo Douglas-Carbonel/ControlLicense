@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Eye, Ticket, Clock, CheckCircle, XCircle, AlertTriangle, MessageSquare } from "lucide-react";
+import { Plus, Eye, Ticket, Clock, CheckCircle, XCircle, AlertTriangle, MessageSquare, Edit } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -724,6 +724,12 @@ function ChamadoDetailDialog({
 }: ChamadoDetailDialogProps) {
   const { toast } = useToast();
   const [newInteracao, setNewInteracao] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    status: chamado.status,
+    prioridade: chamado.prioridade,
+    observacoes: chamado.observacoes || ''
+  });
 
   // Buscar interações do chamado
   const { data: interacoes = [], refetch: refetchInteracoes } = useQuery({
@@ -735,6 +741,52 @@ function ChamadoDetailDialog({
   const { data: pendencias = [] } = useQuery({
     queryKey: [`/api/chamados/${chamado.id}/pendencias`],
     enabled: isOpen,
+  });
+
+  // Atualizar editData quando chamado mudar
+  useState(() => {
+    setEditData({
+      status: chamado.status,
+      prioridade: chamado.prioridade,
+      observacoes: chamado.observacoes || ''
+    });
+  });
+
+  // Mutation para atualizar chamado
+  const updateChamadoMutation = useMutation({
+    mutationFn: async (data: Partial<typeof editData>) => {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/chamados/${chamado.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao atualizar chamado");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
+      setIsEditing(false);
+      toast({
+        title: "Sucesso",
+        description: "Chamado atualizado com sucesso!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   // Criar interação
@@ -797,8 +849,12 @@ function ChamadoDetailDialog({
                 <DialogTitle className="text-2xl">
                   Chamado #{chamado.id}
                 </DialogTitle>
-                {getStatusBadge(chamado.status)}
-                {getPrioridadeBadge(chamado.prioridade)}
+                {!isEditing && (
+                  <>
+                    {getStatusBadge(editData.status)}
+                    {getPrioridadeBadge(editData.prioridade)}
+                  </>
+                )}
               </div>
               <div className="flex items-center space-x-2 text-slate-600">
                 {getCategoriaIcon(chamado.categoria)}
@@ -811,25 +867,121 @@ function ChamadoDetailDialog({
                 </span>
               </div>
             </div>
+            
+            {/* Botão de Editar (apenas para internos) */}
+            {(user?.role === 'admin' || user?.role === 'interno') && !isEditing && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="ml-4"
+              >
+                Editar
+              </Button>
+            )}
           </div>
 
           {/* Informações principais */}
           <div className="mt-4 p-4 bg-slate-50 rounded-lg">
             <h3 className="font-semibold text-lg mb-2">{chamado.titulo}</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-slate-600">Cliente:</span>
-                <span className="ml-2 font-medium">{chamado.clienteId}</span>
-              </div>
-              {chamado.dataPrevisao && (
-                <div>
-                  <span className="text-slate-600">Previsão:</span>
-                  <span className="ml-2 font-medium">
-                    {format(new Date(chamado.dataPrevisao), "dd/MM/yyyy", { locale: ptBR })}
-                  </span>
+            
+            {isEditing ? (
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={editData.status}
+                      onValueChange={(value) => setEditData({ ...editData, status: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS.map(s => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Prioridade</Label>
+                    <Select
+                      value={editData.prioridade}
+                      onValueChange={(value) => setEditData({ ...editData, prioridade: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRIORIDADES.map(p => (
+                          <SelectItem key={p.value} value={p.value}>
+                            {p.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    value={editData.observacoes}
+                    onChange={(e) => setEditData({ ...editData, observacoes: e.target.value })}
+                    placeholder="Adicione observações sobre o chamado..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => updateChamadoMutation.mutate(editData)}
+                    disabled={updateChamadoMutation.isPending}
+                    className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349]"
+                  >
+                    {updateChamadoMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditData({
+                        status: chamado.status,
+                        prioridade: chamado.prioridade,
+                        observacoes: chamado.observacoes || ''
+                      });
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-600">Cliente:</span>
+                  <span className="ml-2 font-medium">{chamado.clienteId}</span>
+                </div>
+                {chamado.dataPrevisao && (
+                  <div>
+                    <span className="text-slate-600">Previsão:</span>
+                    <span className="ml-2 font-medium">
+                      {format(new Date(chamado.dataPrevisao), "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                  </div>
+                )}
+                {editData.observacoes && (
+                  <div className="col-span-2 mt-2">
+                    <span className="text-slate-600">Observações:</span>
+                    <p className="mt-1 text-slate-700">{editData.observacoes}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </DialogHeader>
 
