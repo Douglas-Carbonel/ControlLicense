@@ -276,19 +276,29 @@ export default function ChamadosPage() {
               Novo Chamado
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Criar Novo Chamado</DialogTitle>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="space-y-3 pb-4 border-b">
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#0095da] to-[#313d5a] bg-clip-text text-transparent">
+                Criar Novo Chamado
+              </DialogTitle>
+              <p className="text-sm text-slate-500">
+                Preencha os dados abaixo para abrir um novo chamado de suporte
+              </p>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            
+            <div className="space-y-6 py-6">
+              {/* Categoria - Obrigatório */}
               <div className="space-y-2">
-                <Label htmlFor="categoria">Categoria *</Label>
+                <Label htmlFor="categoria" className="text-base font-semibold flex items-center gap-2">
+                  Categoria
+                  <span className="text-red-500 text-lg">*</span>
+                </Label>
                 <Select
                   value={newChamado.categoria}
                   onValueChange={(value) => setNewChamado({ ...newChamado, categoria: value })}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a categoria" />
+                  <SelectTrigger className={`h-11 ${!newChamado.categoria ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
+                    <SelectValue placeholder="Selecione a categoria do chamado" />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIAS.map(cat => (
@@ -298,17 +308,23 @@ export default function ChamadosPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {!newChamado.categoria && (
+                  <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                )}
               </div>
 
-              {/* Campo Cliente - comportamento baseado no tipo de usuário */}
+              {/* Campo Cliente - Obrigatório - comportamento baseado no tipo de usuário */}
               {(user?.role === 'admin' || user?.role === 'interno') && (
                 <div className="space-y-2">
-                  <Label htmlFor="clienteId">Cliente *</Label>
+                  <Label htmlFor="clienteId" className="text-base font-semibold flex items-center gap-2">
+                    Cliente
+                    <span className="text-red-500 text-lg">*</span>
+                  </Label>
                   <Select
                     value={newChamado.clienteId}
                     onValueChange={(value) => setNewChamado({ ...newChamado, clienteId: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`h-11 ${!newChamado.clienteId ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
                       <SelectValue placeholder="Selecione o cliente" />
                     </SelectTrigger>
                     <SelectContent>
@@ -319,17 +335,23 @@ export default function ChamadosPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {!newChamado.clienteId && (
+                    <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                  )}
                 </div>
               )}
 
               {user?.role === 'representante' && (
                 <div className="space-y-2">
-                  <Label htmlFor="clienteId">Cliente *</Label>
+                  <Label htmlFor="clienteId" className="text-base font-semibold flex items-center gap-2">
+                    Cliente
+                    <span className="text-red-500 text-lg">*</span>
+                  </Label>
                   <Select
                     value={newChamado.clienteId}
                     onValueChange={(value) => setNewChamado({ ...newChamado, clienteId: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={`h-11 ${!newChamado.clienteId ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
                       <SelectValue placeholder="Selecione o cliente" />
                     </SelectTrigger>
                     <SelectContent>
@@ -355,12 +377,17 @@ export default function ChamadosPage() {
                       }
                     </SelectContent>
                   </Select>
+                  {!newChamado.clienteId && (
+                    <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                  )}
                 </div>
               )}
 
               {user?.role === 'cliente_final' && userData && (
                 <div className="space-y-2">
-                  <Label htmlFor="clienteId">Cliente</Label>
+                  <Label htmlFor="clienteId" className="text-base font-semibold text-slate-600">
+                    Cliente
+                  </Label>
                   <Input
                     id="clienteId"
                     value={(() => {
@@ -373,73 +400,115 @@ export default function ChamadosPage() {
                         : currentUser?.clienteId || '';
                     })()}
                     disabled
-                    className="bg-slate-100"
+                    className="bg-slate-50 h-11 text-slate-600 border-slate-200"
                   />
                 </div>
               )}
 
+              {/* Título - Obrigatório */}
               <div className="space-y-2">
-                <Label htmlFor="titulo">Título *</Label>
+                <Label htmlFor="titulo" className="text-base font-semibold flex items-center gap-2">
+                  Título
+                  <span className="text-red-500 text-lg">*</span>
+                </Label>
                 <Input
                   id="titulo"
                   value={newChamado.titulo}
                   onChange={(e) => setNewChamado({ ...newChamado, titulo: e.target.value })}
-                  placeholder="Digite um título descritivo"
+                  placeholder="Digite um título claro e descritivo"
+                  className={`h-11 ${!newChamado.titulo ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}
                 />
+                {!newChamado.titulo && (
+                  <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                )}
               </div>
 
+              {/* Descrição - Obrigatório */}
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição *</Label>
+                <Label htmlFor="descricao" className="text-base font-semibold flex items-center gap-2">
+                  Descrição
+                  <span className="text-red-500 text-lg">*</span>
+                </Label>
                 <Textarea
                   id="descricao"
                   value={newChamado.descricao}
                   onChange={(e) => setNewChamado({ ...newChamado, descricao: e.target.value })}
-                  placeholder="Descreva detalhadamente o problema ou solicitação"
+                  placeholder="Descreva detalhadamente o problema, solicitação ou dúvida. Quanto mais informações, melhor poderemos te ajudar!"
                   rows={5}
+                  className={`resize-none ${!newChamado.descricao ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}
                 />
+                {!newChamado.descricao && (
+                  <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="prioridade">Prioridade</Label>
-                <Select
-                  value={newChamado.prioridade}
-                  onValueChange={(value) => setNewChamado({ ...newChamado, prioridade: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORIDADES.map(p => (
-                      <SelectItem key={p.value} value={p.value}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Divisor */}
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-semibold text-slate-700 mb-4">Informações Adicionais (Opcional)</h3>
+                
+                <div className="space-y-4">
+                  {/* Prioridade */}
+                  <div className="space-y-2">
+                    <Label htmlFor="prioridade" className="text-sm font-medium text-slate-600">
+                      Prioridade
+                    </Label>
+                    <Select
+                      value={newChamado.prioridade}
+                      onValueChange={(value) => setNewChamado({ ...newChamado, prioridade: value })}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRIORIDADES.map(p => (
+                          <SelectItem key={p.value} value={p.value}>
+                            {p.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Observações */}
+                  <div className="space-y-2">
+                    <Label htmlFor="observacoes" className="text-sm font-medium text-slate-600">
+                      Observações Adicionais
+                    </Label>
+                    <Textarea
+                      id="observacoes"
+                      value={newChamado.observacoes}
+                      onChange={(e) => setNewChamado({ ...newChamado, observacoes: e.target.value })}
+                      placeholder="Informações complementares, contexto ou detalhes relevantes..."
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações Adicionais</Label>
-                <Textarea
-                  id="observacoes"
-                  value={newChamado.observacoes}
-                  onChange={(e) => setNewChamado({ ...newChamado, observacoes: e.target.value })}
-                  placeholder="Informações adicionais (opcional)"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
+              {/* Botões */}
+              <div className="flex gap-3 pt-6 border-t">
                 <Button 
                   onClick={handleCreateChamado}
                   disabled={createChamadoMutation.isPending}
-                  className="flex-1 bg-gradient-to-r from-[#0095da] to-[#313d5a]"
+                  className="flex-1 h-11 bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white font-semibold shadow-md hover:shadow-lg transition-all"
                 >
-                  {createChamadoMutation.isPending ? "Criando..." : "Criar Chamado"}
+                  {createChamadoMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar Chamado
+                    </>
+                  )}
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setIsCreateDialogOpen(false)}
+                  className="px-8 h-11 border-slate-300 hover:bg-slate-50"
                 >
                   Cancelar
                 </Button>
