@@ -610,20 +610,109 @@ export default function UsersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-role" className="text-[#0c151f] font-medium">Função</Label>
+                <Label htmlFor="edit-role" className="text-[#0c151f] font-medium">Tipo de Usuário</Label>
                 <Select
                   value={editingUser.role}
-                  onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
+                  onValueChange={(value) => setEditingUser({ 
+                    ...editingUser, 
+                    role: value,
+                    setor: value === 'interno' ? editingUser.setor : null,
+                    nivel: value === 'interno' ? editingUser.nivel : null,
+                    tipoUsuario: (value === 'representante' || value === 'cliente_final') ? editingUser.tipoUsuario : null,
+                    representanteId: value === 'representante' ? editingUser.representanteId : null,
+                    clienteId: value === 'cliente_final' ? editingUser.clienteId : null
+                  })}
                 >
                   <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-[#e0e0e0]">
                     <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="interno">Usuário Interno</SelectItem>
+                    <SelectItem value="representante">Representante</SelectItem>
+                    <SelectItem value="cliente_final">Cliente Final</SelectItem>
                     <SelectItem value="support">Técnico</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Campos para Usuário Interno */}
+              {editingUser.role === 'interno' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-setor" className="text-[#0c151f] font-medium">Setor</Label>
+                    <Select
+                      value={editingUser.setor || ''}
+                      onValueChange={(value) => setEditingUser({ ...editingUser, setor: value, nivel: null })}
+                    >
+                      <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectValue placeholder="Selecione o setor" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-[#e0e0e0]">
+                        <SelectItem value="desenvolvimento">Desenvolvimento</SelectItem>
+                        <SelectItem value="suporte">Suporte</SelectItem>
+                        <SelectItem value="implantacao">Implantação</SelectItem>
+                        <SelectItem value="comercial">Comercial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {editingUser.setor && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-nivel" className="text-[#0c151f] font-medium">Nível/Cargo</Label>
+                      <Select
+                        value={editingUser.nivel || ''}
+                        onValueChange={(value) => setEditingUser({ ...editingUser, nivel: value })}
+                      >
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                          <SelectValue placeholder="Selecione o nível" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-[#e0e0e0]">
+                          {editingUser.setor === 'suporte' && (
+                            <>
+                              <SelectItem value="analista_n1">Analista N1</SelectItem>
+                              <SelectItem value="analista_n2">Analista N2</SelectItem>
+                              <SelectItem value="analista_n3">Analista N3</SelectItem>
+                              <SelectItem value="gerente">Gerente</SelectItem>
+                            </>
+                          )}
+                          {editingUser.setor === 'desenvolvimento' && (
+                            <>
+                              <SelectItem value="dev_web">Desenvolvedor Web</SelectItem>
+                              <SelectItem value="dev_app">Desenvolvedor App</SelectItem>
+                            </>
+                          )}
+                          {(editingUser.setor === 'implantacao' || editingUser.setor === 'comercial') && (
+                            <>
+                              <SelectItem value="analista">Analista</SelectItem>
+                              <SelectItem value="gerente">Gerente</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Campos para Representante/Cliente */}
+              {(editingUser.role === 'representante' || editingUser.role === 'cliente_final') && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-tipoUsuario" className="text-[#0c151f] font-medium">Tipo de Acesso</Label>
+                  <Select
+                    value={editingUser.tipoUsuario || ''}
+                    onValueChange={(value) => setEditingUser({ ...editingUser, tipoUsuario: value })}
+                  >
+                    <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-[#e0e0e0]">
+                      <SelectItem value="gerente">Gerente (vê todos)</SelectItem>
+                      <SelectItem value="analista">Analista (vê apenas seus)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}</old_str>
               <div className="flex items-center space-x-3 pt-2">
                 <Switch
                   id="edit-active"
