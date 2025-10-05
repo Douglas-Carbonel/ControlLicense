@@ -691,11 +691,19 @@ export class DbStorage implements IStorage {
                 .from(licenses)
                 .where(and(
                     not(isNull(licenses.code)),
-                    not(isNull(licenses.nomeCliente))
+                    not(isNull(licenses.nomeCliente)),
+                    eq(licenses.ativo, true) // Apenas clientes ativos
                 ))
                 .orderBy(asc(licenses.code));
 
-            return result.filter(item => item.code && item.nomeCliente);
+            // Garantir unicidade pelo código
+            const uniqueClientes = Array.from(
+                new Map(result.map(item => [item.code, item])).values()
+            );
+
+            console.log('Lista de clientes única:', uniqueClientes.length, 'clientes');
+            
+            return uniqueClientes.filter(item => item.code && item.nomeCliente);
         } catch (error) {
             console.error("Erro ao buscar lista de clientes:", error);
             throw error;

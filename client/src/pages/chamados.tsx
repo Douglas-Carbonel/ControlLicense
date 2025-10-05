@@ -363,16 +363,40 @@ export default function ChamadosPage() {
                   ? userData.find((u: any) => u.id === user.id)
                   : userData;
 
-                const clientesDoRepresentante = clientes.filter(cliente => {
-                  // Buscar a licença correspondente ao código do cliente
-                  const licenseData = clientesData?.data?.find((lic: any) => lic.code === cliente.code);
-                  
-                  if (!licenseData || !currentUser?.representanteId) return false;
-                  
-                  // Verificar se o representante do usuário é principal ou secundário do cliente
-                  return licenseData.representantePrincipalId === currentUser.representanteId || 
-                         licenseData.representanteSecundarioId === currentUser.representanteId;
+                console.log('Debug filtro representante:', {
+                  currentUserId: currentUser?.id,
+                  currentUserName: currentUser?.name,
+                  representanteId: currentUser?.representanteId,
+                  totalClientes: clientes?.length,
+                  totalLicenses: clientesData?.data?.length
                 });
+
+                const clientesDoRepresentante = clientes.filter(cliente => {
+                  // Buscar TODAS as licenças com este código (pode haver múltiplas linhas)
+                  const licensesDoCliente = clientesData?.data?.filter((lic: any) => lic.code === cliente.code) || [];
+                  
+                  if (licensesDoCliente.length === 0 || !currentUser?.representanteId) {
+                    console.log(`Cliente ${cliente.code} - sem licenças ou sem representanteId`);
+                    return false;
+                  }
+                  
+                  // Verificar se ALGUMA das licenças do cliente tem este representante
+                  const temRepresentante = licensesDoCliente.some((lic: any) => 
+                    lic.representantePrincipalId === currentUser.representanteId || 
+                    lic.representanteSecundarioId === currentUser.representanteId
+                  );
+
+                  console.log(`Cliente ${cliente.code}:`, {
+                    nLicenses: licensesDoCliente.length,
+                    representantePrincipal: licensesDoCliente[0]?.representantePrincipalId,
+                    representanteSecundario: licensesDoCliente[0]?.representanteSecundarioId,
+                    temRepresentante
+                  });
+
+                  return temRepresentante;
+                });
+
+                console.log('Clientes filtrados:', clientesDoRepresentante.length);
 
                 return (
                   <div className="space-y-2">
