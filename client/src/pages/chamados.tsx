@@ -364,11 +364,14 @@ export default function ChamadosPage() {
                   : userData;
 
                 const clientesDoRepresentante = clientes.filter(cliente => {
-                  return clientesData?.data?.some((lic: any) => 
-                    lic.code === cliente.code && 
-                    (lic.representantePrincipalId === currentUser?.representanteId || 
-                     lic.representanteSecundarioId === currentUser?.representanteId)
-                  );
+                  // Buscar a licença correspondente ao código do cliente
+                  const licenseData = clientesData?.data?.find((lic: any) => lic.code === cliente.code);
+                  
+                  if (!licenseData || !currentUser?.representanteId) return false;
+                  
+                  // Verificar se o representante do usuário é principal ou secundário do cliente
+                  return licenseData.representantePrincipalId === currentUser.representanteId || 
+                         licenseData.representanteSecundarioId === currentUser.representanteId;
                 });
 
                 return (
@@ -385,18 +388,24 @@ export default function ChamadosPage() {
                         <SelectValue placeholder="Selecione qual cliente está solicitando" />
                       </SelectTrigger>
                       <SelectContent>
-                        {clientesDoRepresentante.map(cliente => (
-                          <SelectItem key={cliente.code} value={cliente.code}>
-                            {cliente.code} - {cliente.nomeCliente}
-                          </SelectItem>
-                        ))}
+                        {clientesDoRepresentante.length === 0 ? (
+                          <div className="p-2 text-sm text-slate-500">
+                            Nenhum cliente vinculado a este representante
+                          </div>
+                        ) : (
+                          clientesDoRepresentante.map(cliente => (
+                            <SelectItem key={cliente.code} value={cliente.code}>
+                              {cliente.code} - {cliente.nomeCliente}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     {!newChamado.clienteId && (
                       <p className="text-xs text-red-500">Este campo é obrigatório</p>
                     )}
                     <p className="text-xs text-slate-500">
-                      Você está abrindo este chamado em nome de um cliente
+                      Você está abrindo este chamado em nome de um cliente ({clientesDoRepresentante.length} cliente(s) disponível(is))
                     </p>
                   </div>
                 );

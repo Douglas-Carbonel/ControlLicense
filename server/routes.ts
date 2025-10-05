@@ -1535,6 +1535,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clientes/lista", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const clientes = await storage.getClientesList();
+      
+      // Debug para representantes
+      if (req.user?.role === 'representante') {
+        const currentUser = await storage.getUser(req.user.id);
+        console.log('Representante buscando clientes:', {
+          userId: req.user.id,
+          userName: req.user.name,
+          representanteId: currentUser?.representanteId
+        });
+      }
+      
       res.json(clientes);
     } catch (error) {
       console.error("Error fetching clientes list:", error);
