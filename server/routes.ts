@@ -236,6 +236,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: user.name,
         role: user.role,
         active: user.active,
+        tipoUsuario: user.tipoUsuario,
+        representanteId: user.representanteId,
+        clienteId: user.clienteId,
+        setor: user.setor,
+        nivel: user.nivel,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }));
@@ -287,6 +292,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: newUser.name,
         role: newUser.role,
         active: newUser.active,
+        tipoUsuario: newUser.tipoUsuario,
+        representanteId: newUser.representanteId,
+        clienteId: newUser.clienteId,
+        setor: newUser.setor,
+        nivel: newUser.nivel,
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt
       };
@@ -304,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { username, email, name, role, active, passwordHash } = req.body;
+      const { username, email, name, role, active, passwordHash, tipoUsuario, representanteId, clienteId, setor, nivel } = req.body;
 
       // Criar objeto apenas com campos válidos para atualização
       const userData: Partial<any> = {
@@ -312,7 +322,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         name,
         role,
-        active
+        active,
+        tipoUsuario,
+        representanteId,
+        clienteId,
+        setor,
+        nivel
       };
 
       // Se está alterando a senha, fazer hash
@@ -340,6 +355,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: updatedUser.name,
         role: updatedUser.role,
         active: updatedUser.active,
+        tipoUsuario: updatedUser.tipoUsuario,
+        representanteId: updatedUser.representanteId,
+        clienteId: updatedUser.clienteId,
+        setor: updatedUser.setor,
+        nivel: updatedUser.nivel,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt
       };
