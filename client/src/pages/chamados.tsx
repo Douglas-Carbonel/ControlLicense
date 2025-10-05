@@ -642,88 +642,17 @@ export default function ChamadosPage() {
         </CardContent>
       </Card>
 
-      {/* Dialog de Detalhes */}
+      {/* Dialog de Detalhes - Estilo osTicket/GLPI */}
       {selectedChamado && (
-        <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Detalhes do Chamado #{selectedChamado.id}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {getCategoriaIcon(selectedChamado.categoria)}
-                  <span className="font-medium">{CATEGORIAS.find(c => c.value === selectedChamado.categoria)?.label}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {getStatusBadge(selectedChamado.status)}
-                  {getPrioridadeBadge(selectedChamado.prioridade)}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-lg">{selectedChamado.titulo}</h3>
-                <p className="text-sm text-slate-500">
-                  Aberto em {format(new Date(selectedChamado.dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </p>
-              </div>
-
-              <div>
-                <Label className="text-slate-600">Descrição</Label>
-                <p className="text-sm mt-1">{selectedChamado.descricao}</p>
-              </div>
-
-              {selectedChamado.observacoes && (
-                <div>
-                  <Label className="text-slate-600">Observações</Label>
-                  <p className="text-sm mt-1">{selectedChamado.observacoes}</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                <div>
-                  <Label className="text-slate-600">Cliente</Label>
-                  <p className="text-sm font-medium">{selectedChamado.clienteId}</p>
-                </div>
-                {selectedChamado.dataPrevisao && (
-                  <div>
-                    <Label className="text-slate-600">Previsão</Label>
-                    <p className="text-sm font-medium">
-                      {format(new Date(selectedChamado.dataPrevisao), "dd/MM/yyyy", { locale: ptBR })}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {(user?.role === 'admin' || user?.role === 'interno') && (
-                <div className="pt-4 border-t">
-                  <Label>Atualizar Status</Label>
-                  <Select
-                    value={selectedChamado.status}
-                    onValueChange={(value) => {
-                      updateChamadoMutation.mutate({
-                        id: selectedChamado.id,
-                        data: { status: value }
-                      });
-                      setSelectedChamado({ ...selectedChamado, status: value });
-                    }}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUS.map(s => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ChamadoDetailDialog
+          chamado={selectedChamado}
+          isOpen={isDetailDialogOpen}
+          onClose={() => setIsDetailDialogOpen(false)}
+          user={user}
+          getStatusBadge={getStatusBadge}
+          getPrioridadeBadge={getPrioridadeBadge}
+          getCategoriaIcon={getCategoriaIcon}
+        />
       )}
     </div>
   );
@@ -771,5 +700,281 @@ function ChamadoCard({
         </div>
       </div>
     </div>
+  );
+}
+
+interface ChamadoDetailDialogProps {
+  chamado: Chamado;
+  isOpen: boolean;
+  onClose: () => void;
+  user: any;
+  getStatusBadge: (status: string) => JSX.Element;
+  getPrioridadeBadge: (prioridade: string) => JSX.Element;
+  getCategoriaIcon: (categoria: string) => JSX.Element;
+}
+
+function ChamadoDetailDialog({
+  chamado,
+  isOpen,
+  onClose,
+  user,
+  getStatusBadge,
+  getPrioridadeBadge,
+  getCategoriaIcon
+}: ChamadoDetailDialogProps) {
+  const { toast } = useToast();
+  const [newInteracao, setNewInteracao] = useState('');
+
+  // Buscar interações do chamado
+  const { data: interacoes = [], refetch: refetchInteracoes } = useQuery({
+    queryKey: [`/api/chamados/${chamado.id}/interacoes`],
+    enabled: isOpen,
+  });
+
+  // Buscar pendências do chamado
+  const { data: pendencias = [] } = useQuery({
+    queryKey: [`/api/chamados/${chamado.id}/pendencias`],
+    enabled: isOpen,
+  });
+
+  // Criar interação
+  const createInteracaoMutation = useMutation({
+    mutationFn: async (mensagem: string) => {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/chamados/${chamado.id}/interacoes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ mensagem, tipo: 'COMENTARIO' }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao adicionar comentário");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchInteracoes();
+      setNewInteracao('');
+      toast({
+        title: "Sucesso",
+        description: "Comentário adicionado com sucesso!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddInteracao = () => {
+    if (!newInteracao.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite uma mensagem",
+        variant: "destructive",
+      });
+      return;
+    }
+    createInteracaoMutation.mutate(newInteracao);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Cabeçalho do Chamado */}
+        <DialogHeader className="border-b pb-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <DialogTitle className="text-2xl">
+                  Chamado #{chamado.id}
+                </DialogTitle>
+                {getStatusBadge(chamado.status)}
+                {getPrioridadeBadge(chamado.prioridade)}
+              </div>
+              <div className="flex items-center space-x-2 text-slate-600">
+                {getCategoriaIcon(chamado.categoria)}
+                <span className="text-sm font-medium">
+                  {CATEGORIAS.find(c => c.value === chamado.categoria)?.label}
+                </span>
+                <span className="text-sm">•</span>
+                <span className="text-sm">
+                  Aberto em {format(new Date(chamado.dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Informações principais */}
+          <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+            <h3 className="font-semibold text-lg mb-2">{chamado.titulo}</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-slate-600">Cliente:</span>
+                <span className="ml-2 font-medium">{chamado.clienteId}</span>
+              </div>
+              {chamado.dataPrevisao && (
+                <div>
+                  <span className="text-slate-600">Previsão:</span>
+                  <span className="ml-2 font-medium">
+                    {format(new Date(chamado.dataPrevisao), "dd/MM/yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Timeline de Interações */}
+        <div className="flex-1 overflow-y-auto py-4 space-y-4">
+          {/* Mensagem Original */}
+          <div className="flex space-x-3">
+            <div className="flex-shrink-0">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-[#0095da] to-[#313d5a] flex items-center justify-center text-white font-semibold">
+                {chamado.clienteId?.charAt(0) || 'U'}
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-slate-800">Abertura do Chamado</span>
+                  <span className="text-xs text-slate-500">
+                    {format(new Date(chamado.dataAbertura), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-700 whitespace-pre-wrap">{chamado.descricao}</p>
+                {chamado.observacoes && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs text-slate-600 font-medium mb-1">Observações:</p>
+                    <p className="text-sm text-slate-600">{chamado.observacoes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Pendências */}
+          {pendencias.map((pendencia: any) => (
+            <div key={pendencia.id} className="flex space-x-3">
+              <div className="flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-yellow-800">
+                      Pendência: {MOTIVOS_PENDENCIA.find(m => m.value === pendencia.motivo)?.label}
+                    </span>
+                    <span className="text-xs text-yellow-600">
+                      {format(new Date(pendencia.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-yellow-700">{pendencia.descricao}</p>
+                  {pendencia.resolvido && (
+                    <div className="mt-2 flex items-center text-xs text-green-600">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Resolvida em {format(new Date(pendencia.dataResolucao), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Interações */}
+          {interacoes.map((interacao: any) => (
+            <div key={interacao.id} className="flex space-x-3">
+              <div className="flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-semibold">
+                  {interacao.usuarioId === user?.id ? 'EU' : 'U'}
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className={`border rounded-lg p-4 ${
+                  interacao.tipo === 'MUDANCA_STATUS' 
+                    ? 'bg-blue-50 border-blue-200' 
+                    : 'bg-white border-slate-200'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-slate-800">
+                      {interacao.tipo === 'MUDANCA_STATUS' && '🔄 '}
+                      {interacao.tipo === 'ATRIBUICAO' && '👤 '}
+                      {interacao.tipo === 'COMENTARIO' && '💬 '}
+                      {interacao.tipo === 'MUDANCA_STATUS' ? 'Mudança de Status' : 
+                       interacao.tipo === 'ATRIBUICAO' ? 'Atribuição' : 'Comentário'}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {format(new Date(interacao.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{interacao.mensagem}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {interacoes.length === 0 && pendencias.length === 0 && (
+            <div className="text-center py-8 text-slate-400">
+              <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Nenhuma interação ainda. Seja o primeiro a comentar!</p>
+            </div>
+          )}
+        </div>
+
+        {/* Campo para adicionar nova interação */}
+        <div className="border-t pt-4 mt-4">
+          <Label htmlFor="nova-interacao" className="text-sm font-medium mb-2 block">
+            Adicionar Comentário
+          </Label>
+          <div className="flex space-x-2">
+            <Textarea
+              id="nova-interacao"
+              value={newInteracao}
+              onChange={(e) => setNewInteracao(e.target.value)}
+              placeholder="Digite seu comentário aqui..."
+              rows={3}
+              className="flex-1 resize-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                  handleAddInteracao();
+                }
+              }}
+            />
+          </div>
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-xs text-slate-500">
+              Pressione Ctrl+Enter para enviar
+            </span>
+            <Button 
+              onClick={handleAddInteracao}
+              disabled={createInteracaoMutation.isPending || !newInteracao.trim()}
+              className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349]"
+            >
+              {createInteracaoMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Adicionar Comentário
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

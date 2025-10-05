@@ -4,18 +4,18 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { 
-  licenses, 
-  activities, 
-  users, 
-  mensagemSistema, 
-  clienteHistorico, 
+import {
+  licenses,
+  activities,
+  users,
+  mensagemSistema,
+  clienteHistorico,
   representantes,
   chamados,
   chamadoPendencias,
   chamadoInteracoes,
-  type License, 
-  type Activity, 
+  type License,
+  type Activity,
   type User,
   type MensagemSistema,
   type ClienteHistorico,
@@ -857,7 +857,7 @@ export class DbStorage implements IStorage {
     async getChamadoInteracoes(chamadoId: number): Promise<ChamadoInteracao[]> {
         return db.select().from(chamadoInteracoes)
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
-            .orderBy(chamadoInteracoes.createdAt);
+            .orderBy(chamadoInteracoes.createdAt); // Ordem crescente para timeline
     }
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
