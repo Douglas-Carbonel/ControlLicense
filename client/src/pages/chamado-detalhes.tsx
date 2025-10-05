@@ -490,14 +490,14 @@ export default function ChamadoDetalhesPage() {
               <div className="space-y-2 mb-6">
                 <Label className="text-sm font-medium text-slate-700">Atendente</Label>
                 <Select
-                  value={editData.atendenteId?.toString() || ""}
-                  onValueChange={(value) => handleFieldChange('atendenteId', value ? parseInt(value) : null)}
+                  value={editData.atendenteId?.toString() || "0"}
+                  onValueChange={(value) => handleFieldChange('atendenteId', value === "0" ? null : parseInt(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um atendente" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sem atendente</SelectItem>
+                    <SelectItem value="0">Sem atendente</SelectItem>
                     {usuariosInternos.map((u: any) => (
                       <SelectItem key={u.id} value={u.id.toString()}>
                         {u.name}
