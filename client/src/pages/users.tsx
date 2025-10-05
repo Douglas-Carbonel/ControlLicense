@@ -481,7 +481,10 @@ export default function UsersPage() {
                       <Label htmlFor="representanteId" className="text-[#0c151f] font-medium">Empresa Representante</Label>
                       <Select
                         value={newUser.representanteId?.toString() || ''}
-                        onValueChange={(value) => setNewUser({ ...newUser, representanteId: parseInt(value) })}
+                        onValueChange={(value) => {
+                          const numValue = value ? parseInt(value, 10) : null;
+                          setNewUser({ ...newUser, representanteId: !isNaN(numValue!) ? numValue : null });
+                        }}
                       >
                         <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]" data-testid="select-representante">
                           <SelectValue placeholder="Selecione a empresa" />
@@ -785,9 +788,12 @@ export default function UsersPage() {
                       <Label htmlFor="edit-representanteId" className="text-[#0c151f] font-medium">Empresa Representante</Label>
                       <Select
                         value={editingUser.representanteId?.toString() || ''}
-                        onValueChange={(value) => setEditingUser({ ...editingUser, representanteId: parseInt(value) })}
+                        onValueChange={(value) => {
+                          const numValue = value ? parseInt(value, 10) : null;
+                          setEditingUser({ ...editingUser, representanteId: !isNaN(numValue!) ? numValue : null });
+                        }}
                       >
-                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]" data-testid="edit-select-representante">
                           <SelectValue placeholder="Selecione a empresa" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border-[#e0e0e0]">
@@ -809,7 +815,7 @@ export default function UsersPage() {
                         value={editingUser.clienteId || ''}
                         onValueChange={(value) => setEditingUser({ ...editingUser, clienteId: value })}
                       >
-                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]" data-testid="edit-select-cliente">
                           <SelectValue placeholder="Selecione o cliente" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border-[#e0e0e0]">
