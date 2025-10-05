@@ -413,9 +413,10 @@ export default function ChamadosPage() {
                     const secundario = lic.representanteSecundarioId;
                     
                     console.log(`Verificando Cliente ${cliente.code}:`, {
-                      representantePrincipal: principal,
-                      representanteSecundario: secundario,
-                      comparandoCom: representanteIdDoUsuario,
+                      licenseId: lic.id,
+                      representantePrincipalId: principal,
+                      representanteSecundarioId: secundario,
+                      representanteIdDoUsuario: representanteIdDoUsuario,
                       matchPrincipal: principal === representanteIdDoUsuario,
                       matchSecundario: secundario === representanteIdDoUsuario
                     });
