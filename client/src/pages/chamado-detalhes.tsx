@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -43,8 +43,9 @@ const MOTIVOS_PENDENCIA = [
 ];
 
 export default function ChamadoDetalhesPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useLocation();
+  const [, params] = useRoute("/chamados/:id");
+  const id = params?.id;
+  const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [newInteracao, setNewInteracao] = useState('');

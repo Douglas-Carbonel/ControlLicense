@@ -66,8 +66,8 @@ function Router() {
         <Route path="/mensagens" component={Mensagens} />
         <Route path="/clientes" component={Clientes} />
         <Route path="/representantes" component={Representantes} />
-        <Route path="/chamados" element={<ProtectedRoute><ChamadosPage /></ProtectedRoute>} />
-        <Route path="/chamados/:id" element={<ProtectedRoute><ChamadoDetalhesPage /></ProtectedRoute>} />
+        <Route path="/chamados" component={ChamadosPage} />
+        <Route path="/chamados/:id" component={ChamadoDetalhesPage} />
       </Switch>
     </AppLayout>
   );

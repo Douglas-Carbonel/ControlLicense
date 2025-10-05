@@ -72,7 +72,7 @@ const MOTIVOS_PENDENCIA = [
 export default function ChamadosPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useLocation()[1]; // Use the navigate function from wouter
+  const [, navigate] = useLocation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newChamado, setNewChamado] = useState({
     categoria: '',
