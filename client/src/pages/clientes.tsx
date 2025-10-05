@@ -373,6 +373,27 @@ export default function Clientes() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return await apiRequest("PUT", `/api/licenses/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/by-code", selectedCliente] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      toast({
+        title: "Sucesso",
+        description: "Representantes atualizados com sucesso!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar representantes. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEdit = (historico: ClienteHistorico) => {
     setEditingHistorico(historico);
     setIsEditModalOpen(true);
@@ -1694,39 +1715,120 @@ export default function Clientes() {
                         </div>
                       </div>
 
-                      {/* Informações de Representantes */}
-                      {clienteLicenseData && (clienteLicenseData.representantePrincipalId || clienteLicenseData.representanteSecundarioId) ? (
-                        <div>
-                          <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Representantes</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {clienteLicenseData.representantePrincipalId && (
-                              <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-l-4 border-blue-500">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <Building2 className="w-5 h-5 text-blue-600" />
-                                  <p className="text-xs text-blue-700 uppercase font-semibold">Representante Principal</p>
-                                </div>
-                                <p className="text-lg font-bold text-blue-800">
+                      {/* Informações de Representantes - Editáveis */}
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide flex items-center justify-between">
+                          <span>Representantes</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await updateMutation.mutateAsync({
+                                  id: clienteLicenseData?.id,
+                                  data: {
+                                    representantePrincipalId: clienteLicenseData?.representantePrincipalId || null,
+                                    representanteSecundarioId: clienteLicenseData?.representanteSecundarioId || null,
+                                  }
+                                });
+                              } catch (error) {
+                                console.error("Erro ao salvar representantes:", error);
+                              }
+                            }}
+                            className="text-xs"
+                          >
+                            <Edit className="w-3 h-3 mr-1" />
+                            Salvar Alterações
+                          </Button>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="representante-principal" className="text-sm font-medium text-slate-700">
+                              Representante Principal
+                            </Label>
+                            <Select
+                              value={clienteLicenseData?.representantePrincipalId?.toString() || ""}
+                              onValueChange={(value) => {
+                                if (clienteLicenseData) {
+                                  queryClient.setQueryData(
+                                    ["/api/licenses/by-code", selectedCliente],
+                                    {
+                                      ...clienteLicenseData,
+                                      representantePrincipalId: value ? parseInt(value) : null
+                                    }
+                                  );
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="border-blue-200 focus:border-blue-500">
+                                <SelectValue placeholder="Selecione um representante" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Nenhum</SelectItem>
+                                {representantes?.filter((r: any) => r.ativo).map((rep: any) => (
+                                  <SelectItem key={rep.id} value={rep.id.toString()}>
+                                    <div className="flex items-center space-x-2">
+                                      <Building2 className="w-4 h-4 text-blue-600" />
+                                      <span>{rep.nome}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {clienteLicenseData?.representantePrincipalId && (
+                              <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-l-4 border-blue-500">
+                                <p className="text-sm font-bold text-blue-800">
                                   {representantes?.find((r: any) => r.id === clienteLicenseData.representantePrincipalId)?.nome || 'N/A'}
                                 </p>
                                 {representantes?.find((r: any) => r.id === clienteLicenseData.representantePrincipalId)?.email && (
-                                  <p className="text-sm text-blue-600 mt-1">
+                                  <p className="text-xs text-blue-600 mt-1">
                                     {representantes.find((r: any) => r.id === clienteLicenseData.representantePrincipalId).email}
                                   </p>
                                 )}
                               </div>
                             )}
+                          </div>
 
-                            {clienteLicenseData.representanteSecundarioId && (
-                              <div className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg border-l-4 border-indigo-500">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <Building2 className="w-5 h-5 text-indigo-600" />
-                                  <p className="text-xs text-indigo-700 uppercase font-semibold">Representante Secundário</p>
-                                </div>
-                                <p className="text-lg font-bold text-indigo-800">
+                          <div className="space-y-2">
+                            <Label htmlFor="representante-secundario" className="text-sm font-medium text-slate-700">
+                              Representante Secundário
+                            </Label>
+                            <Select
+                              value={clienteLicenseData?.representanteSecundarioId?.toString() || ""}
+                              onValueChange={(value) => {
+                                if (clienteLicenseData) {
+                                  queryClient.setQueryData(
+                                    ["/api/licenses/by-code", selectedCliente],
+                                    {
+                                      ...clienteLicenseData,
+                                      representanteSecundarioId: value ? parseInt(value) : null
+                                    }
+                                  );
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="border-indigo-200 focus:border-indigo-500">
+                                <SelectValue placeholder="Selecione um representante" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Nenhum</SelectItem>
+                                {representantes?.filter((r: any) => r.ativo).map((rep: any) => (
+                                  <SelectItem key={rep.id} value={rep.id.toString()}>
+                                    <div className="flex items-center space-x-2">
+                                      <Building2 className="w-4 h-4 text-indigo-600" />
+                                      <span>{rep.nome}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {clienteLicenseData?.representanteSecundarioId && (
+                              <div className="p-3 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg border-l-4 border-indigo-500">
+                                <p className="text-sm font-bold text-indigo-800">
                                   {representantes?.find((r: any) => r.id === clienteLicenseData.representanteSecundarioId)?.nome || 'N/A'}
                                 </p>
                                 {representantes?.find((r: any) => r.id === clienteLicenseData.representanteSecundarioId)?.email && (
-                                  <p className="text-sm text-indigo-600 mt-1">
+                                  <p className="text-xs text-indigo-600 mt-1">
                                     {representantes.find((r: any) => r.id === clienteLicenseData.representanteSecundarioId).email}
                                   </p>
                                 )}
@@ -1734,12 +1836,7 @@ export default function Clientes() {
                             )}
                           </div>
                         </div>
-                      ) : (
-                        <div className="p-6 bg-slate-50 rounded-lg text-center">
-                          <Building2 className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                          <p className="text-sm text-slate-600 font-medium">Nenhum representante vinculado a este cliente</p>
-                        </div>
-                      )}
+                      </div>
 
                       {/* Ambientes do Cliente */}
                       {ambientes && ambientes.length > 0 && (
