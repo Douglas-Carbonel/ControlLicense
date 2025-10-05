@@ -235,6 +235,25 @@ export default function Clientes() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Buscar dados da licença do cliente para obter informações de representantes
+  const { data: clienteLicenseData } = useQuery({
+    queryKey: ["/api/licenses/by-code", selectedCliente],
+    queryFn: async () => {
+      if (!selectedCliente) return null;
+      const allLicenses = await apiRequest("GET", "/api/licenses?limit=1000");
+      const licenses = allLicenses?.data || [];
+      return licenses.find((l: any) => l.code === selectedCliente) || null;
+    },
+    enabled: !!selectedCliente,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Buscar representantes para exibir nos cadastros
+  const { data: representantes } = useQuery({
+    queryKey: ["/api/representantes"],
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Filtrar histórico
   const filteredHistorico = useMemo(() => {
     console.log("Filtering historico:", {
@@ -488,12 +507,12 @@ export default function Clientes() {
     // Cabeçalho do Relatório
     doc.setFillColor(0, 149, 218);
     doc.rect(0, 0, pageWidth, 40, 'F');
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text('RELATÓRIO DE HISTÓRICO DO CLIENTE', pageWidth / 2, 15, { align: 'center' });
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, 25, { align: 'center' });
@@ -503,12 +522,12 @@ export default function Clientes() {
     // Informações do Cliente
     doc.setFillColor(245, 245, 245);
     doc.rect(10, yPos, pageWidth - 20, 30, 'F');
-    
+
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('INFORMAÇÕES DO CLIENTE', 15, yPos + 8);
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Cliente: ${clienteNome}`, 15, yPos + 16);
@@ -520,18 +539,18 @@ export default function Clientes() {
     // Filtros Aplicados
     if (filterStatus !== "all" || filterTipo !== "all" || filterAtendente !== "all" || searchTerm) {
       checkNewPage(40);
-      
+
       doc.setFillColor(255, 243, 205);
       doc.rect(10, yPos, pageWidth - 20, 5, 'F');
-      
+
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text('FILTROS APLICADOS', 15, yPos + 3.5);
-      
+
       yPos += 8;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      
+
       if (filterStatus !== "all") {
         const statusLabel = STATUS_OPTIONS.find(s => s.value === filterStatus)?.label;
         doc.text(`• Status: ${statusLabel}`, 15, yPos);
@@ -553,7 +572,7 @@ export default function Clientes() {
         doc.text(`• Busca: ${searchTerm}`, 15, yPos);
         yPos += 5;
       }
-      
+
       yPos += 5;
     }
 
@@ -571,32 +590,32 @@ export default function Clientes() {
       if (item.observacoes) recordHeight += 15;
       if (item.problemas) recordHeight += 15;
       if (item.solucoes) recordHeight += 15;
-      
+
       checkNewPage(recordHeight);
 
       // Cabeçalho do Registro
       const headerColor = item.statusAtual === 'CONCLUIDO' ? [220, 252, 231] : 
                          item.statusAtual === 'EM_ANDAMENTO' ? [254, 243, 199] : [254, 226, 226];
-      
+
       doc.setFillColor(...headerColor);
       doc.rect(10, yPos, pageWidth - 20, 8, 'F');
-      
+
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text(`${index + 1}. ${getTipoAcaoLabel(item.tipoAtualizacao)}`, 15, yPos + 5.5);
-      
+
       // Status e Data
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       const dataText = format(new Date(item.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR });
       doc.text(`${statusLabel} | ${dataText}`, pageWidth - 15, yPos + 5.5, { align: 'right' });
-      
+
       yPos += 10;
 
       // Informações Principais
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      
+
       const info: Array<[string, string]> = [
         ['Ambiente:', item.ambiente || '-'],
         ['Responsável:', item.responsavel || '-'],
@@ -620,7 +639,7 @@ export default function Clientes() {
       info.forEach(([label, value], idx) => {
         if (idx > 0 && idx % 2 === 0) yPos += 5;
         const xPos = idx % 2 === 0 ? 15 : pageWidth / 2 + 5;
-        
+
         doc.setFont('helvetica', 'bold');
         doc.text(label, xPos, yPos);
         doc.setFont('helvetica', 'normal');
@@ -638,6 +657,7 @@ export default function Clientes() {
         yPos += 4;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
         const obsLines = doc.splitTextToSize(item.observacoes, pageWidth - 30);
         doc.text(obsLines, 15, yPos);
         yPos += obsLines.length * 4 + 3;
@@ -1595,33 +1615,151 @@ export default function Clientes() {
             </div>
           </div>
 
-          {/* Resumo do Cliente Selecionado */}
-          {selectedCliente && historico && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-6 text-sm">
-                  <div className="flex items-center space-x-2 text-slate-700">
-                    <History className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium">{historico.length} registros de histórico</span>
+          {/* Tabs de Navegação do Cliente */}
+          {selectedCliente && (
+            <Tabs defaultValue="historico" className="mt-6">
+              <TabsList className="grid w-full grid-cols-2 bg-[#f4f4f4] border border-[#e0e0e0] rounded-lg p-1">
+                <TabsTrigger 
+                  value="historico" 
+                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+                >
+                  <History className="h-4 w-4" />
+                  Histórico do Cliente
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="cadastros" 
+                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#0095da] data-[state=active]:to-[#313d5a] data-[state=active]:text-white transition-all duration-200"
+                >
+                  <Building2 className="h-4 w-4" />
+                  Cadastros
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab: Histórico do Cliente */}
+              <TabsContent value="historico" className="mt-0">
+                {historico && (
+                  <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-6 text-sm">
+                        <div className="flex items-center space-x-2 text-slate-700">
+                          <History className="w-4 h-4 text-blue-600" />
+                          <span className="font-medium">{historico.length} registros de histórico</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-slate-700">
+                          <Clock className="w-4 h-4 text-blue-600" />
+                          <span className="font-medium">
+                            Última atividade: {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-slate-700">
+                          <User className="w-4 h-4 text-blue-600" />
+                          <span className="font-medium">
+                            Atendente Suporte: {historico[0]?.atendenteSuporteId 
+                              ? usuarios?.find((u: any) => u.id.toString() === historico[0].atendenteSuporteId)?.name || 'N/A'
+                              : 'N/A'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2 text-slate-700">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium">
-                      Última atividade: {historico[0]?.createdAt ? format(new Date(historico[0].createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-slate-700">
-                    <User className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium">
-                      Atendente Suporte: {historico[0]?.atendenteSuporteId 
-                        ? usuarios?.find((u: any) => u.id.toString() === historico[0].atendenteSuporteId)?.name || 'N/A'
-                        : 'N/A'
-                      }
-                    </span>
-                  </div>
+                )}
+              </TabsContent>
+
+              {/* Tab: Cadastros */}
+              <TabsContent value="cadastros" className="mt-0">
+                <div className="mt-4">
+                  <Card className="border border-[#e0e0e0] shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 text-lg">
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                        <span>Informações Cadastrais</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Informações Básicas do Cliente */}
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Dados do Cliente</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-3 bg-slate-50 rounded-lg">
+                            <p className="text-xs text-slate-500 uppercase font-medium mb-1">Código</p>
+                            <p className="text-base font-semibold text-slate-800">{selectedCliente}</p>
+                          </div>
+                          <div className="p-3 bg-slate-50 rounded-lg">
+                            <p className="text-xs text-slate-500 uppercase font-medium mb-1">Nome</p>
+                            <p className="text-base font-semibold text-slate-800">
+                              {Array.isArray(clientes) ? clientes.find((c: Cliente) => c.code === selectedCliente)?.nomeCliente : "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Informações de Representantes */}
+                      {clienteLicenseData && (clienteLicenseData.representantePrincipalId || clienteLicenseData.representanteSecundarioId) ? (
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Representantes</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {clienteLicenseData.representantePrincipalId && (
+                              <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-l-4 border-blue-500">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <Building2 className="w-5 h-5 text-blue-600" />
+                                  <p className="text-xs text-blue-700 uppercase font-semibold">Representante Principal</p>
+                                </div>
+                                <p className="text-lg font-bold text-blue-800">
+                                  {representantes?.find((r: any) => r.id === clienteLicenseData.representantePrincipalId)?.nome || 'N/A'}
+                                </p>
+                                {representantes?.find((r: any) => r.id === clienteLicenseData.representantePrincipalId)?.email && (
+                                  <p className="text-sm text-blue-600 mt-1">
+                                    {representantes.find((r: any) => r.id === clienteLicenseData.representantePrincipalId).email}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {clienteLicenseData.representanteSecundarioId && (
+                              <div className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg border-l-4 border-indigo-500">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <Building2 className="w-5 h-5 text-indigo-600" />
+                                  <p className="text-xs text-indigo-700 uppercase font-semibold">Representante Secundário</p>
+                                </div>
+                                <p className="text-lg font-bold text-indigo-800">
+                                  {representantes?.find((r: any) => r.id === clienteLicenseData.representanteSecundarioId)?.nome || 'N/A'}
+                                </p>
+                                {representantes?.find((r: any) => r.id === clienteLicenseData.representanteSecundarioId)?.email && (
+                                  <p className="text-sm text-indigo-600 mt-1">
+                                    {representantes.find((r: any) => r.id === clienteLicenseData.representanteSecundarioId).email}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-6 bg-slate-50 rounded-lg text-center">
+                          <Building2 className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                          <p className="text-sm text-slate-600 font-medium">Nenhum representante vinculado a este cliente</p>
+                        </div>
+                      )}
+
+                      {/* Ambientes do Cliente */}
+                      {ambientes && ambientes.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Ambientes/Bases</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {ambientes.map((ambiente: string, index: number) => (
+                              <div key={index} className="p-2 bg-green-50 border border-green-200 rounded-lg text-center">
+                                <Database className="w-4 h-4 text-green-600 mx-auto mb-1" />
+                                <p className="text-sm font-medium text-green-800">{ambiente}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
         </CardContent>
       </Card>
@@ -2010,7 +2148,7 @@ export default function Clientes() {
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-5 w-5 p-0 hover:bg-green-100"
+                                          className="h-6 w-6 p-0 hover:bg-green-100"
                                           onClick={() => window.open(anexo, '_blank')}
                                           title="Abrir anexo"
                                         >
