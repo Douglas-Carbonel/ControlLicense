@@ -23,6 +23,11 @@ interface User {
   name: string;
   role: string;
   active: boolean;
+  tipoUsuario?: string | null;
+  representanteId?: number | null;
+  clienteId?: string | null;
+  setor?: string | null;
+  nivel?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -757,21 +762,67 @@ export default function UsersPage() {
 
               {/* Campos para Representante/Cliente */}
               {(editingUser.role === 'representante' || editingUser.role === 'cliente_final') && (
-                <div className="space-y-2">
-                  <Label htmlFor="edit-tipoUsuario" className="text-[#0c151f] font-medium">Tipo de Acesso</Label>
-                  <Select
-                    value={editingUser.tipoUsuario || ''}
-                    onValueChange={(value) => setEditingUser({ ...editingUser, tipoUsuario: value })}
-                  >
-                    <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-[#e0e0e0]">
-                      <SelectItem value="gerente">Gerente (vê todos)</SelectItem>
-                      <SelectItem value="analista">Analista (vê apenas seus)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-tipoUsuario" className="text-[#0c151f] font-medium">Tipo de Acesso</Label>
+                    <Select
+                      value={editingUser.tipoUsuario || ''}
+                      onValueChange={(value) => setEditingUser({ ...editingUser, tipoUsuario: value })}
+                    >
+                      <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-[#e0e0e0]">
+                        <SelectItem value="gerente">Gerente (vê todos)</SelectItem>
+                        <SelectItem value="analista">Analista (vê apenas seus)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Campo para selecionar Representante */}
+                  {editingUser.role === 'representante' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-representanteId" className="text-[#0c151f] font-medium">Empresa Representante</Label>
+                      <Select
+                        value={editingUser.representanteId?.toString() || ''}
+                        onValueChange={(value) => setEditingUser({ ...editingUser, representanteId: parseInt(value) })}
+                      >
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-[#e0e0e0]">
+                          {representantes?.map((rep: any) => (
+                            <SelectItem key={rep.id} value={rep.id.toString()}>
+                              {rep.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Campo para selecionar Cliente */}
+                  {editingUser.role === 'cliente_final' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-clienteId" className="text-[#0c151f] font-medium">Cliente</Label>
+                      <Select
+                        value={editingUser.clienteId || ''}
+                        onValueChange={(value) => setEditingUser({ ...editingUser, clienteId: value })}
+                      >
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                          <SelectValue placeholder="Selecione o cliente" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-[#e0e0e0]">
+                          {clientes?.map((cliente: any) => (
+                            <SelectItem key={cliente.code} value={cliente.code}>
+                              {cliente.code} - {cliente.nomeCliente}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </>
               )}
               <div className="flex items-center space-x-3 pt-2">
                 <Switch
