@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, Users, Shield, Wrench } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Shield, Wrench, Building2, UserCog } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -34,6 +34,11 @@ interface NewUser {
   role: string;
   passwordHash: string;
   active: boolean;
+  tipoUsuario?: string | null;
+  representanteId?: number | null;
+  clienteId?: string | null;
+  setor?: string | null;
+  nivel?: string | null;
 }
 
 export default function UsersPage() {
@@ -49,6 +54,11 @@ export default function UsersPage() {
     role: "support",
     passwordHash: "",
     active: true,
+    tipoUsuario: null,
+    representanteId: null,
+    clienteId: null,
+    setor: null,
+    nivel: null,
   });
 
   // Buscar usuários
@@ -87,6 +97,11 @@ export default function UsersPage() {
         role: "support",
         passwordHash: "",
         active: true,
+        tipoUsuario: null,
+        representanteId: null,
+        clienteId: null,
+        setor: null,
+        nivel: null,
       });
       toast({
         title: "Sucesso",
@@ -207,18 +222,55 @@ export default function UsersPage() {
     return role === "admin" ? <Shield className="h-4 w-4" /> : <Wrench className="h-4 w-4" />;
   };
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (user: User) => {
+    let label = "";
+    let colorClass = "";
+    let icon = null;
+
+    if (user.role === "admin") {
+      label = "Administrador";
+      colorClass = "bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white";
+      icon = <Shield className="h-4 w-4" />;
+    } else if (user.role === "interno") {
+      const setorLabels: Record<string, string> = {
+        'desenvolvimento': 'Desenvolvimento',
+        'suporte': 'Suporte',
+        'implantacao': 'Implantação',
+        'comercial': 'Comercial'
+      };
+      const nivelLabels: Record<string, string> = {
+        'analista_n1': 'N1',
+        'analista_n2': 'N2',
+        'analista_n3': 'N3',
+        'gerente': 'Gerente',
+        'dev_web': 'Web',
+        'dev_app': 'App',
+        'analista': 'Analista'
+      };
+      label = `${setorLabels[user.setor || ''] || ''} ${nivelLabels[user.nivel || ''] || ''}`.trim();
+      colorClass = "bg-blue-100 text-blue-800 border-blue-200";
+      icon = <UserCog className="h-4 w-4" />;
+    } else if (user.role === "representante") {
+      label = `Representante ${user.tipoUsuario === 'gerente' ? '(Gerente)' : '(Analista)'}`;
+      colorClass = "bg-purple-100 text-purple-800 border-purple-200";
+      icon = <Building2 className="h-4 w-4" />;
+    } else if (user.role === "cliente_final") {
+      label = `Cliente ${user.tipoUsuario === 'gerente' ? '(Gerente)' : '(Analista)'}`;
+      colorClass = "bg-green-100 text-green-800 border-green-200";
+      icon = <Users className="h-4 w-4" />;
+    } else {
+      label = "Técnico";
+      colorClass = "bg-gray-100 text-gray-700";
+      icon = <Wrench className="h-4 w-4" />;
+    }
+
     return (
       <Badge 
-        variant={role === "admin" ? "default" : "secondary"} 
-        className={`flex items-center gap-1 ${
-          role === "admin" 
-            ? "bg-gradient-to-r from-[#0095da] to-[#313d5a] text-white" 
-            : "bg-gray-100 text-gray-700"
-        }`}
+        variant="outline" 
+        className={`flex items-center gap-1 ${colorClass}`}
       >
-        {getRoleIcon(role)}
-        {role === "admin" ? "Administrador" : "Técnico"}
+        {icon}
+        {label}
       </Badge>
     );
   };
@@ -301,20 +353,108 @@ export default function UsersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-[#0c151f] font-medium">Função</Label>
+                <Label htmlFor="role" className="text-[#0c151f] font-medium">Tipo de Usuário</Label>
                 <Select
                   value={newUser.role}
-                  onValueChange={(value) => setNewUser({ ...newUser, role: value })}
+                  onValueChange={(value) => setNewUser({ 
+                    ...newUser, 
+                    role: value,
+                    setor: null,
+                    nivel: null,
+                    tipoUsuario: null,
+                    representanteId: null,
+                    clienteId: null
+                  })}
                 >
                   <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-[#e0e0e0]">
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="support">Técnico</SelectItem>
+                    <SelectItem value="interno">Usuário Interno</SelectItem>
+                    <SelectItem value="representante">Representante</SelectItem>
+                    <SelectItem value="cliente_final">Cliente Final</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Campos para Usuário Interno */}
+              {newUser.role === 'interno' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="setor" className="text-[#0c151f] font-medium">Setor</Label>
+                    <Select
+                      value={newUser.setor || ''}
+                      onValueChange={(value) => setNewUser({ ...newUser, setor: value, nivel: null })}
+                    >
+                      <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectValue placeholder="Selecione o setor" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-[#e0e0e0]">
+                        <SelectItem value="desenvolvimento">Desenvolvimento</SelectItem>
+                        <SelectItem value="suporte">Suporte</SelectItem>
+                        <SelectItem value="implantacao">Implantação</SelectItem>
+                        <SelectItem value="comercial">Comercial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {newUser.setor && (
+                    <div className="space-y-2">
+                      <Label htmlFor="nivel" className="text-[#0c151f] font-medium">Nível/Cargo</Label>
+                      <Select
+                        value={newUser.nivel || ''}
+                        onValueChange={(value) => setNewUser({ ...newUser, nivel: value })}
+                      >
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                          <SelectValue placeholder="Selecione o nível" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-[#e0e0e0]">
+                          {newUser.setor === 'suporte' && (
+                            <>
+                              <SelectItem value="analista_n1">Analista N1</SelectItem>
+                              <SelectItem value="analista_n2">Analista N2</SelectItem>
+                              <SelectItem value="analista_n3">Analista N3</SelectItem>
+                              <SelectItem value="gerente">Gerente</SelectItem>
+                            </>
+                          )}
+                          {newUser.setor === 'desenvolvimento' && (
+                            <>
+                              <SelectItem value="dev_web">Desenvolvedor Web</SelectItem>
+                              <SelectItem value="dev_app">Desenvolvedor App</SelectItem>
+                            </>
+                          )}
+                          {(newUser.setor === 'implantacao' || newUser.setor === 'comercial') && (
+                            <>
+                              <SelectItem value="analista">Analista</SelectItem>
+                              <SelectItem value="gerente">Gerente</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Campos para Representante/Cliente */}
+              {(newUser.role === 'representante' || newUser.role === 'cliente_final') && (
+                <div className="space-y-2">
+                  <Label htmlFor="tipoUsuario" className="text-[#0c151f] font-medium">Tipo de Acesso</Label>
+                  <Select
+                    value={newUser.tipoUsuario || ''}
+                    onValueChange={(value) => setNewUser({ ...newUser, tipoUsuario: value })}
+                  >
+                    <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-[#e0e0e0]">
+                      <SelectItem value="gerente">Gerente (vê todos)</SelectItem>
+                      <SelectItem value="analista">Analista (vê apenas seus)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="flex items-center space-x-3 pt-2">
                 <Switch
                   id="active"
@@ -386,7 +526,7 @@ export default function UsersPage() {
                       <TableCell className="font-medium text-gray-900 py-4">{user.name}</TableCell>
                       <TableCell className="text-gray-700 py-4">{user.username}</TableCell>
                       <TableCell className="text-gray-700 py-4">{user.email}</TableCell>
-                      <TableCell className="py-4">{getRoleBadge(user.role)}</TableCell>
+                      <TableCell className="py-4">{getRoleBadge(user)}</TableCell>
                       <TableCell className="py-4">
                         <Badge 
                           variant={user.active ? "default" : "destructive"} 

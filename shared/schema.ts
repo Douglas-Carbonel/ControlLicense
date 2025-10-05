@@ -44,14 +44,18 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  role: text("role").notNull().default("support"), // 'admin', 'support', 'representante', 'cliente_final'
+  role: text("role").notNull().default("support"), // 'admin', 'support', 'representante', 'cliente_final', 'interno'
   name: text("name").notNull(),
   active: boolean("active").notNull().default(true),
   
-  // Novos campos para usuários externos
+  // Campos para usuários externos (representante/cliente_final)
   tipoUsuario: text("tipo_usuario"), // 'gerente' ou 'analista' (apenas para representante/cliente_final)
   representanteId: integer("representante_id"), // Se role = 'representante', referencia a qual representante pertence
   clienteId: text("cliente_id"), // Se role = 'cliente_final', referencia a qual cliente pertence (licenses.code)
+  
+  // Campos para usuários internos
+  setor: text("setor"), // 'desenvolvimento', 'suporte', 'implantacao', 'comercial'
+  nivel: text("nivel"), // Para suporte: 'analista_n1', 'analista_n2', 'analista_n3', 'gerente' | Para desenvolvimento: 'dev_web', 'dev_app'
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -98,6 +102,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  setor: z.enum(['desenvolvimento', 'suporte', 'implantacao', 'comercial']).optional().nullable(),
+  nivel: z.enum(['analista_n1', 'analista_n2', 'analista_n3', 'gerente', 'dev_web', 'dev_app']).optional().nullable(),
+  tipoUsuario: z.enum(['gerente', 'analista']).optional().nullable(),
 });
 
 export const insertMensagemSistemaSchema = createInsertSchema(mensagemSistema).omit({
