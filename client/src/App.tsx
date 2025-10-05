@@ -14,7 +14,15 @@ import AppLayout from "@/components/layout/app-layout";
 import Mensagens from "@/pages/mensagens";
 import Clientes from "./pages/clientes";
 import Representantes from "./pages/representantes";
-import Chamados from "./pages/chamados"; // Importa a página de Chamados
+import ChamadosPage from "@/pages/chamados"; // Importa a página de Chamados
+import ChamadoDetalhesPage from "@/pages/chamado-detalhes"; // Importa a página de detalhes do chamado
+
+// Placeholder for ProtectedRoute, assuming it exists elsewhere
+const ProtectedRoute = ({ children }) => {
+  // In a real app, this would check user authentication status
+  // For this example, we'll assume it always returns children
+  return children;
+};
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -58,7 +66,8 @@ function Router() {
         <Route path="/mensagens" component={Mensagens} />
         <Route path="/clientes" component={Clientes} />
         <Route path="/representantes" component={Representantes} />
-        <Route path="/chamados" component={Chamados} /> {/* Adiciona a rota de Chamados */}
+        <Route path="/chamados" element={<ProtectedRoute><ChamadosPage /></ProtectedRoute>} />
+        <Route path="/chamados/:id" element={<ProtectedRoute><ChamadoDetalhesPage /></ProtectedRoute>} />
       </Switch>
     </AppLayout>
   );
