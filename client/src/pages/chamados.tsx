@@ -92,8 +92,8 @@ export default function ChamadosPage() {
   });
 
   // Buscar clientes para seleção (para internos e representantes)
-  const { data: clientesData } = useQuery<{ data: Cliente[] }>({
-    queryKey: ["/api/licenses"],
+  const { data: clientesData } = useQuery<{ data: any[] }>({
+    queryKey: ["/api/licenses?limit=1000"],
     enabled: user?.role === 'representante' || user?.role === 'admin' || user?.role === 'interno',
   });
 
@@ -378,8 +378,7 @@ export default function ChamadosPage() {
                   currentUserRole: currentUser?.role,
                   representanteId: representanteIdDoUsuario,
                   currentUserCompleto: currentUser,
-                  totalClientes: clientes?.length,
-                  totalLicenses: clientesData?.data?.length,
+                  totalLicensesData: clientes?.length,
                   allUsersCount: allUsers.length
                 });
 
@@ -398,21 +397,28 @@ export default function ChamadosPage() {
                   );
                 }
 
-                const clientesDoRepresentante = clientes.filter(cliente => {
-                  // Buscar TODAS as licenças com este código (pode haver múltiplas linhas)
-                  const licensesDoCliente = clientesData?.data?.filter((lic: any) => lic.code === cliente.code) || [];
-                  
-                  if (licensesDoCliente.length === 0) {
-                    console.log(`Cliente ${cliente.code} - sem licenças encontradas`);
-                    return false;
+                // Agrupar licenças por código de cliente
+                const clientesMap = new Map<string, any[]>();
+                clientes.forEach((lic: any) => {
+                  if (lic.code) {
+                    if (!clientesMap.has(lic.code)) {
+                      clientesMap.set(lic.code, []);
+                    }
+                    clientesMap.get(lic.code)!.push(lic);
                   }
-                  
+                });
+
+                console.log(`Total de códigos de clientes únicos: ${clientesMap.size}`);
+
+                const clientesDoRepresentante: { code: string, nomeCliente: string }[] = [];
+
+                clientesMap.forEach((licensesDoCliente, code) => {
                   // Verificar se ALGUMA das licenças do cliente tem este representante
                   const temRepresentante = licensesDoCliente.some((lic: any) => {
                     const principal = lic.representantePrincipalId;
                     const secundario = lic.representanteSecundarioId;
                     
-                    console.log(`Verificando Cliente ${cliente.code}:`, {
+                    console.log(`Verificando Cliente ${code}:`, {
                       licenseId: lic.id,
                       representantePrincipalId: principal,
                       representanteSecundarioId: secundario,
@@ -426,12 +432,14 @@ export default function ChamadosPage() {
                   });
 
                   if (temRepresentante) {
-                    console.log(`✅ Cliente ${cliente.code} - VINCULADO ao representante ${representanteIdDoUsuario}`);
+                    console.log(`✅ Cliente ${code} - VINCULADO ao representante ${representanteIdDoUsuario}`);
+                    clientesDoRepresentante.push({
+                      code: code,
+                      nomeCliente: licensesDoCliente[0].nomeCliente || code
+                    });
                   } else {
-                    console.log(`❌ Cliente ${cliente.code} - NÃO vinculado ao representante ${representanteIdDoUsuario}`);
+                    console.log(`❌ Cliente ${code} - NÃO vinculado ao representante ${representanteIdDoUsuario}`);
                   }
-
-                  return temRepresentante;
                 });
 
                 console.log(`TOTAL FILTRADO: ${clientesDoRepresentante.length} cliente(s) para o representante ${representanteIdDoUsuario}`);
