@@ -91,10 +91,10 @@ export default function ChamadosPage() {
     queryKey: ["/api/chamados"],
   });
 
-  // Buscar clientes para seleção
+  // Buscar clientes para seleção (para internos e representantes)
   const { data: clientesData } = useQuery<{ data: Cliente[] }>({
     queryKey: ["/api/licenses"],
-    enabled: user?.role === 'representante',
+    enabled: user?.role === 'representante' || user?.role === 'admin' || user?.role === 'interno',
   });
 
   const clientes = clientesData?.data || [];
@@ -102,7 +102,7 @@ export default function ChamadosPage() {
   // Buscar dados do usuário atual
   const { data: userData } = useQuery({
     queryKey: ["/api/users"],
-    enabled: user?.role === 'admin',
+    enabled: !!user,
   });
 
   // Criar chamado
@@ -189,7 +189,17 @@ export default function ChamadosPage() {
   });
 
   const handleCreateChamado = () => {
-    if (!newChamado.categoria || !newChamado.titulo || !newChamado.descricao || !newChamado.clienteId) {
+    // Determinar clienteId baseado no tipo de usuário
+    let finalClienteId = newChamado.clienteId;
+    
+    if (user?.role === 'cliente_final' && userData) {
+      const currentUser = Array.isArray(userData) 
+        ? userData.find((u: any) => u.id === user.id)
+        : userData;
+      finalClienteId = currentUser?.clienteId || '';
+    }
+
+    if (!newChamado.categoria || !newChamado.titulo || !newChamado.descricao || !finalClienteId) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios",
@@ -198,7 +208,10 @@ export default function ChamadosPage() {
       return;
     }
 
-    createChamadoMutation.mutate(newChamado);
+    createChamadoMutation.mutate({
+      ...newChamado,
+      clienteId: finalClienteId
+    });
   };
 
   const handleViewDetails = (chamado: Chamado) => {
@@ -239,18 +252,6 @@ export default function ChamadosPage() {
     };
     
     return iconMap[categoria] || <Ticket className="h-4 w-4" />;
-  };
-
-  // Determinar clienteId baseado no tipo de usuário
-  const getClienteIdForNewChamado = () => {
-    if (user?.role === 'cliente_final' && userData) {
-      // Se for cliente final, retorna o código do cliente do usuário
-      const currentUser = Array.isArray(userData) 
-        ? userData.find((u: any) => u.id === user.id)
-        : userData;
-      return currentUser?.clienteId || '';
-    }
-    return newChamado.clienteId;
   };
 
   const chamadosAbertos = chamados.filter(c => c.status === 'ABERTO');
@@ -299,7 +300,8 @@ export default function ChamadosPage() {
                 </Select>
               </div>
 
-              {user?.role === 'representante' && (
+              {/* Campo Cliente - comportamento baseado no tipo de usuário */}
+              {(user?.role === 'admin' || user?.role === 'interno') && (
                 <div className="space-y-2">
                   <Label htmlFor="clienteId">Cliente *</Label>
                   <Select
@@ -317,6 +319,62 @@ export default function ChamadosPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {user?.role === 'representante' && (
+                <div className="space-y-2">
+                  <Label htmlFor="clienteId">Cliente *</Label>
+                  <Select
+                    value={newChamado.clienteId}
+                    onValueChange={(value) => setNewChamado({ ...newChamado, clienteId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientes
+                        .filter(cliente => {
+                          // Buscar dados do usuário representante
+                          const currentUser = Array.isArray(userData) 
+                            ? userData.find((u: any) => u.id === user.id)
+                            : userData;
+                          
+                          // Buscar licença do cliente para verificar representantes
+                          return clientesData?.data?.some((lic: any) => 
+                            lic.code === cliente.code && 
+                            (lic.representantePrincipalId === currentUser?.representanteId || 
+                             lic.representanteSecundarioId === currentUser?.representanteId)
+                          );
+                        })
+                        .map(cliente => (
+                          <SelectItem key={cliente.code} value={cliente.code}>
+                            {cliente.code} - {cliente.nomeCliente}
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {user?.role === 'cliente_final' && userData && (
+                <div className="space-y-2">
+                  <Label htmlFor="clienteId">Cliente</Label>
+                  <Input
+                    id="clienteId"
+                    value={(() => {
+                      const currentUser = Array.isArray(userData) 
+                        ? userData.find((u: any) => u.id === user.id)
+                        : userData;
+                      const clienteData = clientes.find(c => c.code === currentUser?.clienteId);
+                      return clienteData 
+                        ? `${clienteData.code} - ${clienteData.nomeCliente}` 
+                        : currentUser?.clienteId || '';
+                    })()}
+                    disabled
+                    className="bg-slate-100"
+                  />
                 </div>
               )}
 
