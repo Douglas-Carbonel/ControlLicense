@@ -67,19 +67,19 @@ export default function UsersPage() {
   });
 
   // Buscar usuários
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
+  const { data: users, isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
     enabled: currentUser?.role === "admin",
   });
 
   // Buscar representantes para o select
-  const { data: representantes } = useQuery({
+  const { data: representantes } = useQuery<Array<{ id: number; nome: string }>>({
     queryKey: ["/api/representantes"],
     enabled: currentUser?.role === "admin",
   });
 
   // Buscar clientes (licenses) para o select
-  const { data: clientesData } = useQuery({
+  const { data: clientesData } = useQuery<{ data: Array<{ code: string; nomeCliente: string }> }>({
     queryKey: ["/api/licenses"],
     enabled: currentUser?.role === "admin",
   });
@@ -483,7 +483,7 @@ export default function UsersPage() {
                         value={newUser.representanteId?.toString() || ''}
                         onValueChange={(value) => setNewUser({ ...newUser, representanteId: parseInt(value) })}
                       >
-                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]" data-testid="select-representante">
                           <SelectValue placeholder="Selecione a empresa" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border-[#e0e0e0]">
@@ -505,7 +505,7 @@ export default function UsersPage() {
                         value={newUser.clienteId || ''}
                         onValueChange={(value) => setNewUser({ ...newUser, clienteId: value })}
                       >
-                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]">
+                        <SelectTrigger className="border-[#e0e0e0] focus:border-[#0095da]" data-testid="select-cliente">
                           <SelectValue placeholder="Selecione o cliente" />
                         </SelectTrigger>
                         <SelectContent className="bg-white border-[#e0e0e0]">
