@@ -248,18 +248,30 @@ export class DbStorage implements IStorage {
   async updateLicense(id: number, license: Partial<InsertLicense>): Promise<License> {
     // Se os representantes foram modificados, atualizar todas as linhas do mesmo cliente
     if (license.representantePrincipalId !== undefined || license.representanteSecundarioId !== undefined) {
+      console.log('🔍 Atualizando representantes - ID:', id);
+      console.log('🔍 Novos valores:', {
+        representantePrincipalId: license.representantePrincipalId,
+        representanteSecundarioId: license.representanteSecundarioId
+      });
+      
       // Primeiro, buscar o code da licença atual
       const currentLicense = await this.getLicense(id);
+      console.log('🔍 Licença atual:', currentLicense);
       
       if (currentLicense?.code) {
+        console.log(`🔍 Atualizando TODAS as licenças com code: ${currentLicense.code}`);
+        
         // Atualizar TODAS as licenças com o mesmo code
-        await db
+        const updateResult = await db
           .update(licenses)
           .set({
             representantePrincipalId: license.representantePrincipalId,
             representanteSecundarioId: license.representanteSecundarioId
           })
-          .where(eq(licenses.code, currentLicense.code));
+          .where(eq(licenses.code, currentLicense.code))
+          .returning();
+        
+        console.log(`✅ ${updateResult.length} licença(s) atualizada(s) com code ${currentLicense.code}`);
       }
     }
     
