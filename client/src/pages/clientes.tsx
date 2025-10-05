@@ -1747,14 +1747,14 @@ export default function Clientes() {
                               Representante Principal
                             </Label>
                             <Select
-                              value={clienteLicenseData?.representantePrincipalId?.toString() || ""}
+                              value={clienteLicenseData?.representantePrincipalId?.toString() || "none"}
                               onValueChange={(value) => {
                                 if (clienteLicenseData) {
                                   queryClient.setQueryData(
                                     ["/api/licenses/by-code", selectedCliente],
                                     {
                                       ...clienteLicenseData,
-                                      representantePrincipalId: value ? parseInt(value) : null
+                                      representantePrincipalId: value === "none" ? null : parseInt(value)
                                     }
                                   );
                                 }
@@ -1764,7 +1764,7 @@ export default function Clientes() {
                                 <SelectValue placeholder="Selecione um representante" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Nenhum</SelectItem>
+                                <SelectItem value="none">Nenhum</SelectItem>
                                 {representantes?.filter((r: any) => r.ativo).map((rep: any) => (
                                   <SelectItem key={rep.id} value={rep.id.toString()}>
                                     <div className="flex items-center space-x-2">
@@ -1794,14 +1794,14 @@ export default function Clientes() {
                               Representante Secundário
                             </Label>
                             <Select
-                              value={clienteLicenseData?.representanteSecundarioId?.toString() || ""}
+                              value={clienteLicenseData?.representanteSecundarioId?.toString() || "none"}
                               onValueChange={(value) => {
                                 if (clienteLicenseData) {
                                   queryClient.setQueryData(
                                     ["/api/licenses/by-code", selectedCliente],
                                     {
                                       ...clienteLicenseData,
-                                      representanteSecundarioId: value ? parseInt(value) : null
+                                      representanteSecundarioId: value === "none" ? null : parseInt(value)
                                     }
                                   );
                                 }
@@ -1811,7 +1811,7 @@ export default function Clientes() {
                                 <SelectValue placeholder="Selecione um representante" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Nenhum</SelectItem>
+                                <SelectItem value="none">Nenhum</SelectItem>
                                 {representantes?.filter((r: any) => r.ativo).map((rep: any) => (
                                   <SelectItem key={rep.id} value={rep.id.toString()}>
                                     <div className="flex items-center space-x-2">
