@@ -50,10 +50,7 @@ export default function Representantes() {
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return await apiRequest("/api/representantes", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("POST", "/api/representantes", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/representantes"] });
@@ -75,10 +72,7 @@ export default function Representantes() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: typeof formData }) => {
-      return await apiRequest(`/api/representantes/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("PUT", `/api/representantes/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/representantes"] });
@@ -101,9 +95,7 @@ export default function Representantes() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/representantes/${id}`, {
-        method: "DELETE",
-      });
+      return await apiRequest("DELETE", `/api/representantes/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/representantes"] });
