@@ -1,4 +1,5 @@
 import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
