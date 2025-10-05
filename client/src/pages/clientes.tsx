@@ -373,7 +373,7 @@ export default function Clientes() {
     },
   });
 
-  const updateMutation = useMutation({
+  const updateRepresentantesMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       return await apiRequest("PUT", `/api/licenses/${id}`, data);
     },
@@ -1724,7 +1724,7 @@ export default function Clientes() {
                             size="sm"
                             onClick={async () => {
                               try {
-                                await updateMutation.mutateAsync({
+                                await updateRepresentantesMutation.mutateAsync({
                                   id: clienteLicenseData?.id,
                                   data: {
                                     representantePrincipalId: clienteLicenseData?.representantePrincipalId || null,
