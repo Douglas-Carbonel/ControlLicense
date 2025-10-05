@@ -229,22 +229,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Admin e interno podem ver todos os usuários
       if (req.user?.role === 'admin' || req.user?.role === 'interno') {
-        const allUsers = await db.select().from(storage.schema.users); // Use storage.schema.users here
-        const usersWithoutPassword = allUsers.map(({ passwordHash, ...user }) => user); // Use passwordHash here
+        const allUsers = await storage.getUsers();
+        const usersWithoutPassword = allUsers.map(({ passwordHash, ...user }) => user);
         return res.json(usersWithoutPassword);
       }
 
       // Representantes e clientes podem ver apenas seus próprios dados
-      const user = await db.select()
-        .from(storage.schema.users) // Use storage.schema.users here
-        .where(eq(storage.schema.users.id, req.user!.id)) // Use storage.schema.users here
-        .limit(1);
+      const user = await storage.getUser(req.user!.id);
 
-      if (user.length === 0) {
+      if (!user) {
         return res.status(404).json({ message: "Usuário não encontrado" });
       }
 
-      const { passwordHash, ...userWithoutPassword } = user[0]; // Use passwordHash here
+      const { passwordHash, ...userWithoutPassword } = user;
       res.json([userWithoutPassword]); // Retorna como array para manter compatibilidade
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
@@ -1330,7 +1327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar informações do solicitante
       let solicitante = null;
       if (chamado.solicitanteId) {
-        solicitante = await storage.getUserById(chamado.solicitanteId);
+        solicitante = await storage.getUser(chamado.solicitanteId);
       }
 
       res.json({ ...chamado, solicitante });
