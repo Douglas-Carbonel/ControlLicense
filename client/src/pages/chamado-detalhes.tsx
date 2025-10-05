@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,7 @@ const MOTIVOS_PENDENCIA = [
 
 export default function ChamadoDetalhesPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const navigate = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [newInteracao, setNewInteracao] = useState('');
@@ -187,7 +186,7 @@ export default function ChamadoDetalhesPage() {
       'SOLUCIONADO': { label: 'Solucionado', variant: 'outline' },
       'FECHADO': { label: 'Fechado', variant: 'destructive' }
     };
-    
+
     const config = statusMap[status] || statusMap['ABERTO'];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
@@ -199,7 +198,7 @@ export default function ChamadoDetalhesPage() {
       'ALTA': { color: 'bg-orange-100 text-orange-800 border-orange-200' },
       'URGENTE': { color: 'bg-red-100 text-red-800 border-red-200' }
     };
-    
+
     const config = prioridadeMap[prioridade] || prioridadeMap['MEDIA'];
     return <Badge variant="outline" className={config.color}>{prioridade}</Badge>;
   };
@@ -264,7 +263,7 @@ export default function ChamadoDetalhesPage() {
                 </span>
               </div>
             </div>
-            
+
             {/* Botão de Editar (apenas para internos) */}
             {(user?.role === 'admin' || user?.role === 'interno') && (
               <div>
@@ -309,7 +308,7 @@ export default function ChamadoDetalhesPage() {
           {/* Informações principais */}
           <div className="mt-6 p-6 bg-slate-50 rounded-lg">
             <h3 className="font-semibold text-xl mb-4">{chamado.titulo}</h3>
-            
+
             {isEditing ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">

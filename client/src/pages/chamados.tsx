@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +72,7 @@ const MOTIVOS_PENDENCIA = [
 export default function ChamadosPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const navigate = useLocation()[1]; // Use the navigate function from wouter
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newChamado, setNewChamado] = useState({
     categoria: '',
@@ -191,7 +190,7 @@ export default function ChamadosPage() {
   const handleCreateChamado = () => {
     // Determinar clienteId baseado no tipo de usuário
     let finalClienteId = newChamado.clienteId;
-    
+
     if (user?.role === 'cliente_final' && userData) {
       const currentUser = Array.isArray(userData) 
         ? userData.find((u: any) => u.id === user.id)
@@ -225,7 +224,7 @@ export default function ChamadosPage() {
       'SOLUCIONADO': { label: 'Solucionado', variant: 'outline' },
       'FECHADO': { label: 'Fechado', variant: 'destructive' }
     };
-    
+
     const config = statusMap[status] || statusMap['ABERTO'];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
@@ -237,7 +236,7 @@ export default function ChamadosPage() {
       'ALTA': { color: 'bg-orange-100 text-orange-800 border-orange-200' },
       'URGENTE': { color: 'bg-red-100 text-red-800 border-red-200' }
     };
-    
+
     const config = prioridadeMap[prioridade] || prioridadeMap['MEDIA'];
     return <Badge variant="outline" className={config.color}>{prioridade}</Badge>;
   };
@@ -249,7 +248,7 @@ export default function ChamadosPage() {
       'BUG': <XCircle className="h-4 w-4" />,
       'ATENDIMENTO': <MessageSquare className="h-4 w-4" />
     };
-    
+
     return iconMap[categoria] || <Ticket className="h-4 w-4" />;
   };
 
@@ -267,7 +266,7 @@ export default function ChamadosPage() {
             Gerencie seus chamados de suporte
           </p>
         </div>
-        
+
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349] text-white">
@@ -284,7 +283,7 @@ export default function ChamadosPage() {
                 Preencha os dados abaixo para abrir um novo chamado de suporte
               </p>
             </DialogHeader>
-            
+
             <div className="space-y-6 py-6">
               {/* Categoria - Obrigatório */}
               <div className="space-y-2">
@@ -360,7 +359,7 @@ export default function ChamadosPage() {
                           const currentUser = Array.isArray(userData) 
                             ? userData.find((u: any) => u.id === user.id)
                             : userData;
-                          
+
                           // Buscar licença do cliente para verificar representantes
                           return clientesData?.data?.some((lic: any) => 
                             lic.code === cliente.code && 
@@ -444,7 +443,7 @@ export default function ChamadosPage() {
               {/* Divisor */}
               <div className="border-t pt-6">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4">Informações Adicionais (Opcional)</h3>
-                
+
                 <div className="space-y-4">
                   {/* Prioridade */}
                   <div className="space-y-2">
@@ -689,5 +688,3 @@ function ChamadoCard({
     </div>
   );
 }
-
-
