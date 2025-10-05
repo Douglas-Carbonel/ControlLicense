@@ -1,5 +1,5 @@
 
-const postgres = require('postgres');
+import postgres from 'postgres';
 
 async function runMigration() {
   const connectionString = process.env.DATABASE_URL;
