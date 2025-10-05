@@ -287,7 +287,7 @@ export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;
 // Tabela de Chamados
 export const chamados = pgTable("chamados", {
   id: serial("id").primaryKey(),
-  numero: integer("numero").notNull().default(sql`nextval('chamados_numero_seq')`), // Número sequencial do chamado (auto-gerado)
+  // numero é gerenciado automaticamente pelo PostgreSQL via sequence
   categoria: text("categoria").notNull(), // 'INSTALACAO', 'MELHORIA', 'BUG', 'ATENDIMENTO'
   titulo: text("titulo").notNull(),
   descricao: text("descricao").notNull(),
@@ -342,7 +342,6 @@ export const chamadoInteracoes = pgTable("chamado_interacoes", {
 
 export const insertChamadoSchema = createInsertSchema(chamados).omit({
   id: true,
-  numero: true, // Excluir numero pois é auto-gerado
   dataAbertura: true,
   createdAt: true,
   updatedAt: true,
