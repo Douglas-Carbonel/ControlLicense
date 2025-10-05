@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronUp,
   User,
-  MessageSquare
+  MessageSquare,
+  Ticket
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useState, useMemo, useCallback, memo, useEffect } from "react";
@@ -81,6 +82,12 @@ function Sidebar() {
           label: "Clientes", 
           icon: Building2,
           description: "Histórico e suporte aos clientes"
+        },
+        { 
+          href: "/chamados", 
+          label: "Chamados", 
+          icon: Ticket,
+          description: "Gerenciar chamados"
         }
       );
     } else {
@@ -103,6 +110,12 @@ function Sidebar() {
           label: "Mensagens", 
           icon: MessageSquare,
           description: "Gerenciar mensagens do sistema"
+        },
+        { 
+          href: "/chamados", 
+          label: "Chamados", 
+          icon: Ticket,
+          description: "Portal de chamados"
         },
         { 
           href: "/clientes", 

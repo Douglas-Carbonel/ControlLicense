@@ -4,7 +4,36 @@ dotenv.config();
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { licenses, users, activities, mensagemSistema, clienteHistorico, representantes, type InsertLicense, type InsertUser, type InsertActivity, type InsertMensagemSistema, type InsertClienteHistorico, type InsertRepresentante, type License, type User, type Activity, type MensagemSistema, type ClienteHistorico, type Representante, type HardwareLicenseQuery } from "@shared/schema";
+import { 
+  licenses, 
+  activities, 
+  users, 
+  mensagemSistema, 
+  clienteHistorico, 
+  representantes,
+  chamados,
+  chamadoPendencias,
+  chamadoInteracoes,
+  type License, 
+  type Activity, 
+  type User,
+  type MensagemSistema,
+  type ClienteHistorico,
+  type Representante,
+  type Chamado,
+  type ChamadoPendencia,
+  type ChamadoInteracao,
+  type InsertLicense,
+  type InsertActivity,
+  type InsertUser,
+  type InsertMensagemSistema,
+  type InsertClienteHistorico,
+  type InsertRepresentante,
+  type InsertChamado,
+  type InsertChamadoPendencia,
+  type InsertChamadoInteracao,
+  type HardwareLicenseQuery
+} from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -76,6 +105,23 @@ export interface IStorage {
   createRepresentante(data: InsertRepresentante): Promise<Representante>;
   updateRepresentante(id: number, data: Partial<InsertRepresentante>): Promise<Representante>;
   deleteRepresentante(id: number): Promise<void>;
+
+  // Chamados operations
+  getChamados(): Promise<Chamado[]>;
+  getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<Chamado[]>;
+  getChamado(id: number): Promise<Chamado | undefined>;
+  createChamado(data: InsertChamado): Promise<Chamado>;
+  updateChamado(id: number, data: Partial<InsertChamado>): Promise<Chamado>;
+  deleteChamado(id: number): Promise<void>;
+
+  // Chamado Pendências operations
+  getChamadoPendencias(chamadoId: number): Promise<ChamadoPendencia[]>;
+  createChamadoPendencia(data: InsertChamadoPendencia): Promise<ChamadoPendencia>;
+  updateChamadoPendencia(id: number, data: Partial<InsertChamadoPendencia>): Promise<ChamadoPendencia>;
+
+  // Chamado Interações operations
+  getChamadoInteracoes(chamadoId: number): Promise<ChamadoInteracao[]>;
+  createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao>;
 }
 
 export class DbStorage implements IStorage {
@@ -721,11 +767,11 @@ export class DbStorage implements IStorage {
                 .set({ ...data, updatedAt: new Date() })
                 .where(eq(representantes.id, id))
                 .returning();
-            
+
             if (!result[0]) {
                 throw new Error("Representante não encontrado");
             }
-            
+
             return result[0];
         } catch (error) {
             console.error("Erro ao atualizar representante:", error);
@@ -735,13 +781,88 @@ export class DbStorage implements IStorage {
 
     async deleteRepresentante(id: number): Promise<void> {
         try {
-            await db
-                .delete(representantes)
-                .where(eq(representantes.id, id));
+            await db.delete(representantes).where(eq(representantes.id, id));
         } catch (error) {
             console.error("Erro ao deletar representante:", error);
             throw error;
         }
+    }
+
+    // Métodos para Chamados
+    async getChamados(): Promise<Chamado[]> {
+        return db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
+    }
+
+    async getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<Chamado[]> {
+        if (role === 'admin' || role === 'interno') {
+            // Admins e internos veem todos
+            return db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
+        } else if (role === 'representante' && representanteId) {
+            // Representantes veem apenas de seus clientes
+            return db.select().from(chamados)
+                .where(eq(chamados.representanteId, representanteId))
+                .orderBy(desc(chamados.dataAbertura));
+        } else if (role === 'cliente_final' && clienteId) {
+            // Clientes veem apenas seus próprios
+            return db.select().from(chamados)
+                .where(eq(chamados.clienteId, clienteId))
+                .orderBy(desc(chamados.dataAbertura));
+        }
+        return [];
+    }
+
+    async getChamado(id: number): Promise<Chamado | undefined> {
+        const result = await db.select().from(chamados).where(eq(chamados.id, id));
+        return result[0];
+    }
+
+    async createChamado(data: InsertChamado): Promise<Chamado> {
+        const result = await db.insert(chamados).values(data).returning();
+        return result[0];
+    }
+
+    async updateChamado(id: number, data: Partial<InsertChamado>): Promise<Chamado> {
+        const result = await db.update(chamados)
+            .set({ ...data, updatedAt: new Date() })
+            .where(eq(chamados.id, id))
+            .returning();
+        return result[0];
+    }
+
+    async deleteChamado(id: number): Promise<void> {
+        await db.delete(chamados).where(eq(chamados.id, id));
+    }
+
+    // Métodos para Pendências
+    async getChamadoPendencias(chamadoId: number): Promise<ChamadoPendencia[]> {
+        return db.select().from(chamadoPendencias)
+            .where(eq(chamadoPendencias.chamadoId, chamadoId))
+            .orderBy(desc(chamadoPendencias.createdAt));
+    }
+
+    async createChamadoPendencia(data: InsertChamadoPendencia): Promise<ChamadoPendencia> {
+        const result = await db.insert(chamadoPendencias).values(data).returning();
+        return result[0];
+    }
+
+    async updateChamadoPendencia(id: number, data: Partial<InsertChamadoPendencia>): Promise<ChamadoPendencia> {
+        const result = await db.update(chamadoPendencias)
+            .set({ ...data, updatedAt: new Date() })
+            .where(eq(chamadoPendencias.id, id))
+            .returning();
+        return result[0];
+    }
+
+    // Métodos para Interações
+    async getChamadoInteracoes(chamadoId: number): Promise<ChamadoInteracao[]> {
+        return db.select().from(chamadoInteracoes)
+            .where(eq(chamadoInteracoes.chamadoId, chamadoId))
+            .orderBy(chamadoInteracoes.createdAt);
+    }
+
+    async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
+        const result = await db.insert(chamadoInteracoes).values(data).returning();
+        return result[0];
     }
 }
 

@@ -282,3 +282,108 @@ export const insertRepresentanteSchema = createInsertSchema(representantes).omit
 
 export type Representante = InferSelectModel<typeof representantes>;
 export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;
+
+// Tabela de Chamados
+export const chamados = pgTable("chamados", {
+  id: serial("id").primaryKey(),
+  categoria: text("categoria").notNull(), // 'INSTALACAO', 'MELHORIA', 'BUG', 'ATENDIMENTO'
+  titulo: text("titulo").notNull(),
+  descricao: text("descricao").notNull(),
+  status: text("status").notNull().default('ABERTO'), // 'ABERTO', 'PENDENTE', 'SOLUCIONADO', 'FECHADO'
+  prioridade: text("prioridade").notNull().default('MEDIA'), // 'BAIXA', 'MEDIA', 'ALTA', 'URGENTE'
+  
+  // Relacionamentos
+  usuarioAberturaId: integer("usuario_abertura_id").notNull(), // Quem abriu o chamado
+  clienteId: text("cliente_id").notNull(), // Cliente relacionado (licenses.code)
+  representanteId: integer("representante_id"), // Se aplicável
+  
+  // Atribuição interna
+  atendenteId: integer("atendente_id"), // Usuário interno responsável
+  
+  // Datas
+  dataAbertura: timestamp("data_abertura").defaultNow().notNull(),
+  dataPrevisao: timestamp("data_previsao"),
+  dataFechamento: timestamp("data_fechamento"),
+  
+  // Campos adicionais
+  observacoes: text("observacoes"),
+  anexos: text("anexos").array(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de Pendências de Chamados
+export const chamadoPendencias = pgTable("chamado_pendencias", {
+  id: serial("id").primaryKey(),
+  chamadoId: integer("chamado_id").notNull(),
+  motivo: text("motivo").notNull(), // 'AGUARDANDO_REPRESENTANTE', 'AGUARDANDO_AGENDAMENTO', 'AGUARDANDO_CLIENTE', 'OUTROS'
+  descricao: text("descricao").notNull(),
+  responsavelId: integer("responsavel_id").notNull(), // Quem registrou a pendência
+  resolvido: boolean("resolvido").notNull().default(false),
+  dataResolucao: timestamp("data_resolucao"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabela de Interações/Comentários em Chamados
+export const chamadoInteracoes = pgTable("chamado_interacoes", {
+  id: serial("id").primaryKey(),
+  chamadoId: integer("chamado_id").notNull(),
+  usuarioId: integer("usuario_id").notNull(),
+  mensagem: text("mensagem").notNull(),
+  anexos: text("anexos").array(),
+  tipo: text("tipo").notNull().default('COMENTARIO'), // 'COMENTARIO', 'MUDANCA_STATUS', 'ATRIBUICAO'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertChamadoSchema = createInsertSchema(chamados).omit({
+  id: true,
+  dataAbertura: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  dataPrevisao: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  dataFechamento: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+  anexos: z.array(z.string()).optional().nullable(),
+});
+
+export const insertChamadoPendenciaSchema = createInsertSchema(chamadoPendencias).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  dataResolucao: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }),
+});
+
+export const insertChamadoInteracaoSchema = createInsertSchema(chamadoInteracoes).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  anexos: z.array(z.string()).optional().nullable(),
+});
+
+export type Chamado = InferSelectModel<typeof chamados>;
+export type InsertChamado = z.infer<typeof insertChamadoSchema>;
+export type ChamadoPendencia = InferSelectModel<typeof chamadoPendencias>;
+export type InsertChamadoPendencia = z.infer<typeof insertChamadoPendenciaSchema>;
+export type ChamadoInteracao = InferSelectModel<typeof chamadoInteracoes>;
+export type InsertChamadoInteracao = z.infer<typeof insertChamadoInteracaoSchema>;

@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
-import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, insertRepresentanteSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse } from "@shared/schema";
+import { insertLicenseSchema, insertActivitySchema, insertUserSchema, insertMensagemSistemaSchema, insertClienteHistoricoSchema, insertRepresentanteSchema, insertChamadoSchema, insertChamadoPendenciaSchema, insertChamadoInteracaoSchema, hardwareLicenseQuerySchema, clienteHistorico, type HardwareLicenseResponse } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import { parse } from "csv-parse";
@@ -1287,6 +1287,241 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching usuarios:", error);
       res.status(500).json({ message: "Failed to fetch usuarios" });
+    }
+  });
+
+  // Rotas de Chamados
+  app.get("/api/chamados", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Buscar dados do usuário para filtrar corretamente
+      const userData = await storage.getUser(req.user.id);
+      if (!userData) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      const chamados = await storage.getChamadosByUsuario(
+        req.user.id,
+        req.user.role,
+        userData.representanteId || undefined,
+        userData.clienteId || undefined
+      );
+
+      res.json(chamados);
+    } catch (error) {
+      console.error("Error fetching chamados:", error);
+      res.status(500).json({ message: "Erro ao buscar chamados" });
+    }
+  });
+
+  app.get("/api/chamados/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const chamado = await storage.getChamado(id);
+      
+      if (!chamado) {
+        return res.status(404).json({ message: "Chamado não encontrado" });
+      }
+
+      res.json(chamado);
+    } catch (error) {
+      console.error("Error fetching chamado:", error);
+      res.status(500).json({ message: "Erro ao buscar chamado" });
+    }
+  });
+
+  app.post("/api/chamados", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const validatedData = insertChamadoSchema.parse({
+        ...req.body,
+        usuarioAberturaId: req.user.id
+      });
+
+      const chamado = await storage.createChamado(validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user.id.toString(),
+        userName: req.user.name,
+        action: "CREATE",
+        resourceType: "chamado",
+        resourceId: chamado.id,
+        description: `${req.user.name} abriu chamado: ${chamado.titulo}`,
+      });
+
+      res.status(201).json(chamado);
+    } catch (error) {
+      console.error("Error creating chamado:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao criar chamado" });
+    }
+  });
+
+  app.put("/api/chamados/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertChamadoSchema.partial().parse(req.body);
+
+      // Verificar se usuário externo está tentando mudar status para PENDENTE ou SOLUCIONADO
+      if (req.user?.role !== 'admin' && req.user?.role !== 'interno') {
+        if (validatedData.status === 'PENDENTE' || validatedData.status === 'SOLUCIONADO') {
+          return res.status(403).json({ 
+            message: "Apenas usuários internos podem definir status para PENDENTE ou SOLUCIONADO" 
+          });
+        }
+      }
+
+      const chamado = await storage.updateChamado(id, validatedData);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "UPDATE",
+        resourceType: "chamado",
+        resourceId: chamado.id,
+        description: `${req.user!.name} atualizou chamado: ${chamado.titulo}`,
+      });
+
+      res.json(chamado);
+    } catch (error) {
+      console.error("Error updating chamado:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao atualizar chamado" });
+    }
+  });
+
+  app.delete("/api/chamados/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const chamado = await storage.getChamado(id);
+      
+      if (!chamado) {
+        return res.status(404).json({ message: "Chamado não encontrado" });
+      }
+
+      await storage.deleteChamado(id);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user!.id.toString(),
+        userName: req.user!.name,
+        action: "DELETE",
+        resourceType: "chamado",
+        resourceId: id,
+        description: `${req.user!.name} excluiu chamado: ${chamado.titulo}`,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting chamado:", error);
+      res.status(500).json({ message: "Erro ao excluir chamado" });
+    }
+  });
+
+  // Rotas de Pendências
+  app.get("/api/chamados/:id/pendencias", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const chamadoId = parseInt(req.params.id);
+      const pendencias = await storage.getChamadoPendencias(chamadoId);
+      res.json(pendencias);
+    } catch (error) {
+      console.error("Error fetching pendencias:", error);
+      res.status(500).json({ message: "Erro ao buscar pendências" });
+    }
+  });
+
+  app.post("/api/chamados/:id/pendencias", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (req.user?.role !== 'admin' && req.user?.role !== 'interno') {
+        return res.status(403).json({ 
+          message: "Apenas usuários internos podem criar pendências" 
+        });
+      }
+
+      const chamadoId = parseInt(req.params.id);
+      const validatedData = insertChamadoPendenciaSchema.parse({
+        ...req.body,
+        chamadoId,
+        responsavelId: req.user.id
+      });
+
+      const pendencia = await storage.createChamadoPendencia(validatedData);
+
+      res.status(201).json(pendencia);
+    } catch (error) {
+      console.error("Error creating pendencia:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao criar pendência" });
+    }
+  });
+
+  app.put("/api/chamados/:chamadoId/pendencias/:id", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (req.user?.role !== 'admin' && req.user?.role !== 'interno') {
+        return res.status(403).json({ 
+          message: "Apenas usuários internos podem atualizar pendências" 
+        });
+      }
+
+      const id = parseInt(req.params.id);
+      const validatedData = insertChamadoPendenciaSchema.partial().parse(req.body);
+
+      const pendencia = await storage.updateChamadoPendencia(id, validatedData);
+
+      res.json(pendencia);
+    } catch (error) {
+      console.error("Error updating pendencia:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao atualizar pendência" });
+    }
+  });
+
+  // Rotas de Interações
+  app.get("/api/chamados/:id/interacoes", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const chamadoId = parseInt(req.params.id);
+      const interacoes = await storage.getChamadoInteracoes(chamadoId);
+      res.json(interacoes);
+    } catch (error) {
+      console.error("Error fetching interacoes:", error);
+      res.status(500).json({ message: "Erro ao buscar interações" });
+    }
+  });
+
+  app.post("/api/chamados/:id/interacoes", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const chamadoId = parseInt(req.params.id);
+      const validatedData = insertChamadoInteracaoSchema.parse({
+        ...req.body,
+        chamadoId,
+        usuarioId: req.user!.id
+      });
+
+      const interacao = await storage.createChamadoInteracao(validatedData);
+
+      res.status(201).json(interacao);
+    } catch (error) {
+      console.error("Error creating interacao:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      }
+      res.status(500).json({ message: "Erro ao criar interação" });
     }
   });
 

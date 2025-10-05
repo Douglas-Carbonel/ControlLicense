@@ -14,6 +14,7 @@ import AppLayout from "@/components/layout/app-layout";
 import Mensagens from "@/pages/mensagens";
 import Clientes from "./pages/clientes";
 import Representantes from "./pages/representantes";
+import Chamados from "./pages/chamados"; // Importa a página de Chamados
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -57,6 +58,7 @@ function Router() {
         <Route path="/mensagens" component={Mensagens} />
         <Route path="/clientes" component={Clientes} />
         <Route path="/representantes" component={Representantes} />
+        <Route path="/chamados" component={Chamados} /> {/* Adiciona a rota de Chamados */}
       </Switch>
     </AppLayout>
   );
