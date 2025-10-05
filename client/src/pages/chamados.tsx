@@ -363,40 +363,67 @@ export default function ChamadosPage() {
                   ? userData.find((u: any) => u.id === user.id)
                   : userData;
 
+                const representanteIdDoUsuario = currentUser?.representanteId;
+
                 console.log('Debug filtro representante:', {
                   currentUserId: currentUser?.id,
                   currentUserName: currentUser?.name,
-                  representanteId: currentUser?.representanteId,
+                  representanteId: representanteIdDoUsuario,
                   totalClientes: clientes?.length,
                   totalLicenses: clientesData?.data?.length
                 });
+
+                // Se não tem representanteId, não mostra nenhum cliente
+                if (!representanteIdDoUsuario) {
+                  console.log('Usuário sem representanteId definido');
+                  return (
+                    <div className="space-y-2">
+                      <Label className="text-base font-semibold text-red-600">
+                        Erro de configuração
+                      </Label>
+                      <p className="text-sm text-red-500">
+                        Seu usuário não está vinculado a nenhum representante. Contate o administrador.
+                      </p>
+                    </div>
+                  );
+                }
 
                 const clientesDoRepresentante = clientes.filter(cliente => {
                   // Buscar TODAS as licenças com este código (pode haver múltiplas linhas)
                   const licensesDoCliente = clientesData?.data?.filter((lic: any) => lic.code === cliente.code) || [];
                   
-                  if (licensesDoCliente.length === 0 || !currentUser?.representanteId) {
-                    console.log(`Cliente ${cliente.code} - sem licenças ou sem representanteId`);
+                  if (licensesDoCliente.length === 0) {
+                    console.log(`Cliente ${cliente.code} - sem licenças encontradas`);
                     return false;
                   }
                   
                   // Verificar se ALGUMA das licenças do cliente tem este representante
-                  const temRepresentante = licensesDoCliente.some((lic: any) => 
-                    lic.representantePrincipalId === currentUser.representanteId || 
-                    lic.representanteSecundarioId === currentUser.representanteId
-                  );
-
-                  console.log(`Cliente ${cliente.code}:`, {
-                    nLicenses: licensesDoCliente.length,
-                    representantePrincipal: licensesDoCliente[0]?.representantePrincipalId,
-                    representanteSecundario: licensesDoCliente[0]?.representanteSecundarioId,
-                    temRepresentante
+                  const temRepresentante = licensesDoCliente.some((lic: any) => {
+                    const principal = lic.representantePrincipalId;
+                    const secundario = lic.representanteSecundarioId;
+                    
+                    console.log(`Verificando Cliente ${cliente.code}:`, {
+                      representantePrincipal: principal,
+                      representanteSecundario: secundario,
+                      comparandoCom: representanteIdDoUsuario,
+                      matchPrincipal: principal === representanteIdDoUsuario,
+                      matchSecundario: secundario === representanteIdDoUsuario
+                    });
+                    
+                    return principal === representanteIdDoUsuario || 
+                           secundario === representanteIdDoUsuario;
                   });
+
+                  if (temRepresentante) {
+                    console.log(`✅ Cliente ${cliente.code} - VINCULADO ao representante ${representanteIdDoUsuario}`);
+                  } else {
+                    console.log(`❌ Cliente ${cliente.code} - NÃO vinculado ao representante ${representanteIdDoUsuario}`);
+                  }
 
                   return temRepresentante;
                 });
 
-                console.log('Clientes filtrados para representante:', clientesDoRepresentante.length);
+                console.log(`TOTAL FILTRADO: ${clientesDoRepresentante.length} cliente(s) para o representante ${representanteIdDoUsuario}`);
 
                 return (
                   <div className="space-y-2">
