@@ -1,15 +1,16 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageSquare, CheckCircle, AlertTriangle, Save, X, User, Calendar } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Send, Clock, User2, Info } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -23,17 +24,17 @@ const CATEGORIAS = [
 ];
 
 const PRIORIDADES = [
-  { value: 'BAIXA', label: 'Baixa' },
-  { value: 'MEDIA', label: 'Média' },
-  { value: 'ALTA', label: 'Alta' },
-  { value: 'URGENTE', label: 'Urgente' }
+  { value: 'BAIXA', label: 'Baixa', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { value: 'MEDIA', label: 'Média', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { value: 'ALTA', label: 'Alta', color: 'bg-orange-50 text-orange-700 border-orange-200' },
+  { value: 'URGENTE', label: 'Urgente', color: 'bg-red-50 text-red-700 border-red-200' }
 ];
 
 const STATUS = [
-  { value: 'ABERTO', label: 'Aberto' },
-  { value: 'PENDENTE', label: 'Pendente' },
-  { value: 'SOLUCIONADO', label: 'Solucionado' },
-  { value: 'FECHADO', label: 'Fechado' }
+  { value: 'ABERTO', label: 'Aberto', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { value: 'PENDENTE', label: 'Pendente', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  { value: 'SOLUCIONADO', label: 'Solucionado', color: 'bg-green-50 text-green-700 border-green-200' },
+  { value: 'FECHADO', label: 'Fechado', color: 'bg-slate-100 text-slate-700 border-slate-300' }
 ];
 
 const MOTIVOS_PENDENCIA = [
@@ -50,7 +51,6 @@ export default function ChamadoDetalhesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [newInteracao, setNewInteracao] = useState('');
-  const [hasChanges, setHasChanges] = useState(false);
   const [editData, setEditData] = useState({
     status: '',
     prioridade: '',
@@ -58,7 +58,6 @@ export default function ChamadoDetalhesPage() {
     observacoes: ''
   });
 
-  // Buscar chamado
   const { data: chamado, isLoading } = useQuery({
     queryKey: [`/api/chamados/${id}`],
     queryFn: async () => {
@@ -72,25 +71,21 @@ export default function ChamadoDetalhesPage() {
     enabled: !!id,
   });
 
-  // Buscar interações
-  const { data: interacoes = [], refetch: refetchInteracoes } = useQuery({
+  const { data: interacoes = [], refetch: refetchInteracoes } = useQuery<any[]>({
     queryKey: [`/api/chamados/${id}/interacoes`],
     enabled: !!id,
   });
 
-  // Buscar pendências
-  const { data: pendencias = [] } = useQuery({
+  const { data: pendencias = [] } = useQuery<any[]>({
     queryKey: [`/api/chamados/${id}/pendencias`],
     enabled: !!id,
   });
 
-  // Buscar usuários internos para atendente
   const { data: usuariosInternos = [] } = useQuery({
     queryKey: ["/api/users"],
     select: (data: any[]) => data.filter(u => u.role === 'admin' || u.role === 'interno')
   });
 
-  // Atualizar editData quando chamado carregar
   useEffect(() => {
     if (chamado) {
       setEditData({
@@ -102,7 +97,16 @@ export default function ChamadoDetalhesPage() {
     }
   }, [chamado]);
 
-  // Mutation para atualizar chamado
+  const hasChanges = useMemo(() => {
+    if (!chamado) return false;
+    return (
+      editData.status !== chamado.status ||
+      editData.prioridade !== chamado.prioridade ||
+      editData.atendenteId !== chamado.atendenteId ||
+      editData.observacoes !== (chamado.observacoes || '')
+    );
+  }, [chamado, editData]);
+
   const updateChamadoMutation = useMutation({
     mutationFn: async (data: Partial<typeof editData>) => {
       const token = localStorage.getItem("token");
@@ -125,7 +129,6 @@ export default function ChamadoDetalhesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
-      setHasChanges(false);
       toast({
         title: "Sucesso",
         description: "Chamado atualizado com sucesso!",
@@ -140,7 +143,6 @@ export default function ChamadoDetalhesPage() {
     },
   });
 
-  // Criar interação
   const createInteracaoMutation = useMutation({
     mutationFn: async (mensagem: string) => {
       const token = localStorage.getItem("token");
@@ -201,37 +203,19 @@ export default function ChamadoDetalhesPage() {
         atendenteId: chamado.atendenteId,
         observacoes: chamado.observacoes || ''
       });
-      setHasChanges(false);
     }
   };
 
   const handleFieldChange = (field: string, value: any) => {
     setEditData({ ...editData, [field]: value });
-    setHasChanges(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      'ABERTO': { label: 'Aberto', variant: 'default' },
-      'PENDENTE': { label: 'Pendente', variant: 'secondary' },
-      'SOLUCIONADO': { label: 'Solucionado', variant: 'outline' },
-      'FECHADO': { label: 'Fechado', variant: 'destructive' }
-    };
-
-    const config = statusMap[status] || statusMap['ABERTO'];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const getStatusConfig = (status: string) => {
+    return STATUS.find(s => s.value === status) || STATUS[0];
   };
 
-  const getPrioridadeBadge = (prioridade: string) => {
-    const prioridadeMap: Record<string, { color: string }> = {
-      'BAIXA': { color: 'bg-green-100 text-green-800 border-green-200' },
-      'MEDIA': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-      'ALTA': { color: 'bg-orange-100 text-orange-800 border-orange-200' },
-      'URGENTE': { color: 'bg-red-100 text-red-800 border-red-200' }
-    };
-
-    const config = prioridadeMap[prioridade] || prioridadeMap['MEDIA'];
-    return <Badge variant="outline" className={config.color}>{prioridade}</Badge>;
+  const getPrioridadeConfig = (prioridade: string) => {
+    return PRIORIDADES.find(p => p.value === prioridade) || PRIORIDADES[1];
   };
 
   const isInternal = user?.role === 'admin' || user?.role === 'interno';
@@ -248,7 +232,7 @@ export default function ChamadoDetalhesPage() {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-slate-800 mb-4">Chamado não encontrado</h2>
-        <Button onClick={() => navigate('/chamados')}>
+        <Button onClick={() => navigate('/chamados')} data-testid="button-voltar">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar para Chamados
         </Button>
@@ -256,330 +240,346 @@ export default function ChamadoDetalhesPage() {
     );
   }
 
+  const statusConfig = getStatusConfig(chamado.status);
+  const prioridadeConfig = getPrioridadeConfig(chamado.prioridade);
+
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="border-b bg-white px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/chamados')}
-              className="text-slate-600 hover:text-slate-900"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <div className="h-6 w-px bg-slate-300"></div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">
-                Chamado #{chamado.id}
+    <div className="h-full flex flex-col bg-slate-50">
+      {/* Header Simplificado */}
+      <div className="bg-white border-b px-6 py-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/chamados')}
+            className="text-slate-600 hover:text-slate-900 -ml-2"
+            data-testid="button-voltar-header"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Voltar
+          </Button>
+          <Separator orientation="vertical" className="h-6" />
+          <div className="flex-1">
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-xl font-semibold text-slate-900" data-testid="text-titulo-chamado">
+                {chamado.titulo}
               </h1>
-              <div className="flex items-center space-x-2 mt-1">
-                <Badge variant="outline" className="text-sm">
-                  {CATEGORIAS.find(c => c.value === chamado.categoria)?.label}
-                </Badge>
-                <span className="text-sm text-slate-500">•</span>
-                <span className="text-sm text-slate-500">
-                  Aberto em {format(new Date(chamado.dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </span>
-              </div>
+              <span className="text-sm text-slate-500" data-testid="badge-numero-chamado">#{chamado.id}</span>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={`${statusConfig.color} border font-medium`} data-testid="badge-status-header">
+              {statusConfig.label}
+            </Badge>
+            <Badge variant="outline" className={`${prioridadeConfig.color} border font-medium`} data-testid="badge-prioridade-header">
+              {prioridadeConfig.label}
+            </Badge>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Conteúdo Principal */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Descrição do Chamado */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">{chamado.titulo}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-slate-50 rounded-lg p-6">
-                <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{chamado.descricao}</p>
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto p-6 space-y-4">
+            
+            {/* Descrição Original */}
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200" data-testid="card-descricao">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Info className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-slate-900 mb-1">Descrição do Problema</h3>
+                  <p className="text-sm text-slate-500">
+                    Aberto por {chamado.clienteId} • {format(new Date(chamado.dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap pl-11" data-testid="text-descricao">
+                {chamado.descricao}
+              </p>
+            </div>
 
-          {/* Timeline de Interações */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Histórico do Chamado</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Pendências */}
-              {pendencias.map((pendencia: any) => (
-                <div key={pendencia.id} className="flex space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                      <AlertTriangle className="h-6 w-6 text-yellow-600" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold text-yellow-800 text-lg">
-                          Pendência: {MOTIVOS_PENDENCIA.find(m => m.value === pendencia.motivo)?.label}
-                        </span>
-                        <span className="text-sm text-yellow-600">
-                          {format(new Date(pendencia.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                        </span>
+            {/* Timeline de Interações */}
+            {(interacoes.length > 0 || pendencias.length > 0) && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide px-1">
+                  Histórico
+                </h3>
+
+                {/* Pendências */}
+                {pendencias.map((pendencia: any) => (
+                  <div key={pendencia.id} className="bg-yellow-50 rounded-lg p-4 border border-yellow-200" data-testid={`card-pendencia-${pendencia.id}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-4 h-4 text-yellow-700" />
                       </div>
-                      <p className="text-yellow-700">{pendencia.descricao}</p>
-                      {pendencia.resolvido && (
-                        <div className="mt-3 flex items-center text-sm text-green-600">
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Resolvida em {format(new Date(pendencia.dataResolucao), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-yellow-900 text-sm">
+                            {MOTIVOS_PENDENCIA.find(m => m.value === pendencia.motivo)?.label}
+                          </span>
+                          <span className="text-xs text-yellow-600" data-testid={`text-data-pendencia-${pendencia.id}`}>
+                            {format(new Date(pendencia.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Interações */}
-              {interacoes.map((interacao: any) => (
-                <div key={interacao.id} className="flex space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="h-12 w-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-semibold text-lg">
-                      {interacao.usuarioId === user?.id ? 'EU' : 'U'}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className={`border rounded-lg p-6 ${
-                      interacao.tipo === 'MUDANCA_STATUS' 
-                        ? 'bg-blue-50 border-blue-200' 
-                        : 'bg-white border-slate-200'
-                    }`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold text-slate-800 text-lg">
-                          {interacao.tipo === 'MUDANCA_STATUS' && '🔄 '}
-                          {interacao.tipo === 'ATRIBUICAO' && '👤 '}
-                          {interacao.tipo === 'COMENTARIO' && '💬 '}
-                          {interacao.tipo === 'MUDANCA_STATUS' ? 'Mudança de Status' : 
-                           interacao.tipo === 'ATRIBUICAO' ? 'Atribuição' : 'Comentário'}
-                        </span>
-                        <span className="text-sm text-slate-500">
-                          {format(new Date(interacao.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                        </span>
+                        <p className="text-sm text-yellow-800">{pendencia.descricao}</p>
                       </div>
-                      <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{interacao.mensagem}</p>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {interacoes.length === 0 && pendencias.length === 0 && (
-                <div className="text-center py-12 text-slate-400">
-                  <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">Nenhuma interação ainda.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                {/* Interações */}
+                {interacoes.map((interacao: any, index: number) => (
+                  <div 
+                    key={interacao.id} 
+                    className={`bg-white rounded-lg p-4 shadow-sm border ${
+                      interacao.tipo === 'MUDANCA_STATUS' ? 'border-blue-200 bg-blue-50/30' : 'border-slate-200'
+                    }`}
+                    data-testid={`card-interacao-${interacao.id}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
+                        interacao.tipo === 'MUDANCA_STATUS' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {interacao.usuario?.name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-900 text-sm">
+                              {interacao.usuario?.name || 'Usuário'}
+                            </span>
+                            {interacao.tipo !== 'COMENTARIO' && (
+                              <span className="text-xs text-slate-500">
+                                {interacao.tipo === 'MUDANCA_STATUS' ? 'alterou o status' : 'atribuiu o chamado'}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-slate-500" data-testid={`text-data-interacao-${interacao.id}`}>
+                            {format(new Date(interacao.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-700 leading-relaxed" data-testid={`text-mensagem-interacao-${interacao.id}`}>
+                          {interacao.mensagem}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {/* Campo para adicionar nova interação */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Adicionar Comentário</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            {/* Nova Interação */}
+            <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200" data-testid="card-nova-interacao">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">Adicionar Comentário</h3>
+              <div className="space-y-3">
                 <Textarea
                   value={newInteracao}
                   onChange={(e) => setNewInteracao(e.target.value)}
-                  placeholder="Digite seu comentário aqui..."
-                  rows={4}
+                  placeholder="Digite seu comentário..."
+                  rows={3}
                   className="resize-none"
+                  data-testid="input-nova-interacao"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.ctrlKey) {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                       handleAddInteracao();
                     }
                   }}
                 />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">
-                    Pressione Ctrl+Enter para enviar
-                  </span>
-                  <Button 
+                <div className="flex justify-end">
+                  <Button
                     onClick={handleAddInteracao}
                     disabled={createInteracaoMutation.isPending || !newInteracao.trim()}
+                    size="sm"
                     className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349]"
+                    data-testid="button-adicionar-comentario"
                   >
                     {createInteracaoMutation.isPending ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
                         Enviando...
                       </>
                     ) : (
                       <>
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Adicionar Comentário
+                        <Send className="h-3 w-3 mr-2" />
+                        Enviar (Ctrl+Enter)
                       </>
                     )}
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
-        {/* Sidebar Direita - Informações do Chamado */}
-        <div className="w-80 border-l bg-slate-50 overflow-y-auto p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Informações do Chamado</h3>
-            
-            {/* Status */}
-            <div className="space-y-2 mb-6">
-              <Label className="text-sm font-medium text-slate-700">Status</Label>
-              {isInternal ? (
-                <Select
-                  value={editData.status}
-                  onValueChange={(value) => handleFieldChange('status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS.map(s => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="p-3 bg-white rounded-md border">
-                  {getStatusBadge(chamado.status)}
+        {/* Sidebar de Informações */}
+        <div className="w-80 bg-white border-l overflow-y-auto">
+          <div className="p-6 space-y-6">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <User2 className="w-4 h-4" />
+                Informações do Chamado
+              </h3>
+
+              {/* Status */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Status</Label>
+                {isInternal ? (
+                  <Select
+                    value={editData.status}
+                    onValueChange={(value) => handleFieldChange('status', value)}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS.map(s => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge variant="outline" className={`${statusConfig.color} border`} data-testid="display-status">
+                    {statusConfig.label}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Prioridade */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Prioridade</Label>
+                {isInternal ? (
+                  <Select
+                    value={editData.prioridade}
+                    onValueChange={(value) => handleFieldChange('prioridade', value)}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-prioridade">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORIDADES.map(p => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge variant="outline" className={`${prioridadeConfig.color} border`} data-testid="display-prioridade">
+                    {prioridadeConfig.label}
+                  </Badge>
+                )}
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Atendente */}
+              {isInternal && (
+                <div className="mb-4">
+                  <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Atendente</Label>
+                  <Select
+                    value={editData.atendenteId?.toString() || "0"}
+                    onValueChange={(value) => handleFieldChange('atendenteId', value === "0" ? null : parseInt(value))}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-atendente">
+                      <SelectValue placeholder="Não atribuído" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Não atribuído</SelectItem>
+                      {usuariosInternos.map((u: any) => (
+                        <SelectItem key={u.id} value={u.id.toString()}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
-            </div>
 
-            {/* Prioridade */}
-            <div className="space-y-2 mb-6">
-              <Label className="text-sm font-medium text-slate-700">Prioridade</Label>
-              {isInternal ? (
-                <Select
-                  value={editData.prioridade}
-                  onValueChange={(value) => handleFieldChange('prioridade', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORIDADES.map(p => (
-                      <SelectItem key={p.value} value={p.value}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="p-3 bg-white rounded-md border">
-                  {getPrioridadeBadge(chamado.prioridade)}
-                </div>
-              )}
-            </div>
-
-            {/* Atendente */}
-            {isInternal && (
-              <div className="space-y-2 mb-6">
-                <Label className="text-sm font-medium text-slate-700">Atendente</Label>
-                <Select
-                  value={editData.atendenteId?.toString() || "0"}
-                  onValueChange={(value) => handleFieldChange('atendenteId', value === "0" ? null : parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um atendente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Sem atendente</SelectItem>
-                    {usuariosInternos.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id.toString()}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Solicitante */}
-            <div className="space-y-2 mb-6">
-              <Label className="text-sm font-medium text-slate-700">Solicitante</Label>
-              <div className="p-3 bg-white rounded-md border">
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-slate-500" />
-                  <span className="text-sm text-slate-700">{chamado.clienteId}</span>
+              {/* Solicitante */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Solicitante</Label>
+                <div className="px-3 py-2 bg-slate-50 rounded-md text-sm text-slate-900" data-testid="text-solicitante">
+                  {chamado.clienteId}
                 </div>
               </div>
-            </div>
 
-            {/* Data de Previsão */}
-            {chamado.dataPrevisao && (
-              <div className="space-y-2 mb-6">
-                <Label className="text-sm font-medium text-slate-700">Previsão de Conclusão</Label>
-                <div className="p-3 bg-white rounded-md border">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-slate-500" />
-                    <span className="text-sm text-slate-700">
-                      {format(new Date(chamado.dataPrevisao), "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
+              {/* Categoria */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Categoria</Label>
+                <div className="px-3 py-2 bg-slate-50 rounded-md text-sm text-slate-900" data-testid="text-categoria">
+                  {CATEGORIAS.find(c => c.value === chamado.categoria)?.label}
+                </div>
+              </div>
+
+              {/* Data de Abertura */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Aberto em</Label>
+                <div className="px-3 py-2 bg-slate-50 rounded-md text-sm text-slate-900" data-testid="text-data-abertura-sidebar">
+                  {format(new Date(chamado.dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </div>
+              </div>
+
+              {/* Observações Internas */}
+              {isInternal && (
+                <>
+                  <Separator className="my-4" />
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Notas Internas</Label>
+                    <Textarea
+                      value={editData.observacoes}
+                      onChange={(e) => handleFieldChange('observacoes', e.target.value)}
+                      placeholder="Adicione notas visíveis apenas para a equipe..."
+                      rows={4}
+                      className="resize-none text-sm"
+                      data-testid="input-observacoes"
+                    />
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Observações */}
-            {isInternal && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-700">Observações Internas</Label>
-                <Textarea
-                  value={editData.observacoes}
-                  onChange={(e) => handleFieldChange('observacoes', e.target.value)}
-                  placeholder="Adicione observações sobre o chamado..."
-                  rows={4}
-                  className="resize-none"
-                />
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Footer - Botões de Ação */}
-      {isInternal && hasChanges && (
-        <div className="border-t bg-white px-6 py-4">
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              disabled={updateChamadoMutation.isPending}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={updateChamadoMutation.isPending}
-              className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349]"
-            >
-              {updateChamadoMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salvar Alterações
-                </>
-              )}
-            </Button>
+      {/* Footer com Ações */}
+      {isInternal && (
+        <div className="bg-white border-t px-6 py-3">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+              {hasChanges ? '✎ Você tem alterações não salvas' : 'Nenhuma alteração pendente'}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                disabled={!hasChanges || updateChamadoMutation.isPending}
+                data-testid="button-cancelar"
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={!hasChanges || updateChamadoMutation.isPending}
+                className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349]"
+                data-testid="button-salvar"
+              >
+                {updateChamadoMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar Alterações'
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}
