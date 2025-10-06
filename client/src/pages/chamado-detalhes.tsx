@@ -66,6 +66,13 @@ export default function ChamadoDetalhesPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error("Chamado não encontrado");
+      
+      // Marcar como lido ao visualizar
+      fetch(`/api/chamados/${id}/mark-read`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }).catch(err => console.error('Erro ao marcar como lido:', err));
+      
       return response.json();
     },
     enabled: !!id,

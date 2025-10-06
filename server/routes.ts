@@ -1316,6 +1316,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para contagem de chamados não lidos/pendentes
+  app.get("/api/chamados/unread-count", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const userData = await storage.getUser(req.user.id);
+      if (!userData) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      const count = await storage.getChamadosUnreadCount(
+        req.user.id,
+        req.user.role,
+        userData.representanteId || undefined,
+        userData.clienteId || undefined
+      );
+
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Erro ao buscar contagem" });
+    }
+  });
+
+  // Endpoint para marcar chamado como lido
+  app.post("/api/chamados/:id/mark-read", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const chamadoId = parseInt(req.params.id);
+      await storage.markChamadoAsRead(chamadoId, req.user.id);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking chamado as read:", error);
+      res.status(500).json({ message: "Erro ao marcar como lido" });
+    }
+  });
+
   app.get("/api/chamados/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);

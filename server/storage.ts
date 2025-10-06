@@ -122,6 +122,10 @@ export interface IStorage {
   // Chamado Interações operations
   getChamadoInteracoes(chamadoId: number): Promise<ChamadoInteracao[]>;
   createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao>;
+
+  // Chamado Notificações operations
+  getChamadosUnreadCount(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<number>;
+  markChamadoAsRead(chamadoId: number, usuarioId: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -942,7 +946,85 @@ export class DbStorage implements IStorage {
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
         const result = await db.insert(chamadoInteracoes).values(data).returning();
+        
+        // Atualizar data da última interação e marcar como não lido para o destinatário
+        await db.update(chamados)
+            .set({ 
+                dataUltimaInteracao: new Date(),
+                // Se quem interagiu é interno, marca como não lido para o solicitante
+                // Se quem interagiu é externo, marca como não lido para o atendente
+                lidoPorSolicitante: data.usuarioId === result[0].usuarioId ? true : false,
+                lidoPorAtendente: false
+            })
+            .where(eq(chamados.id, data.chamadoId));
+        
         return result[0];
+    }
+
+    async getChamadosUnreadCount(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<number> {
+        try {
+            let conditions: any[] = [];
+
+            if (role === 'admin' || role === 'interno') {
+                // Admins/Internos: chamados não lidos por atendentes (novos ou com respostas não lidas)
+                conditions.push(eq(chamados.lidoPorAtendente, false));
+            } else if (role === 'representante' && representanteId) {
+                // Representantes: chamados do seu grupo não lidos pelo solicitante
+                conditions.push(
+                    eq(chamados.representanteId, representanteId),
+                    eq(chamados.solicitanteId, usuarioId),
+                    eq(chamados.lidoPorSolicitante, false)
+                );
+            } else if (role === 'cliente_final' && clienteId) {
+                // Cliente final: seus chamados não lidos
+                conditions.push(
+                    eq(chamados.clienteId, clienteId),
+                    eq(chamados.solicitanteId, usuarioId),
+                    eq(chamados.lidoPorSolicitante, false)
+                );
+            }
+
+            if (conditions.length === 0) {
+                return 0;
+            }
+
+            const result = await db
+                .select({ count: count() })
+                .from(chamados)
+                .where(and(...conditions));
+
+            return result[0]?.count || 0;
+        } catch (error) {
+            console.error("Erro ao buscar contagem de chamados não lidos:", error);
+            return 0;
+        }
+    }
+
+    async markChamadoAsRead(chamadoId: number, usuarioId: number): Promise<void> {
+        try {
+            // Buscar o chamado e o usuário para determinar qual campo atualizar
+            const chamado = await this.getChamado(chamadoId);
+            const user = await this.getUser(usuarioId);
+
+            if (!chamado || !user) {
+                return;
+            }
+
+            // Se é interno/admin, marca como lido pelo atendente
+            if (user.role === 'admin' || user.role === 'interno') {
+                await db.update(chamados)
+                    .set({ lidoPorAtendente: true })
+                    .where(eq(chamados.id, chamadoId));
+            }
+            // Se é o solicitante, marca como lido por ele
+            else if (chamado.solicitanteId === usuarioId) {
+                await db.update(chamados)
+                    .set({ lidoPorSolicitante: true })
+                    .where(eq(chamados.id, chamadoId));
+            }
+        } catch (error) {
+            console.error("Erro ao marcar chamado como lido:", error);
+        }
     }
 }
 

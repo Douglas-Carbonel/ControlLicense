@@ -665,13 +665,72 @@ export default function ChamadosPage() {
           <CardTitle>Lista de Chamados</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="todos">
+          <Tabs defaultValue={user?.role === 'admin' || user?.role === 'interno' ? 'novos' : 'todos'}>
             <TabsList>
+              {(user?.role === 'admin' || user?.role === 'interno') && (
+                <>
+                  <TabsTrigger value="novos" className="relative">
+                    Novos
+                    {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId).length > 0 && (
+                      <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId).length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="respondidos">
+                    Respondidos ({chamados.filter(c => c.dataUltimaInteracao && c.atendenteId).length})
+                  </TabsTrigger>
+                </>
+              )}
               <TabsTrigger value="todos">Todos ({chamados.length})</TabsTrigger>
               <TabsTrigger value="abertos">Abertos ({chamadosAbertos.length})</TabsTrigger>
               <TabsTrigger value="pendentes">Pendentes ({chamadosPendentes.length})</TabsTrigger>
               <TabsTrigger value="solucionados">Solucionados ({chamadosSolucionados.length})</TabsTrigger>
             </TabsList>
+
+            {(user?.role === 'admin' || user?.role === 'interno') && (
+              <>
+                <TabsContent value="novos" className="space-y-4 mt-4">
+                  {chamados
+                    .filter(c => c.status === 'ABERTO' && !c.atendenteId)
+                    .map(chamado => (
+                      <ChamadoCard 
+                        key={chamado.id} 
+                        chamado={chamado}
+                        onViewDetails={handleViewDetails}
+                        getStatusBadge={getStatusBadge}
+                        getPrioridadeBadge={getPrioridadeBadge}
+                        getCategoriaIcon={getCategoriaIcon}
+                      />
+                    ))}
+                  {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId).length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      Nenhum chamado novo
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="respondidos" className="space-y-4 mt-4">
+                  {chamados
+                    .filter(c => c.dataUltimaInteracao && c.atendenteId)
+                    .map(chamado => (
+                      <ChamadoCard 
+                        key={chamado.id} 
+                        chamado={chamado}
+                        onViewDetails={handleViewDetails}
+                        getStatusBadge={getStatusBadge}
+                        getPrioridadeBadge={getPrioridadeBadge}
+                        getCategoriaIcon={getCategoriaIcon}
+                      />
+                    ))}
+                  {chamados.filter(c => c.dataUltimaInteracao && c.atendenteId).length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      Nenhum chamado respondido
+                    </div>
+                  )}
+                </TabsContent>
+              </>
+            )}
 
             <TabsContent value="todos" className="space-y-4 mt-4">
               {chamados.map(chamado => (

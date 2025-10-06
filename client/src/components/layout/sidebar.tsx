@@ -41,7 +41,18 @@ function Sidebar() {
     enabled: user?.role === 'admin', // Apenas para administradores
   });
 
+  // Query para buscar contagem de chamados não lidos
+  const { data: unreadChamadosData, refetch: refetchUnreadChamados } = useQuery<{ count: number }>({
+    queryKey: ["/api/chamados/unread-count"],
+    staleTime: 10 * 1000,
+    gcTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15 * 1000, // Verificar a cada 15 segundos
+    enabled: !!user, // Para todos os usuários autenticados
+  });
+
   const newLogsCount = unreadData?.count || 0;
+  const newChamadosCount = unreadChamadosData?.count || 0;
 
   // Forçar atualização quando houver mudanças no sistema
   useEffect(() => {
@@ -69,7 +80,8 @@ function Sidebar() {
           href: "/chamados", 
           label: "Meus Chamados", 
           icon: Ticket,
-          description: "Visualizar e gerenciar seus chamados"
+          description: "Visualizar e gerenciar seus chamados",
+          badge: newChamadosCount > 0 ? newChamadosCount : null
         }
       );
       return items;
@@ -100,7 +112,8 @@ function Sidebar() {
           href: "/chamados", 
           label: "Chamados", 
           icon: Ticket,
-          description: "Gerenciar chamados"
+          description: "Gerenciar chamados",
+          badge: newChamadosCount > 0 ? newChamadosCount : null
         }
       );
     } else {
@@ -128,7 +141,8 @@ function Sidebar() {
           href: "/chamados", 
           label: "Chamados", 
           icon: Ticket,
-          description: "Portal de chamados"
+          description: "Portal de chamados",
+          badge: newChamadosCount > 0 ? newChamadosCount : null
         },
         { 
           href: "/clientes", 

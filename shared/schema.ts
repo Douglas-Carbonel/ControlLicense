@@ -311,6 +311,11 @@ export const chamados = pgTable("chamados", {
   observacoes: text("observacoes"),
   anexos: text("anexos").array(),
 
+  // Controle de leitura
+  lidoPorSolicitante: boolean("lido_por_solicitante").notNull().default(true), // Solicitante já viu (criou o chamado)
+  lidoPorAtendente: boolean("lido_por_atendente").notNull().default(false), // Atendente interno já viu
+  dataUltimaInteracao: timestamp("data_ultima_interacao"), // Data da última interação/resposta
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
