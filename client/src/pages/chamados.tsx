@@ -667,7 +667,13 @@ export default function ChamadosPage() {
           <CardTitle>Lista de Chamados</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={user?.role === 'admin' || user?.role === 'interno' ? 'novos' : 'todos'}>
+          <Tabs defaultValue={
+            user?.role === 'admin' || user?.role === 'interno' 
+              ? 'novos' 
+              : chamados.filter(c => c.solicitanteId === user?.id && !c.lidoPorSolicitante && c.totalInteracoes && c.totalInteracoes > 0).length > 0
+                ? 'respondidos'
+                : 'todos'
+          }>
             <TabsList>
               {(user?.role === 'admin' || user?.role === 'interno') && (
                 <>
@@ -684,6 +690,19 @@ export default function ChamadosPage() {
                   </TabsTrigger>
                 </>
               )}
+              
+              {/* Tab de respondidos para usuários externos (solicitantes) */}
+              {(user?.role !== 'admin' && user?.role !== 'interno') && (
+                <TabsTrigger value="respondidos" className="relative">
+                  Com Respostas
+                  {chamados.filter(c => c.solicitanteId === user?.id && !c.lidoPorSolicitante && c.totalInteracoes && c.totalInteracoes > 0).length > 0 && (
+                    <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse">
+                      {chamados.filter(c => c.solicitanteId === user?.id && !c.lidoPorSolicitante && c.totalInteracoes && c.totalInteracoes > 0).length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              )}
+              
               <TabsTrigger value="todos">Todos ({chamados.length})</TabsTrigger>
               <TabsTrigger value="abertos">Abertos ({chamadosAbertos.length})</TabsTrigger>
               <TabsTrigger value="pendentes">Pendentes ({chamadosPendentes.length})</TabsTrigger>
@@ -785,6 +804,29 @@ export default function ChamadosPage() {
                 />
               ))}
             </TabsContent>
+            
+            {/* Tab de chamados respondidos para usuários externos */}
+            {(user?.role !== 'admin' && user?.role !== 'interno') && (
+              <TabsContent value="respondidos" className="space-y-4 mt-4">
+                {chamados
+                  .filter(c => c.solicitanteId === user?.id && !c.lidoPorSolicitante && c.totalInteracoes && c.totalInteracoes > 0)
+                  .map(chamado => (
+                    <ChamadoCard 
+                      key={chamado.id} 
+                      chamado={chamado}
+                      onViewDetails={handleViewDetails}
+                      getStatusBadge={getStatusBadge}
+                      getPrioridadeBadge={getPrioridadeBadge}
+                      getCategoriaIcon={getCategoriaIcon}
+                    />
+                  ))}
+                {chamados.filter(c => c.solicitanteId === user?.id && !c.lidoPorSolicitante && c.totalInteracoes && c.totalInteracoes > 0).length === 0 && (
+                  <div className="text-center py-8 text-slate-500">
+                    Nenhum chamado com novas respostas
+                  </div>
+                )}
+              </TabsContent>
+            )}
           </Tabs>
 
           {isLoading && (
@@ -820,22 +862,58 @@ function ChamadoCard({
   getPrioridadeBadge,
   getCategoriaIcon 
 }: ChamadoCardProps) {
+  const { user } = useAuth();
+  
+  // Verificar se há resposta não lida para o solicitante
+  const temRespostaNaoLida = 
+    chamado.solicitanteId === user?.id && 
+    !chamado.lidoPorSolicitante && 
+    chamado.totalInteracoes && 
+    chamado.totalInteracoes > 0;
+
   return (
     <div 
-      className="p-4 border border-slate-200 rounded-lg hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-white"
+      className={`p-4 border rounded-lg hover:border-primary/50 hover:shadow-md transition-all cursor-pointer relative ${
+        temRespostaNaoLida 
+          ? 'bg-blue-50 border-blue-300 shadow-sm' 
+          : 'bg-white border-slate-200'
+      }`}
       onClick={() => onViewDetails(chamado)}
     >
+      {temRespostaNaoLida && (
+        <div className="absolute -top-2 -right-2 z-10">
+          <Badge variant="destructive" className="animate-pulse shadow-lg">
+            Nova Resposta!
+          </Badge>
+        </div>
+      )}
+      
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-2 mb-2">
             {getCategoriaIcon(chamado.categoria)}
-            <h3 className="font-semibold text-slate-800">{chamado.titulo}</h3>
+            <h3 className={`font-semibold ${temRespostaNaoLida ? 'text-blue-900' : 'text-slate-800'}`}>
+              {chamado.titulo}
+            </h3>
+            {temRespostaNaoLida && (
+              <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
+                Respondido
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-slate-600 mb-3 line-clamp-2">{chamado.descricao}</p>
           <div className="flex items-center space-x-4 text-xs text-slate-500">
             <span>Cliente: {chamado.clienteId}</span>
             <span>•</span>
             <span>{format(new Date(chamado.dataAbertura), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+            {chamado.totalInteracoes && chamado.totalInteracoes > 0 && (
+              <>
+                <span>•</span>
+                <span className={temRespostaNaoLida ? 'font-semibold text-blue-700' : ''}>
+                  {chamado.totalInteracoes} {chamado.totalInteracoes === 1 ? 'resposta' : 'respostas'}
+                </span>
+              </>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-end space-y-2">

@@ -974,14 +974,25 @@ export class DbStorage implements IStorage {
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
         const result = await db.insert(chamadoInteracoes).values(data).returning();
 
-        // Atualizar data da última interação e marcar como não lido para o destinatário
+        // Buscar informações do chamado e do usuário que está interagindo
+        const chamado = await this.getChamado(data.chamadoId);
+        const usuario = await this.getUser(data.usuarioId);
+
+        if (!chamado || !usuario) {
+            return result[0];
+        }
+
+        // Determinar quem deve marcar como não lido
+        const isInterno = usuario.role === 'admin' || usuario.role === 'interno';
+        const isSolicitante = chamado.solicitanteId === data.usuarioId;
+
         await db.update(chamados)
             .set({ 
                 dataUltimaInteracao: new Date(),
-                // Se quem interagiu é interno, marca como não lido para o solicitante
-                // Se quem interagiu é externo, marca como não lido para o atendente
-                lidoPorSolicitante: data.usuarioId === result[0].usuarioId ? true : false,
-                lidoPorAtendente: false
+                // Se quem interagiu é interno/admin, marca como não lido para o solicitante
+                lidoPorSolicitante: isInterno ? false : true,
+                // Se quem interagiu é o solicitante, marca como não lido para o atendente
+                lidoPorAtendente: isSolicitante ? false : true
             })
             .where(eq(chamados.id, data.chamadoId));
 
