@@ -14,24 +14,25 @@ import {
   chamados,
   chamadoPendencias,
   chamadoInteracoes,
+  notificacoes,
   type License,
   type Activity,
   type User,
-  type MensagemSistema,
-  type ClienteHistorico,
-  type Representante,
-  type Chamado,
-  type ChamadoPendencia,
-  type ChamadoInteracao,
-  type InsertLicense,
   type InsertActivity,
-  type InsertUser,
+  type MensagemSistema,
   type InsertMensagemSistema,
+  type ClienteHistorico,
   type InsertClienteHistorico,
+  type Representante,
   type InsertRepresentante,
+  type Chamado,
   type InsertChamado,
+  type ChamadoPendencia,
   type InsertChamadoPendencia,
+  type ChamadoInteracao,
   type InsertChamadoInteracao,
+  type Notificacao,
+  type InsertNotificacao,
   type HardwareLicenseQuery
 } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
@@ -126,6 +127,13 @@ export interface IStorage {
   // Chamado Notificações operations
   getChamadosUnreadCount(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<number>;
   markChamadoAsRead(chamadoId: number, usuarioId: number): Promise<void>;
+
+  // Notificações operations
+  getNotificacoes(usuarioId: number): Promise<Notificacao[]>;
+  createNotificacao(data: InsertNotificacao): Promise<Notificacao>;
+  markNotificacaoAsRead(notificacaoId: number, usuarioId: number): Promise<void>;
+  markAllNotificacoesAsRead(usuarioId: number): Promise<void>;
+  deleteNotificacao(notificacaoId: number, usuarioId: number): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -987,7 +995,7 @@ export class DbStorage implements IStorage {
         const isSolicitante = chamado.solicitanteId === data.usuarioId;
 
         await db.update(chamados)
-            .set({ 
+            .set({
                 dataUltimaInteracao: new Date(),
                 // Se quem interagiu é interno/admin, marca como não lido para o solicitante
                 lidoPorSolicitante: isInterno ? false : true,
@@ -1063,6 +1071,41 @@ export class DbStorage implements IStorage {
         } catch (error) {
             console.error("Erro ao marcar chamado como lido:", error);
         }
+    }
+
+    // Notificações operations
+    async getNotificacoes(usuarioId: number): Promise<Notificacao[]> {
+        return db.select().from(notificacoes)
+            .where(eq(notificacoes.usuarioId, usuarioId))
+            .orderBy(desc(notificacoes.createdAt));
+    }
+
+    async createNotificacao(data: InsertNotificacao): Promise<Notificacao> {
+        const result = await db.insert(notificacoes).values(data).returning();
+        return result[0];
+    }
+
+    async markNotificacaoAsRead(notificacaoId: number, usuarioId: number): Promise<void> {
+        await db.update(notificacoes)
+            .set({ lido: true, updatedAt: new Date() })
+            .where(and(
+                eq(notificacoes.id, notificacaoId),
+                eq(notificacoes.usuarioId, usuarioId)
+            ));
+    }
+
+    async markAllNotificacoesAsRead(usuarioId: number): Promise<void> {
+        await db.update(notificacoes)
+            .set({ lido: true, updatedAt: new Date() })
+            .where(eq(notificacoes.usuarioId, usuarioId));
+    }
+
+    async deleteNotificacao(notificacaoId: number, usuarioId: number): Promise<void> {
+        await db.delete(notificacoes)
+            .where(and(
+                eq(notificacoes.id, notificacaoId),
+                eq(notificacoes.usuarioId, usuarioId)
+            ));
     }
 }
 

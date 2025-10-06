@@ -1540,6 +1540,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rotas de Notificações
+  app.get("/api/notificacoes", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const notificacoes = await storage.getNotificacoesByUsuario(req.user.id);
+      res.json(notificacoes);
+    } catch (error) {
+      console.error("Error fetching notificacoes:", error);
+      res.status(500).json({ message: "Erro ao buscar notificações" });
+    }
+  });
+
+  app.get("/api/notificacoes/unread-count", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const count = await storage.getNotificacoesNaoLidasCount(req.user.id);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Erro ao buscar contagem" });
+    }
+  });
+
+  app.post("/api/notificacoes/:id/mark-read", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.markNotificacaoAsRead(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notificacao as read:", error);
+      res.status(500).json({ message: "Erro ao marcar como lida" });
+    }
+  });
+
+  app.post("/api/notificacoes/mark-all-read", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      await storage.markAllNotificacoesAsRead(req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+      res.status(500).json({ message: "Erro ao marcar todas como lidas" });
+    }
+  });
+
   // Rotas de Interações
   app.get("/api/chamados/:id/interacoes", authenticateToken, async (req: AuthRequest, res) => {
     try {
@@ -1562,6 +1620,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const interacao = await storage.createChamadoInteracao(validatedData);
+
+      // Buscar chamado para criar notificações
+      const chamado = await storage.getChamado(chamadoId);
+      
+      if (chamado) {
+        // Notificar solicitante se quem respondeu não for ele
+        if (chamado.solicitanteId !== req.user!.id) {
+          await storage.createNotificacao({
+            usuarioId: chamado.solicitanteId,
+            tipo: 'RESPOSTA_CHAMADO',
+            titulo: 'Nova resposta no chamado',
+            mensagem: `${req.user!.name} respondeu no chamado: ${chamado.titulo}`,
+            chamadoId: chamadoId,
+            lida: false
+          });
+        }
+
+        // Notificar atendente se existir e não for quem respondeu
+        if (chamado.atendenteId && chamado.atendenteId !== req.user!.id) {
+          await storage.createNotificacao({
+            usuarioId: chamado.atendenteId,
+            tipo: 'RESPOSTA_CHAMADO',
+            titulo: 'Nova resposta no chamado',
+            mensagem: `${req.user!.name} respondeu no chamado: ${chamado.titulo}`,
+            chamadoId: chamadoId,
+            lida: false
+          });
+        }
+      }
 
       res.status(201).json(interacao);
     } catch (error) {

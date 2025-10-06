@@ -395,3 +395,23 @@ export type ChamadoPendencia = InferSelectModel<typeof chamadoPendencias>;
 export type InsertChamadoPendencia = z.infer<typeof insertChamadoPendenciaSchema>;
 export type ChamadoInteracao = InferSelectModel<typeof chamadoInteracoes>;
 export type InsertChamadoInteracao = z.infer<typeof insertChamadoInteracaoSchema>;
+
+// Tabela de Notificações
+export const notificacoes = pgTable("notificacoes", {
+  id: serial("id").primaryKey(),
+  usuarioId: integer("usuario_id").notNull(),
+  tipo: text("tipo").notNull(), // 'NOVO_CHAMADO', 'RESPOSTA_CHAMADO', 'STATUS_ALTERADO', 'ATRIBUICAO'
+  titulo: text("titulo").notNull(),
+  mensagem: text("mensagem").notNull(),
+  chamadoId: integer("chamado_id"),
+  lida: boolean("lida").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNotificacaoSchema = createInsertSchema(notificacoes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Notificacao = InferSelectModel<typeof notificacoes>;
+export type InsertNotificacao = z.infer<typeof insertNotificacaoSchema>;
