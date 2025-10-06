@@ -833,21 +833,61 @@ export class DbStorage implements IStorage {
         return db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
     }
 
-    async getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<Chamado[]> {
+    async getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string, tipoUsuario?: string): Promise<Chamado[]> {
+        console.log('[CHAMADOS FILTER]', {
+            usuarioId,
+            role,
+            representanteId,
+            clienteId,
+            tipoUsuario
+        });
+
         if (role === 'admin' || role === 'interno') {
             // Admins e internos veem todos
+            console.log('[CHAMADOS] Admin/Interno - retornando todos os chamados');
             return db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
         } else if (role === 'representante' && representanteId) {
-            // Representantes veem apenas de seus clientes
-            return db.select().from(chamados)
-                .where(eq(chamados.representanteId, representanteId))
-                .orderBy(desc(chamados.dataAbertura));
+            // Se é gerente, vê todos os chamados do representante
+            if (tipoUsuario === 'gerente') {
+                console.log('[CHAMADOS] Representante Gerente - filtrando por representanteId:', representanteId);
+                return db.select().from(chamados)
+                    .where(eq(chamados.representanteId, representanteId))
+                    .orderBy(desc(chamados.dataAbertura));
+            }
+            // Se é analista, vê apenas chamados onde ele é o solicitante
+            else if (tipoUsuario === 'analista') {
+                console.log('[CHAMADOS] Representante Analista - filtrando por representanteId:', representanteId, 'e solicitanteId:', usuarioId);
+                return db.select().from(chamados)
+                    .where(
+                        and(
+                            eq(chamados.representanteId, representanteId),
+                            eq(chamados.solicitanteId, usuarioId)
+                        )
+                    )
+                    .orderBy(desc(chamados.dataAbertura));
+            }
         } else if (role === 'cliente_final' && clienteId) {
-            // Clientes veem apenas seus próprios
-            return db.select().from(chamados)
-                .where(eq(chamados.clienteId, clienteId))
-                .orderBy(desc(chamados.dataAbertura));
+            // Se é gerente do cliente, vê todos os chamados do cliente
+            if (tipoUsuario === 'gerente') {
+                console.log('[CHAMADOS] Cliente Gerente - filtrando por clienteId:', clienteId);
+                return db.select().from(chamados)
+                    .where(eq(chamados.clienteId, clienteId))
+                    .orderBy(desc(chamados.dataAbertura));
+            }
+            // Se é analista do cliente, vê apenas seus próprios chamados
+            else if (tipoUsuario === 'analista') {
+                console.log('[CHAMADOS] Cliente Analista - filtrando por clienteId:', clienteId, 'e solicitanteId:', usuarioId);
+                return db.select().from(chamados)
+                    .where(
+                        and(
+                            eq(chamados.clienteId, clienteId),
+                            eq(chamados.solicitanteId, usuarioId)
+                        )
+                    )
+                    .orderBy(desc(chamados.dataAbertura));
+            }
         }
+        console.log('[CHAMADOS] Nenhuma condição atendida - retornando vazio');
         return [];
     }
 

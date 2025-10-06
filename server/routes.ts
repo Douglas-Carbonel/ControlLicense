@@ -1305,7 +1305,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user.id,
         req.user.role,
         userData.representanteId || undefined,
-        userData.clienteId || undefined
+        userData.clienteId || undefined,
+        userData.tipoUsuario || undefined
       );
 
       res.json(chamados);
