@@ -43,6 +43,45 @@ const MOTIVOS_PENDENCIA = [
   { value: 'OUTROS', label: 'Outros motivos' }
 ];
 
+// Função para comprimir imagens antes de enviar
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Redimensionar se a imagem for muito grande
+        const maxSize = 1200;
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = (height / width) * maxSize;
+            width = maxSize;
+          } else {
+            width = (width / height) * maxSize;
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Comprimir com qualidade 0.7
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(compressed);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function ChamadoDetalhesPage() {
   const [, params] = useRoute("/chamados/:id");
   const id = params?.id;
@@ -459,7 +498,7 @@ export default function ChamadoDetalhesPage() {
                       handleAddInteracao();
                     }
                   }}
-                  onPaste={(e) => {
+                  onPaste={async (e) => {
                     const items = e.clipboardData?.items;
                     if (!items) return;
 
@@ -471,14 +510,10 @@ export default function ChamadoDetalhesPage() {
                         e.preventDefault();
                         const file = item.getAsFile();
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const base64 = event.target?.result as string;
-                            // Adicionar marcador de imagem no texto (oculto)
-                            const imageMarker = `[IMAGEM: ${base64}]`;
-                            setNewInteracao(prev => prev + imageMarker);
-                          };
-                          reader.readAsDataURL(file);
+                          // Comprimir imagem antes de adicionar
+                          const compressedBase64 = await compressImage(file);
+                          const imageMarker = `[IMAGEM: ${compressedBase64}]`;
+                          setNewInteracao(prev => prev + imageMarker);
                         }
                       }
                     }
@@ -523,18 +558,15 @@ export default function ChamadoDetalhesPage() {
                       accept="image/*"
                       multiple
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const files = e.target.files;
                         if (!files) return;
                         
-                        Array.from(files).forEach(file => {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const base64 = event.target?.result as string;
-                            setNewInteracao(prev => prev + `[IMAGEM: ${base64}]`);
-                          };
-                          reader.readAsDataURL(file);
-                        });
+                        // Processar cada arquivo
+                        for (const file of Array.from(files)) {
+                          const compressedBase64 = await compressImage(file);
+                          setNewInteracao(prev => prev + `[IMAGEM: ${compressedBase64}]`);
+                        }
                         
                         // Limpar input para permitir selecionar o mesmo arquivo novamente
                         e.target.value = '';
