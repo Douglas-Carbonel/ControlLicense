@@ -108,7 +108,7 @@ export interface IStorage {
 
   // Chamados operations
   getChamados(): Promise<Chamado[]>;
-  getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<Chamado[]>;
+  getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string, tipoUsuario?: string): Promise<Chamado[]>;
   getChamado(id: number): Promise<Chamado | undefined>;
   createChamado(data: InsertChamado): Promise<Chamado>;
   updateChamado(id: number, data: Partial<InsertChamado>): Promise<Chamado>;
@@ -257,14 +257,14 @@ export class DbStorage implements IStorage {
         representantePrincipalId: license.representantePrincipalId,
         representanteSecundarioId: license.representanteSecundarioId
       });
-      
+
       // Primeiro, buscar o code da licença atual
       const currentLicense = await this.getLicense(id);
       console.log('🔍 Licença atual:', currentLicense);
-      
+
       if (currentLicense?.code) {
         console.log(`🔍 Atualizando TODAS as licenças com code: ${currentLicense.code}`);
-        
+
         // Atualizar TODAS as licenças com o mesmo code
         const updateResult = await db
           .update(licenses)
@@ -274,11 +274,11 @@ export class DbStorage implements IStorage {
           })
           .where(eq(licenses.code, currentLicense.code))
           .returning();
-        
+
         console.log(`✅ ${updateResult.length} licença(s) atualizada(s) com code ${currentLicense.code}`);
       }
     }
-    
+
     // Atualizar a licença específica com todos os campos
     const result = await db
       .update(licenses)
@@ -738,7 +738,7 @@ export class DbStorage implements IStorage {
             );
 
             console.log('Lista de clientes única:', uniqueClientes.length, 'clientes');
-            
+
             return uniqueClientes.filter(item => item.code && item.nomeCliente);
         } catch (error) {
             console.error("Erro ao buscar lista de clientes:", error);
@@ -837,7 +837,13 @@ export class DbStorage implements IStorage {
         return db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
     }
 
-    async getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string, tipoUsuario?: string): Promise<Chamado[]> {
+    async getChamadosByUsuario(
+        usuarioId: number,
+        role: string,
+        representanteId?: number,
+        clienteId?: string,
+        tipoUsuario?: string
+    ): Promise<(Chamado & { totalInteracoes?: number })[]> {
         console.log('[CHAMADOS FILTER]', {
             usuarioId,
             role,
@@ -846,51 +852,72 @@ export class DbStorage implements IStorage {
             tipoUsuario
         });
 
+        // Admin e interno veem todos
         if (role === 'admin' || role === 'interno') {
-            // Admins e internos veem todos
             console.log('[CHAMADOS] Admin/Interno - retornando todos os chamados');
-            return db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
-        } else if (role === 'representante' && representanteId) {
-            // Se é gerente, vê todos os chamados do representante
-            if (tipoUsuario === 'gerente') {
-                console.log('[CHAMADOS] Representante Gerente - filtrando por representanteId:', representanteId);
-                return db.select().from(chamados)
-                    .where(eq(chamados.representanteId, representanteId))
-                    .orderBy(desc(chamados.dataAbertura));
-            }
-            // Se é analista, vê apenas chamados onde ele é o solicitante
-            else if (tipoUsuario === 'analista') {
-                console.log('[CHAMADOS] Representante Analista - filtrando por representanteId:', representanteId, 'e solicitanteId:', usuarioId);
-                return db.select().from(chamados)
-                    .where(
-                        and(
-                            eq(chamados.representanteId, representanteId),
-                            eq(chamados.solicitanteId, usuarioId)
-                        )
-                    )
-                    .orderBy(desc(chamados.dataAbertura));
-            }
-        } else if (role === 'cliente_final' && clienteId) {
-            // Se é gerente do cliente, vê todos os chamados do cliente
-            if (tipoUsuario === 'gerente') {
-                console.log('[CHAMADOS] Cliente Gerente - filtrando por clienteId:', clienteId);
-                return db.select().from(chamados)
-                    .where(eq(chamados.clienteId, clienteId))
-                    .orderBy(desc(chamados.dataAbertura));
-            }
-            // Se é analista do cliente, vê apenas seus próprios chamados
-            else if (tipoUsuario === 'analista') {
-                console.log('[CHAMADOS] Cliente Analista - filtrando por clienteId:', clienteId, 'e solicitanteId:', usuarioId);
-                return db.select().from(chamados)
-                    .where(
-                        and(
-                            eq(chamados.clienteId, clienteId),
-                            eq(chamados.solicitanteId, usuarioId)
-                        )
-                    )
-                    .orderBy(desc(chamados.dataAbertura));
-            }
+            const chamadosList = await db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
+
+            // Adicionar contagem de interações para cada chamado
+            const chamadosComInteracoes = await Promise.all(
+                chamadosList.map(async (chamado) => {
+                    const interacoes = await db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, chamado.id));
+                    return { ...chamado, totalInteracoes: interacoes.length };
+                })
+            );
+
+            return chamadosComInteracoes;
         }
+
+        // Representante analista vê chamados onde:
+        // - É o solicitante OU
+        // - É vinculado ao representante
+        if (role === 'representante' && tipoUsuario === 'analista') {
+            console.log('[CHAMADOS] Representante Analista - filtrando por representanteId:', representanteId, 'e solicitanteId:', usuarioId);
+            const chamadosList = await db.select()
+                .from(chamados)
+                .where(
+                    or(
+                        eq(chamados.solicitanteId, usuarioId),
+                        representanteId ? eq(chamados.representanteId, representanteId) : undefined
+                    )
+                )
+                .orderBy(desc(chamados.dataAbertura));
+
+            // Adicionar contagem de interações
+            const chamadosComInteracoes = await Promise.all(
+                chamadosList.map(async (chamado) => {
+                    const interacoes = await db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, chamado.id));
+                    return { ...chamado, totalInteracoes: interacoes.length };
+                })
+            );
+
+            return chamadosComInteracoes;
+        }
+
+        // Cliente final vê apenas seus próprios chamados
+        if (role === 'cliente_final' && clienteId) {
+            console.log('[CHAMADOS] Cliente Final - filtrando por clienteId:', clienteId, 'e solicitanteId:', usuarioId);
+            const chamadosList = await db.select()
+                .from(chamados)
+                .where(
+                    and(
+                        eq(chamados.clienteId, clienteId),
+                        eq(chamados.solicitanteId, usuarioId)
+                    )
+                )
+                .orderBy(desc(chamados.dataAbertura));
+
+            // Adicionar contagem de interações
+            const chamadosComInteracoes = await Promise.all(
+                chamadosList.map(async (chamado) => {
+                    const interacoes = await db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, chamado.id));
+                    return { ...chamado, totalInteracoes: interacoes.length };
+                })
+            );
+
+            return chamadosComInteracoes;
+        }
+
         console.log('[CHAMADOS] Nenhuma condição atendida - retornando vazio');
         return [];
     }
@@ -946,7 +973,7 @@ export class DbStorage implements IStorage {
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
         const result = await db.insert(chamadoInteracoes).values(data).returning();
-        
+
         // Atualizar data da última interação e marcar como não lido para o destinatário
         await db.update(chamados)
             .set({ 
@@ -957,7 +984,7 @@ export class DbStorage implements IStorage {
                 lidoPorAtendente: false
             })
             .where(eq(chamados.id, data.chamadoId));
-        
+
         return result[0];
     }
 

@@ -34,6 +34,8 @@ interface Chamado {
   observacoes?: string;
   createdAt: string;
   updatedAt: string;
+  dataUltimaInteracao?: string; // Adicionado para compatibilidade com chamados respondidos
+  totalInteracoes?: number; // Novo campo para contar interações
 }
 
 interface Cliente {
@@ -208,7 +210,7 @@ export default function ChamadosPage() {
     // Se é cliente final sem representante, usa seu próprio clienteId
     if (user?.role === 'cliente_final' && currentUser) {
       finalClienteId = currentUser.clienteId || '';
-      
+
       // Verificar se tem representante
       const clienteLicense = clientes.find((c: Cliente) => c.code === finalClienteId);
       if (clienteLicense) {
@@ -417,7 +419,7 @@ export default function ChamadosPage() {
                   const temRepresentante = licensesDoCliente.some((lic: any) => {
                     const principal = lic.representantePrincipalId;
                     const secundario = lic.representanteSecundarioId;
-                    
+
                     console.log(`Verificando Cliente ${code}:`, {
                       licenseId: lic.id,
                       representantePrincipalId: principal,
@@ -426,7 +428,7 @@ export default function ChamadosPage() {
                       matchPrincipal: principal === representanteIdDoUsuario,
                       matchSecundario: secundario === representanteIdDoUsuario
                     });
-                    
+
                     return principal === representanteIdDoUsuario || 
                            secundario === representanteIdDoUsuario;
                   });
@@ -671,9 +673,9 @@ export default function ChamadosPage() {
                 <>
                   <TabsTrigger value="novos" className="relative">
                     Novos
-                    {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId).length > 0 && (
+                    {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId && (!c.totalInteracoes || c.totalInteracoes === 0)).length > 0 && (
                       <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                        {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId).length}
+                        {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId && (!c.totalInteracoes || c.totalInteracoes === 0)).length}
                       </Badge>
                     )}
                   </TabsTrigger>
@@ -692,7 +694,7 @@ export default function ChamadosPage() {
               <>
                 <TabsContent value="novos" className="space-y-4 mt-4">
                   {chamados
-                    .filter(c => c.status === 'ABERTO' && !c.atendenteId)
+                    .filter(c => c.status === 'ABERTO' && !c.atendenteId && (!c.totalInteracoes || c.totalInteracoes === 0))
                     .map(chamado => (
                       <ChamadoCard 
                         key={chamado.id} 
@@ -703,7 +705,7 @@ export default function ChamadosPage() {
                         getCategoriaIcon={getCategoriaIcon}
                       />
                     ))}
-                  {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId).length === 0 && (
+                  {chamados.filter(c => c.status === 'ABERTO' && !c.atendenteId && (!c.totalInteracoes || c.totalInteracoes === 0)).length === 0 && (
                     <div className="text-center py-8 text-slate-500">
                       Nenhum chamado novo
                     </div>
