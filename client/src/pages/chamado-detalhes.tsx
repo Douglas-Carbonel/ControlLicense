@@ -384,9 +384,54 @@ export default function ChamadoDetalhesPage() {
                             {format(new Date(interacao.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-700 leading-relaxed" data-testid={`text-mensagem-interacao-${interacao.id}`}>
-                          {interacao.mensagem}
-                        </p>
+                        <div className="text-sm text-slate-700 leading-relaxed space-y-2" data-testid={`text-mensagem-interacao-${interacao.id}`}>
+                          {(() => {
+                            const mensagem = interacao.mensagem;
+                            const parts = mensagem.split(/(\[IMAGEM: .*?\])/g);
+                            
+                            return parts.map((part, idx) => {
+                              // Detectar imagens base64
+                              if (part.startsWith('[IMAGEM:')) {
+                                const base64 = part.replace('[IMAGEM: ', '').replace(']', '');
+                                return (
+                                  <div key={idx} className="my-2">
+                                    <img 
+                                      src={base64} 
+                                      alt={`Anexo ${idx}`}
+                                      className="max-w-md rounded-lg border border-slate-200 cursor-pointer hover:opacity-90"
+                                      onClick={() => window.open(base64, '_blank')}
+                                    />
+                                  </div>
+                                );
+                              }
+                              
+                              // Detectar URLs de imagens
+                              const urlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
+                              if (urlRegex.test(part)) {
+                                return part.split(urlRegex).map((segment, segIdx) => {
+                                  if (segment && segment.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                                    return (
+                                      <div key={`${idx}-${segIdx}`} className="my-2">
+                                        <img 
+                                          src={segment}
+                                          alt={`Imagem ${segIdx}`}
+                                          className="max-w-md rounded-lg border border-slate-200 cursor-pointer hover:opacity-90"
+                                          onClick={() => window.open(segment, '_blank')}
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                      </div>
+                                    );
+                                  }
+                                  return <span key={`${idx}-${segIdx}`}>{segment}</span>;
+                                });
+                              }
+                              
+                              return <p key={idx}>{part}</p>;
+                            });
+                          })()}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -401,8 +446,8 @@ export default function ChamadoDetalhesPage() {
                 <Textarea
                   value={newInteracao}
                   onChange={(e) => setNewInteracao(e.target.value)}
-                  placeholder="Digite seu comentário..."
-                  rows={3}
+                  placeholder="Digite seu comentário... (Ctrl+V para colar imagens ou cole links de imagens)"
+                  rows={5}
                   className="resize-none"
                   data-testid="input-nova-interacao"
                   onKeyDown={(e) => {
@@ -410,8 +455,65 @@ export default function ChamadoDetalhesPage() {
                       handleAddInteracao();
                     }
                   }}
+                  onPaste={(e) => {
+                    const items = e.clipboardData?.items;
+                    if (!items) return;
+
+                    for (let i = 0; i < items.length; i++) {
+                      const item = items[i];
+                      
+                      // Detectar imagem colada
+                      if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const file = item.getAsFile();
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const base64 = event.target?.result as string;
+                            // Adicionar marcador de imagem no texto
+                            const imageMarker = `\n[IMAGEM: ${base64}]\n`;
+                            setNewInteracao(prev => prev + imageMarker);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }
+                    }
+                  }}
                 />
-                <div className="flex justify-end">
+                
+                {/* Preview de imagens no texto */}
+                {newInteracao.includes('[IMAGEM:') && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-700 mb-2 font-medium">Imagens anexadas:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {newInteracao.match(/\[IMAGEM: (.*?)\]/g)?.map((match, idx) => {
+                        const base64 = match.replace('[IMAGEM: ', '').replace(']', '');
+                        return (
+                          <div key={idx} className="relative group">
+                            <img 
+                              src={base64} 
+                              alt={`Anexo ${idx + 1}`} 
+                              className="w-full h-24 object-cover rounded border border-blue-300"
+                            />
+                            <button
+                              onClick={() => {
+                                setNewInteracao(prev => prev.replace(match, '').trim());
+                              }}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-500">
+                    💡 Dica: Cole imagens com Ctrl+V ou adicione links de imagens no texto
+                  </p>
                   <Button
                     onClick={handleAddInteracao}
                     disabled={createInteracaoMutation.isPending || !newInteracao.trim()}
