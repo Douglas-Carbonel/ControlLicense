@@ -45,6 +45,7 @@ interface Cliente {
 
 const CATEGORIAS = [
   { value: 'INSTALACAO', label: 'Instalação' },
+  { value: 'ATUALIZACAO', label: 'Atualização' },
   { value: 'MELHORIA', label: 'Melhoria' },
   { value: 'BUG', label: 'Bug/Erros' },
   { value: 'ATENDIMENTO', label: 'Atendimento/Dúvidas' }
@@ -281,6 +282,7 @@ export default function ChamadosPage() {
   const getCategoriaIcon = (categoria: string) => {
     const iconMap: Record<string, any> = {
       'INSTALACAO': <Ticket className="h-4 w-4" />,
+      'ATUALIZACAO': <Edit className="h-4 w-4" />,
       'MELHORIA': <AlertTriangle className="h-4 w-4" />,
       'BUG': <XCircle className="h-4 w-4" />,
       'ATENDIMENTO': <MessageSquare className="h-4 w-4" />
@@ -322,6 +324,32 @@ export default function ChamadosPage() {
             </DialogHeader>
 
             <div className="space-y-6 py-6">
+              {/* Produto - Obrigatório - PRIMEIRO CAMPO */}
+              <div className="space-y-2">
+                <Label htmlFor="produto" className="text-base font-semibold flex items-center gap-2">
+                  Produto
+                  <span className="text-red-500 text-lg">*</span>
+                </Label>
+                <Select
+                  value={newChamado.produto}
+                  onValueChange={(value) => setNewChamado({ ...newChamado, produto: value })}
+                >
+                  <SelectTrigger className={`h-11 ${!newChamado.produto ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
+                    <SelectValue placeholder="Selecione o produto relacionado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUTOS.map(prod => (
+                      <SelectItem key={prod.value} value={prod.value}>
+                        {prod.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!newChamado.produto && (
+                  <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                )}
+              </div>
+
               {/* Categoria - Obrigatório */}
               <div className="space-y-2">
                 <Label htmlFor="categoria" className="text-base font-semibold flex items-center gap-2">
@@ -344,32 +372,6 @@ export default function ChamadosPage() {
                   </SelectContent>
                 </Select>
                 {!newChamado.categoria && (
-                  <p className="text-xs text-red-500">Este campo é obrigatório</p>
-                )}
-              </div>
-
-              {/* Produto - Obrigatório */}
-              <div className="space-y-2">
-                <Label htmlFor="produto" className="text-base font-semibold flex items-center gap-2">
-                  Produto
-                  <span className="text-red-500 text-lg">*</span>
-                </Label>
-                <Select
-                  value={newChamado.produto}
-                  onValueChange={(value) => setNewChamado({ ...newChamado, produto: value })}
-                >
-                  <SelectTrigger className={`h-11 ${!newChamado.produto ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
-                    <SelectValue placeholder="Selecione o produto relacionado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUTOS.map(prod => (
-                      <SelectItem key={prod.value} value={prod.value}>
-                        {prod.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {!newChamado.produto && (
                   <p className="text-xs text-red-500">Este campo é obrigatório</p>
                 )}
               </div>
