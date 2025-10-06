@@ -51,12 +51,25 @@ export default function ChamadoDetalhesPage() {
   const { toast } = useToast();
   const [newInteracao, setNewInteracao] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
   const [editData, setEditData] = useState({
     status: '',
     prioridade: '',
     atendenteId: null as number | null,
     observacoes: ''
   });
+
+  // Cleanup de URLs de preview para evitar vazamento de memória
+  useEffect(() => {
+    // Criar URLs de preview para os arquivos anexados
+    const urls = attachedFiles.map(file => URL.createObjectURL(file));
+    setFilePreviewUrls(urls);
+
+    // Cleanup: revogar URLs quando o componente desmontar ou arquivos mudarem
+    return () => {
+      urls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [attachedFiles]);
 
   const { data: chamado, isLoading } = useQuery({
     queryKey: [`/api/chamados/${id}`],
@@ -491,27 +504,24 @@ export default function ChamadoDetalhesPage() {
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs text-blue-700 mb-2 font-medium">📎 Arquivos anexados ({attachedFiles.length}):</p>
                     <div className="grid grid-cols-3 gap-2">
-                      {attachedFiles.map((file, idx) => {
-                        const preview = URL.createObjectURL(file);
-                        return (
-                          <div key={idx} className="relative group">
-                            <img 
-                              src={preview} 
-                              alt={file.name} 
-                              className="w-full h-20 object-cover rounded border border-blue-300"
-                            />
-                            <button
-                              onClick={() => {
-                                setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
-                              }}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                              title="Remover imagem"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        );
-                      })}
+                      {attachedFiles.map((file, idx) => (
+                        <div key={idx} className="relative group">
+                          <img 
+                            src={filePreviewUrls[idx]} 
+                            alt={file.name} 
+                            className="w-full h-20 object-cover rounded border border-blue-300"
+                          />
+                          <button
+                            onClick={() => {
+                              setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                            title="Remover imagem"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
