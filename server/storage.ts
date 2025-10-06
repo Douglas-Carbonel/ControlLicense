@@ -131,7 +131,7 @@ export interface IStorage {
   // Notificações operations
   getNotificacoes(usuarioId: number): Promise<Notificacao[]>;
   createNotificacao(data: InsertNotificacao): Promise<Notificacao>;
-  markNotificacaoAsRead(notificacaoId: number, usuarioId: number): Promise<void>;
+  markNotificacaoAsRead(notificacaoId: number): Promise<void>;
   markAllNotificacoesAsRead(usuarioId: number): Promise<void>;
   deleteNotificacao(notificacaoId: number, usuarioId: number): Promise<void>;
 }
@@ -995,7 +995,7 @@ export class DbStorage implements IStorage {
             .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(chamadoInteracoes.createdAt);
-        
+
         return result;
     }
 
@@ -1119,13 +1119,10 @@ export class DbStorage implements IStorage {
         return result[0];
     }
 
-    async markNotificacaoAsRead(notificacaoId: number, usuarioId: number): Promise<void> {
+    async markNotificacaoAsRead(notificacaoId: number): Promise<void> {
         await db.update(notificacoes)
             .set({ lida: true })
-            .where(and(
-                eq(notificacoes.id, notificacaoId),
-                eq(notificacoes.usuarioId, usuarioId)
-            ));
+            .where(eq(notificacoes.id, notificacaoId));
     }
 
     async markAllNotificacoesAsRead(usuarioId: number): Promise<void> {

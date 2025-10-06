@@ -1404,6 +1404,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: `${req.user.name} abriu chamado: ${chamado.titulo}`,
       });
 
+      // Notificar TODOS os usuários internos e admins sobre o novo chamado
+      const allUsers = await storage.getUsers();
+      const internosEAdmins = allUsers.filter(u => 
+        (u.role === 'admin' || u.role === 'interno') && u.id !== req.user!.id
+      );
+
+      for (const interno of internosEAdmins) {
+        await storage.createNotificacao({
+          usuarioId: interno.id,
+          tipo: 'NOVO_CHAMADO',
+          titulo: 'Novo chamado aberto',
+          mensagem: `${req.user.name} abriu o chamado: ${chamado.titulo}`,
+          chamadoId: chamado.id,
+          lida: false
+        });
+      }
+
       res.status(201).json(chamado);
     } catch (error) {
       console.error("Error creating chamado:", error);
@@ -1621,12 +1638,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const interacao = await storage.createChamadoInteracao(validatedData);
 
-      // Buscar chamado para criar notificações
+      // Buscar chamado e usuário que está respondendo
       const chamado = await storage.getChamado(chamadoId);
+      const usuarioQueRespondeu = await storage.getUser(req.user!.id);
       
-      if (chamado) {
-        // Notificar solicitante se quem respondeu não for ele
-        if (chamado.solicitanteId !== req.user!.id) {
+      if (chamado && usuarioQueRespondeu) {
+        const isInternoOuAdmin = usuarioQueRespondeu.role === 'admin' || usuarioQueRespondeu.role === 'interno';
+
+        // Se quem respondeu é interno/admin, notifica APENAS o solicitante
+        if (isInternoOuAdmin && chamado.solicitanteId !== req.user!.id) {
           await storage.createNotificacao({
             usuarioId: chamado.solicitanteId,
             tipo: 'RESPOSTA_CHAMADO',
@@ -1636,9 +1656,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lida: false
           });
         }
-
-        // Notificar atendente se existir e não for quem respondeu
-        if (chamado.atendenteId && chamado.atendenteId !== req.user!.id) {
+        
+        // Se quem respondeu é o solicitante, notifica APENAS o atendente atribuído (se houver)
+        if (!isInternoOuAdmin && chamado.atendenteId && chamado.atendenteId !== req.user!.id) {
           await storage.createNotificacao({
             usuarioId: chamado.atendenteId,
             tipo: 'RESPOSTA_CHAMADO',
