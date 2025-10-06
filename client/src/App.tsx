@@ -56,6 +56,21 @@ function Router() {
     );
   }
 
+  // Usuários REPRESENTANTES e CLIENTES FINAIS - Acesso RESTRITO apenas a Chamados
+  if (user.role === 'representante' || user.role === 'cliente_final') {
+    return (
+      <AppLayout>
+        <Switch>
+          <Route path="/" component={ChamadosPage} />
+          <Route path="/chamados" component={ChamadosPage} />
+          <Route path="/chamados/:id" component={ChamadoDetalhesPage} />
+          <Route component={() => <Redirect to="/chamados" />} />
+        </Switch>
+      </AppLayout>
+    );
+  }
+
+  // Usuários ADMIN e INTERNO - Acesso COMPLETO ao sistema
   return (
     <AppLayout>
       <Switch>

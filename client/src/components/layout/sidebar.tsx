@@ -62,7 +62,20 @@ function Sidebar() {
   const navigationItems = useMemo(() => {
     const items = [];
 
-  // Usuários técnicos podem ver licenças e clientes
+    // Usuários REPRESENTANTES e CLIENTES FINAIS - Apenas Chamados
+    if (user?.role === 'representante' || user?.role === 'cliente_final') {
+      items.push(
+        { 
+          href: "/chamados", 
+          label: "Meus Chamados", 
+          icon: Ticket,
+          description: "Visualizar e gerenciar seus chamados"
+        }
+      );
+      return items;
+    }
+
+    // Usuários técnicos podem ver licenças e clientes
     if (user?.role === 'support') {
       items.push(
         { 
@@ -91,7 +104,7 @@ function Sidebar() {
         }
       );
     } else {
-      // Administradores podem ver tudo
+      // Administradores e Internos podem ver tudo
       items.push(
         { 
           href: "/", 
