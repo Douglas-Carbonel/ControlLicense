@@ -973,10 +973,30 @@ export class DbStorage implements IStorage {
     }
 
     // Métodos para Interações
-    async getChamadoInteracoes(chamadoId: number): Promise<ChamadoInteracao[]> {
-        return db.select().from(chamadoInteracoes)
+    async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
+        const result = await db
+            .select({
+                id: chamadoInteracoes.id,
+                chamadoId: chamadoInteracoes.chamadoId,
+                usuarioId: chamadoInteracoes.usuarioId,
+                mensagem: chamadoInteracoes.mensagem,
+                anexos: chamadoInteracoes.anexos,
+                tipo: chamadoInteracoes.tipo,
+                createdAt: chamadoInteracoes.createdAt,
+                usuario: {
+                    id: users.id,
+                    name: users.name,
+                    username: users.username,
+                    email: users.email,
+                    role: users.role
+                }
+            })
+            .from(chamadoInteracoes)
+            .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
-            .orderBy(chamadoInteracoes.createdAt); // Ordem crescente para timeline
+            .orderBy(chamadoInteracoes.createdAt);
+        
+        return result;
     }
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
@@ -997,10 +1017,10 @@ export class DbStorage implements IStorage {
         await db.update(chamados)
             .set({
                 dataUltimaInteracao: new Date(),
-                // Se quem interagiu é interno/admin, marca como não lido para o solicitante
-                lidoPorSolicitante: isInterno ? false : true,
-                // Se quem interagiu é o solicitante, marca como não lido para o atendente
-                lidoPorAtendente: isSolicitante ? false : true
+                // Se quem interagiu é o solicitante, marca como lido para ele; senão marca como não lido
+                lidoPorSolicitante: isSolicitante ? true : false,
+                // Se quem interagiu é interno/atendente, marca como lido para atendente; senão marca como não lido
+                lidoPorAtendente: isInterno ? true : false
             })
             .where(eq(chamados.id, data.chamadoId));
 
@@ -1080,6 +1100,20 @@ export class DbStorage implements IStorage {
             .orderBy(desc(notificacoes.createdAt));
     }
 
+    async getNotificacoesByUsuario(usuarioId: number): Promise<Notificacao[]> {
+        return this.getNotificacoes(usuarioId);
+    }
+
+    async getNotificacoesNaoLidasCount(usuarioId: number): Promise<number> {
+        const result = await db.select({ count: count() })
+            .from(notificacoes)
+            .where(and(
+                eq(notificacoes.usuarioId, usuarioId),
+                eq(notificacoes.lida, false)
+            ));
+        return result[0]?.count || 0;
+    }
+
     async createNotificacao(data: InsertNotificacao): Promise<Notificacao> {
         const result = await db.insert(notificacoes).values(data).returning();
         return result[0];
@@ -1087,7 +1121,7 @@ export class DbStorage implements IStorage {
 
     async markNotificacaoAsRead(notificacaoId: number, usuarioId: number): Promise<void> {
         await db.update(notificacoes)
-            .set({ lido: true, updatedAt: new Date() })
+            .set({ lida: true })
             .where(and(
                 eq(notificacoes.id, notificacaoId),
                 eq(notificacoes.usuarioId, usuarioId)
@@ -1096,7 +1130,7 @@ export class DbStorage implements IStorage {
 
     async markAllNotificacoesAsRead(usuarioId: number): Promise<void> {
         await db.update(notificacoes)
-            .set({ lido: true, updatedAt: new Date() })
+            .set({ lida: true })
             .where(eq(notificacoes.usuarioId, usuarioId));
     }
 

@@ -172,6 +172,11 @@ export default function ChamadoDetalhesPage() {
     onSuccess: () => {
       refetchInteracoes();
       setNewInteracao('');
+      queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notificacoes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notificacoes/unread-count"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chamados/unread-count"] });
       toast({
         title: "Sucesso",
         description: "Comentário adicionado com sucesso!",
