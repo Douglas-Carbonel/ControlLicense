@@ -444,9 +444,13 @@ export default function ChamadoDetalhesPage() {
               <h3 className="text-sm font-semibold text-slate-900 mb-3">Adicionar Comentário</h3>
               <div className="space-y-3">
                 <Textarea
-                  value={newInteracao}
-                  onChange={(e) => setNewInteracao(e.target.value)}
-                  placeholder="Digite seu comentário... (Ctrl+V para colar imagens ou cole links de imagens)"
+                  value={newInteracao.replace(/\[IMAGEM: .*?\]/g, '')}
+                  onChange={(e) => {
+                    // Preservar imagens existentes e atualizar apenas o texto
+                    const imagens = newInteracao.match(/\[IMAGEM: .*?\]/g) || [];
+                    setNewInteracao(e.target.value + imagens.join(''));
+                  }}
+                  placeholder="Digite seu comentário... (Ctrl+V para colar imagens)"
                   rows={5}
                   className="resize-none"
                   data-testid="input-nova-interacao"
@@ -470,8 +474,8 @@ export default function ChamadoDetalhesPage() {
                           const reader = new FileReader();
                           reader.onload = (event) => {
                             const base64 = event.target?.result as string;
-                            // Adicionar marcador de imagem no texto
-                            const imageMarker = `\n[IMAGEM: ${base64}]\n`;
+                            // Adicionar marcador de imagem no texto (oculto)
+                            const imageMarker = `[IMAGEM: ${base64}]`;
                             setNewInteracao(prev => prev + imageMarker);
                           };
                           reader.readAsDataURL(file);
@@ -484,8 +488,8 @@ export default function ChamadoDetalhesPage() {
                 {/* Preview de imagens no texto */}
                 {newInteracao.includes('[IMAGEM:') && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 mb-2 font-medium">Imagens anexadas:</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <p className="text-xs text-blue-700 mb-2 font-medium">📎 Imagens anexadas ({newInteracao.match(/\[IMAGEM: (.*?)\]/g)?.length || 0}):</p>
+                    <div className="grid grid-cols-3 gap-2">
                       {newInteracao.match(/\[IMAGEM: (.*?)\]/g)?.map((match, idx) => {
                         const base64 = match.replace('[IMAGEM: ', '').replace(']', '');
                         return (
@@ -493,13 +497,14 @@ export default function ChamadoDetalhesPage() {
                             <img 
                               src={base64} 
                               alt={`Anexo ${idx + 1}`} 
-                              className="w-full h-24 object-cover rounded border border-blue-300"
+                              className="w-full h-20 object-cover rounded border border-blue-300"
                             />
                             <button
                               onClick={() => {
-                                setNewInteracao(prev => prev.replace(match, '').trim());
+                                setNewInteracao(prev => prev.replace(match, ''));
                               }}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                              title="Remover imagem"
                             >
                               ×
                             </button>
@@ -510,10 +515,44 @@ export default function ChamadoDetalhesPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-slate-500">
-                    💡 Dica: Cole imagens com Ctrl+V ou adicione links de imagens no texto
-                  </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (!files) return;
+                        
+                        Array.from(files).forEach(file => {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const base64 = event.target?.result as string;
+                            setNewInteracao(prev => prev + `[IMAGEM: ${base64}]`);
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                        
+                        // Limpar input para permitir selecionar o mesmo arquivo novamente
+                        e.target.value = '';
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                      className="text-slate-600 hover:text-slate-900"
+                    >
+                      📎 Anexar Arquivo
+                    </Button>
+                    <p className="text-xs text-slate-500">
+                      ou Ctrl+V para colar
+                    </p>
+                  </div>
                   <Button
                     onClick={handleAddInteracao}
                     disabled={createInteracaoMutation.isPending || !newInteracao.trim()}
