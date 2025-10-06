@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -66,13 +65,13 @@ export default function ChamadoDetalhesPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error("Chamado não encontrado");
-      
+
       // Marcar como lido ao visualizar
       fetch(`/api/chamados/${id}/mark-read`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       }).catch(err => console.error('Erro ao marcar como lido:', err));
-      
+
       return response.json();
     },
     enabled: !!id,
@@ -87,6 +86,8 @@ export default function ChamadoDetalhesPage() {
     queryKey: [`/api/chamados/${id}/pendencias`],
     enabled: !!id,
   });
+
+  const isInternal = user?.role === 'admin' || user?.role === 'interno';
 
   const { data: usuariosInternos = [] } = useQuery({
     queryKey: ["/api/users"],
@@ -239,8 +240,6 @@ export default function ChamadoDetalhesPage() {
     return PRIORIDADES.find(p => p.value === prioridade) || PRIORIDADES[1];
   };
 
-  const isInternal = user?.role === 'admin' || user?.role === 'interno';
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -303,7 +302,7 @@ export default function ChamadoDetalhesPage() {
         {/* Conteúdo Principal */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto p-6 space-y-4">
-            
+
             {/* Descrição Original */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200" data-testid="card-descricao">
               <div className="flex items-start gap-3 mb-4">
@@ -353,8 +352,8 @@ export default function ChamadoDetalhesPage() {
 
                 {/* Interações */}
                 {interacoes.map((interacao: any, index: number) => (
-                  <div 
-                    key={interacao.id} 
+                  <div
+                    key={interacao.id}
                     className={`bg-white rounded-lg p-4 shadow-sm border ${
                       interacao.tipo === 'MUDANCA_STATUS' ? 'border-blue-200 bg-blue-50/30' : 'border-slate-200'
                     }`}
@@ -524,7 +523,7 @@ export default function ChamadoDetalhesPage() {
                   </Select>
                 ) : (
                   <div className="px-3 py-2 bg-slate-50 rounded-md text-sm text-slate-900" data-testid="text-atendente">
-                    {chamado.atendenteId 
+                    {chamado.atendenteId
                       ? usuariosInternos.find((u: any) => u.id === chamado.atendenteId)?.name || 'Não atribuído'
                       : 'Não atribuído'
                     }
