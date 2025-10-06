@@ -90,7 +90,16 @@ export default function ChamadoDetalhesPage() {
 
   const { data: usuariosInternos = [] } = useQuery({
     queryKey: ["/api/users"],
-    select: (data: any[]) => data.filter(u => u.role === 'admin' || u.role === 'interno')
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Erro ao buscar usuários");
+      const data = await response.json();
+      return data.filter((u: any) => u.role === 'admin' || u.role === 'interno');
+    },
+    enabled: isInternal, // Só buscar se for interno/admin
   });
 
   useEffect(() => {
@@ -498,15 +507,19 @@ export default function ChamadoDetalhesPage() {
                     onValueChange={(value) => handleFieldChange('atendenteId', value === "0" ? null : parseInt(value))}
                   >
                     <SelectTrigger className="w-full" data-testid="select-atendente">
-                      <SelectValue placeholder="Não atribuído" />
+                      <SelectValue placeholder="Selecione um atendente" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="0">Não atribuído</SelectItem>
-                      {usuariosInternos.map((u: any) => (
-                        <SelectItem key={u.id} value={u.id.toString()}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
+                      {usuariosInternos && usuariosInternos.length > 0 ? (
+                        usuariosInternos.map((u: any) => (
+                          <SelectItem key={u.id} value={u.id.toString()}>
+                            {u.name} ({u.role === 'admin' ? 'Admin' : 'Interno'})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="-1" disabled>Nenhum usuário disponível</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 ) : (
