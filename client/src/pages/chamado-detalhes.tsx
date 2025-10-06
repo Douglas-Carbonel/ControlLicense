@@ -489,10 +489,10 @@ export default function ChamadoDetalhesPage() {
 
               <Separator className="my-4" />
 
-              {/* Atendente */}
-              {isInternal && (
-                <div className="mb-4">
-                  <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Atendente</Label>
+              {/* Atendente - Sempre visível para facilitar atribuição */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Atendente</Label>
+                {isInternal ? (
                   <Select
                     value={editData.atendenteId?.toString() || "0"}
                     onValueChange={(value) => handleFieldChange('atendenteId', value === "0" ? null : parseInt(value))}
@@ -509,8 +509,15 @@ export default function ChamadoDetalhesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              )}
+                ) : (
+                  <div className="px-3 py-2 bg-slate-50 rounded-md text-sm text-slate-900" data-testid="text-atendente">
+                    {chamado.atendenteId 
+                      ? usuariosInternos.find((u: any) => u.id === chamado.atendenteId)?.name || 'Não atribuído'
+                      : 'Não atribuído'
+                    }
+                  </div>
+                )}
+              </div>
 
               {/* Cliente */}
               <div className="mb-4">
