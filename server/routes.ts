@@ -1615,17 +1615,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload de arquivos para interações
+  // Upload de arquivos para interações - Com validação de segurança
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_FILES = 10;
+
   const uploadMultiple = multer({ 
     dest: "uploads/",
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB por arquivo
-  }).array('files', 10); // Máximo 10 arquivos
+    limits: { 
+      fileSize: MAX_FILE_SIZE,
+      files: MAX_FILES
+    },
+    fileFilter: (req, file, cb) => {
+      // Validar MIME type
+      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        return cb(new Error('Apenas imagens são permitidas (JPG, PNG, GIF, WEBP)'));
+      }
+
+      // Validar extensão do arquivo
+      const ext = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        return cb(new Error('Extensão de arquivo não permitida'));
+      }
+
+      cb(null, true);
+    }
+  }).array('files', MAX_FILES);
 
   app.post("/api/upload", authenticateToken, (req: AuthRequest, res) => {
     uploadMultiple(req, res, (err) => {
       if (err) {
         console.error("Upload error:", err);
-        return res.status(400).json({ message: "Erro no upload" });
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ message: `Arquivo muito grande. Tamanho máximo: ${MAX_FILE_SIZE / 1024 / 1024}MB` });
+          }
+          if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({ message: `Muitos arquivos. Máximo: ${MAX_FILES}` });
+          }
+        }
+        return res.status(400).json({ message: err.message || "Erro no upload" });
       }
       
       const files = (req as any).files as Express.Multer.File[];
