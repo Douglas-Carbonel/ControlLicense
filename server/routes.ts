@@ -1615,6 +1615,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload de arquivos para interações
+  const uploadMultiple = multer({ 
+    dest: "uploads/",
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB por arquivo
+  }).array('files', 10); // Máximo 10 arquivos
+
+  app.post("/api/upload", authenticateToken, (req: AuthRequest, res) => {
+    uploadMultiple(req, res, (err) => {
+      if (err) {
+        console.error("Upload error:", err);
+        return res.status(400).json({ message: "Erro no upload" });
+      }
+      
+      const files = (req as any).files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "Nenhum arquivo enviado" });
+      }
+
+      // Retornar URLs dos arquivos
+      const fileUrls = files.map(file => `/uploads/${file.filename}`);
+      res.json({ urls: fileUrls });
+    });
+  });
+
   // Rotas de Interações
   app.get("/api/chamados/:id/interacoes", authenticateToken, async (req: AuthRequest, res) => {
     try {
