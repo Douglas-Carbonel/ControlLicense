@@ -90,7 +90,7 @@ export default function ChamadoDetalhesPage() {
   const isInternal = user?.role === 'admin' || user?.role === 'interno';
 
   const { data: usuariosInternos = [] } = useQuery({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/users/internos"],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await fetch("/api/users", {
@@ -98,7 +98,10 @@ export default function ChamadoDetalhesPage() {
       });
       if (!response.ok) throw new Error("Erro ao buscar usuários");
       const data = await response.json();
-      return data.filter((u: any) => u.role === 'admin' || u.role === 'interno');
+      // Filtrar apenas usuários com role 'admin' ou 'interno' E que estejam ativos
+      return data.filter((u: any) => 
+        (u.role === 'admin' || u.role === 'interno') && u.active === true
+      );
     },
     enabled: isInternal, // Só buscar se for interno/admin
   });
