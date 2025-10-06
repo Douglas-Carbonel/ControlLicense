@@ -50,6 +50,13 @@ const CATEGORIAS = [
   { value: 'ATENDIMENTO', label: 'Atendimento/Dúvidas' }
 ];
 
+const PRODUTOS = [
+  { value: 'CRM_ONE_WEB', label: 'CRM One - WEB' },
+  { value: 'CRM_ONE_APP', label: 'CRM One - App' },
+  { value: 'VENDA_RAPIDA', label: 'Venda Rápida' },
+  { value: 'ZEUS', label: 'Zeus' }
+];
+
 const PRIORIDADES = [
   { value: 'BAIXA', label: 'Baixa' },
   { value: 'MEDIA', label: 'Média' },
@@ -76,8 +83,10 @@ export default function ChamadosPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [clienteSearchTerm, setClienteSearchTerm] = useState('');
   const [newChamado, setNewChamado] = useState({
     categoria: '',
+    produto: '',
     titulo: '',
     descricao: '',
     prioridade: 'MEDIA',
@@ -224,7 +233,7 @@ export default function ChamadosPage() {
       finalRepresentanteId = currentUser.representanteId;
     }
 
-    if (!newChamado.categoria || !newChamado.titulo || !newChamado.descricao || !finalClienteId) {
+    if (!newChamado.categoria || !newChamado.produto || !newChamado.titulo || !newChamado.descricao || !finalClienteId) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios",
@@ -339,6 +348,32 @@ export default function ChamadosPage() {
                 )}
               </div>
 
+              {/* Produto - Obrigatório */}
+              <div className="space-y-2">
+                <Label htmlFor="produto" className="text-base font-semibold flex items-center gap-2">
+                  Produto
+                  <span className="text-red-500 text-lg">*</span>
+                </Label>
+                <Select
+                  value={newChamado.produto}
+                  onValueChange={(value) => setNewChamado({ ...newChamado, produto: value })}
+                >
+                  <SelectTrigger className={`h-11 ${!newChamado.produto ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
+                    <SelectValue placeholder="Selecione o produto relacionado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUTOS.map(prod => (
+                      <SelectItem key={prod.value} value={prod.value}>
+                        {prod.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!newChamado.produto && (
+                  <p className="text-xs text-red-500">Este campo é obrigatório</p>
+                )}
+              </div>
+
               {/* Campo Cliente - Obrigatório - comportamento baseado no tipo de usuário */}
               {(user?.role === 'admin' || user?.role === 'interno') && (
                 <div className="space-y-2">
@@ -374,19 +409,8 @@ export default function ChamadosPage() {
 
                 const representanteIdDoUsuario = currentUser?.representanteId;
 
-                console.log('Debug filtro representante:', {
-                  currentUserId: currentUser?.id,
-                  currentUserName: currentUser?.name,
-                  currentUserRole: currentUser?.role,
-                  representanteId: representanteIdDoUsuario,
-                  currentUserCompleto: currentUser,
-                  totalLicensesData: clientes?.length,
-                  allUsersCount: allUsers.length
-                });
-
                 // Se não tem representanteId, não mostra nenhum cliente
                 if (!representanteIdDoUsuario) {
-                  console.log('Usuário sem representanteId definido');
                   return (
                     <div className="space-y-2">
                       <Label className="text-base font-semibold text-red-600">
@@ -410,8 +434,6 @@ export default function ChamadosPage() {
                   }
                 });
 
-                console.log(`Total de códigos de clientes únicos: ${clientesMap.size}`);
-
                 const clientesDoRepresentante: { code: string, nomeCliente: string }[] = [];
 
                 clientesMap.forEach((licensesDoCliente, code) => {
@@ -419,65 +441,83 @@ export default function ChamadosPage() {
                   const temRepresentante = licensesDoCliente.some((lic: any) => {
                     const principal = lic.representantePrincipalId;
                     const secundario = lic.representanteSecundarioId;
-
-                    console.log(`Verificando Cliente ${code}:`, {
-                      licenseId: lic.id,
-                      representantePrincipalId: principal,
-                      representanteSecundarioId: secundario,
-                      representanteIdDoUsuario: representanteIdDoUsuario,
-                      matchPrincipal: principal === representanteIdDoUsuario,
-                      matchSecundario: secundario === representanteIdDoUsuario
-                    });
-
                     return principal === representanteIdDoUsuario || 
                            secundario === representanteIdDoUsuario;
                   });
 
                   if (temRepresentante) {
-                    console.log(`✅ Cliente ${code} - VINCULADO ao representante ${representanteIdDoUsuario}`);
                     clientesDoRepresentante.push({
                       code: code,
                       nomeCliente: licensesDoCliente[0].nomeCliente || code
                     });
-                  } else {
-                    console.log(`❌ Cliente ${code} - NÃO vinculado ao representante ${representanteIdDoUsuario}`);
                   }
                 });
 
-                console.log(`TOTAL FILTRADO: ${clientesDoRepresentante.length} cliente(s) para o representante ${representanteIdDoUsuario}`);
+                // Filtrar clientes com base no termo de busca (mínimo 4 caracteres)
+                const clientesFiltrados = clienteSearchTerm.length >= 4
+                  ? clientesDoRepresentante.filter(c => 
+                      c.code.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
+                      c.nomeCliente.toLowerCase().includes(clienteSearchTerm.toLowerCase())
+                    )
+                  : [];
+
+                // Verificar se o cliente selecionado está na lista filtrada
+                const clienteSelecionado = clientesDoRepresentante.find(c => c.code === newChamado.clienteId);
 
                 return (
                   <div className="space-y-2">
-                    <Label htmlFor="clienteId" className="text-base font-semibold flex items-center gap-2">
+                    <Label htmlFor="clienteSearch" className="text-base font-semibold flex items-center gap-2">
                       Cliente que está solicitando
                       <span className="text-red-500 text-lg">*</span>
                     </Label>
-                    <Select
-                      value={newChamado.clienteId}
-                      onValueChange={(value) => setNewChamado({ ...newChamado, clienteId: value })}
-                    >
-                      <SelectTrigger className={`h-11 ${!newChamado.clienteId ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}>
-                        <SelectValue placeholder="Selecione qual cliente está solicitando" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientesDoRepresentante.length === 0 ? (
-                          <div className="p-2 text-sm text-slate-500">
-                            Nenhum cliente vinculado a este representante
-                          </div>
-                        ) : (
-                          clientesDoRepresentante.map((cliente, index) => (
-                            <SelectItem key={`${cliente.code}-${index}`} value={cliente.code}>
-                              {cliente.code} - {cliente.nomeCliente}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Input
+                        id="clienteSearch"
+                        type="text"
+                        value={clienteSelecionado ? `${clienteSelecionado.code} - ${clienteSelecionado.nomeCliente}` : clienteSearchTerm}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setClienteSearchTerm(value);
+                          if (!value) {
+                            setNewChamado({ ...newChamado, clienteId: '' });
+                          }
+                        }}
+                        placeholder="Digite pelo menos 4 caracteres para buscar..."
+                        className={`h-11 ${!newChamado.clienteId ? 'border-red-200 focus:border-red-400' : 'border-slate-200'}`}
+                      />
+                      {clienteSearchTerm.length > 0 && clienteSearchTerm.length < 4 && (
+                        <p className="text-xs text-amber-600">
+                          Digite pelo menos 4 caracteres para buscar
+                        </p>
+                      )}
+                      {clienteSearchTerm.length >= 4 && clientesFiltrados.length === 0 && (
+                        <p className="text-xs text-slate-500">
+                          Nenhum cliente encontrado com "{clienteSearchTerm}"
+                        </p>
+                      )}
+                      {clientesFiltrados.length > 0 && !clienteSelecionado && (
+                        <div className="border rounded-md max-h-48 overflow-y-auto bg-white">
+                          {clientesFiltrados.map((cliente, index) => (
+                            <div
+                              key={`${cliente.code}-${index}`}
+                              className="px-3 py-2 hover:bg-slate-100 cursor-pointer border-b last:border-b-0"
+                              onClick={() => {
+                                setNewChamado({ ...newChamado, clienteId: cliente.code });
+                                setClienteSearchTerm('');
+                              }}
+                            >
+                              <p className="text-sm font-medium">{cliente.code}</p>
+                              <p className="text-xs text-slate-600">{cliente.nomeCliente}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     {!newChamado.clienteId && (
                       <p className="text-xs text-red-500">Este campo é obrigatório</p>
                     )}
                     <p className="text-xs text-slate-500">
-                      Você está abrindo este chamado em nome de um cliente ({clientesDoRepresentante.length} cliente(s) disponível(is))
+                      Digite o código ou nome do cliente ({clientesDoRepresentante.length} cliente(s) disponível(is))
                     </p>
                   </div>
                 );
@@ -880,14 +920,6 @@ function ChamadoCard({
       }`}
       onClick={() => onViewDetails(chamado)}
     >
-      {temRespostaNaoLida && (
-        <div className="absolute -top-2 -right-2 z-10">
-          <Badge variant="destructive" className="animate-pulse shadow-lg">
-            Nova Resposta!
-          </Badge>
-        </div>
-      )}
-      
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-2 mb-2">

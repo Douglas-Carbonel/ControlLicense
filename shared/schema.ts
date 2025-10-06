@@ -288,6 +288,7 @@ export type InsertRepresentante = z.infer<typeof insertRepresentanteSchema>;
 export const chamados = pgTable("chamados", {
   id: serial("id").primaryKey(),
   categoria: text("categoria").notNull(), // 'INSTALACAO', 'MELHORIA', 'BUG', 'ATENDIMENTO'
+  produto: text("produto").notNull(), // 'CRM_ONE_WEB', 'CRM_ONE_APP', 'VENDA_RAPIDA', 'ZEUS'
   titulo: text("titulo").notNull(),
   descricao: text("descricao").notNull(),
   status: text("status").notNull().default('ABERTO'), // 'ABERTO', 'PENDENTE', 'SOLUCIONADO', 'FECHADO'
