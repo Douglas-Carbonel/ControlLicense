@@ -43,45 +43,6 @@ const MOTIVOS_PENDENCIA = [
   { value: 'OUTROS', label: 'Outros motivos' }
 ];
 
-// Função para comprimir imagens antes de enviar
-const compressImage = (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        
-        // Redimensionar se a imagem for muito grande
-        const maxSize = 1200;
-        if (width > maxSize || height > maxSize) {
-          if (width > height) {
-            height = (height / width) * maxSize;
-            width = maxSize;
-          } else {
-            width = (width / height) * maxSize;
-            height = maxSize;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Comprimir com qualidade 0.7
-        const compressed = canvas.toDataURL('image/jpeg', 0.7);
-        resolve(compressed);
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
-};
-
 export default function ChamadoDetalhesPage() {
   const [, params] = useRoute("/chamados/:id");
   const id = params?.id;
@@ -89,6 +50,7 @@ export default function ChamadoDetalhesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [newInteracao, setNewInteracao] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [editData, setEditData] = useState({
     status: '',
     prioridade: '',
@@ -203,7 +165,7 @@ export default function ChamadoDetalhesPage() {
   });
 
   const createInteracaoMutation = useMutation({
-    mutationFn: async (mensagem: string) => {
+    mutationFn: async ({ mensagem, anexos }: { mensagem: string; anexos?: string[] }) => {
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/chamados/${id}/interacoes`, {
         method: "POST",
@@ -211,7 +173,7 @@ export default function ChamadoDetalhesPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ mensagem, tipo: 'COMENTARIO' }),
+        body: JSON.stringify({ mensagem, tipo: 'COMENTARIO', anexos }),
       });
 
       if (!response.ok) {
@@ -224,6 +186,7 @@ export default function ChamadoDetalhesPage() {
     onSuccess: () => {
       refetchInteracoes();
       setNewInteracao('');
+      setAttachedFiles([]);
       queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
       queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/notificacoes"] });
@@ -243,16 +206,52 @@ export default function ChamadoDetalhesPage() {
     },
   });
 
-  const handleAddInteracao = () => {
-    if (!newInteracao.trim()) {
+  const handleAddInteracao = async () => {
+    if (!newInteracao.trim() && attachedFiles.length === 0) {
       toast({
         title: "Erro",
-        description: "Digite uma mensagem",
+        description: "Digite uma mensagem ou anexe um arquivo",
         variant: "destructive",
       });
       return;
     }
-    createInteracaoMutation.mutate(newInteracao);
+
+    let anexos: string[] = [];
+
+    // Upload de arquivos primeiro, se houver
+    if (attachedFiles.length > 0) {
+      try {
+        const token = localStorage.getItem("token");
+        const formData = new FormData();
+        attachedFiles.forEach(file => {
+          formData.append('files', file);
+        });
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Erro ao fazer upload dos arquivos');
+        }
+
+        const uploadData = await uploadResponse.json();
+        anexos = uploadData.urls;
+      } catch (error) {
+        toast({
+          title: "Erro no upload",
+          description: "Não foi possível enviar os arquivos",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    createInteracaoMutation.mutate({ mensagem: newInteracao, anexos });
   };
 
   const handleSave = () => {
@@ -424,52 +423,26 @@ export default function ChamadoDetalhesPage() {
                           </span>
                         </div>
                         <div className="text-sm text-slate-700 leading-relaxed space-y-2" data-testid={`text-mensagem-interacao-${interacao.id}`}>
-                          {(() => {
-                            const mensagem = interacao.mensagem;
-                            const parts = mensagem.split(/(\[IMAGEM: .*?\])/g);
-                            
-                            return parts.map((part, idx) => {
-                              // Detectar imagens base64
-                              if (part.startsWith('[IMAGEM:')) {
-                                const base64 = part.replace('[IMAGEM: ', '').replace(']', '');
-                                return (
-                                  <div key={idx} className="my-2">
-                                    <img 
-                                      src={base64} 
-                                      alt={`Anexo ${idx}`}
-                                      className="max-w-md rounded-lg border border-slate-200 cursor-pointer hover:opacity-90"
-                                      onClick={() => window.open(base64, '_blank')}
-                                    />
-                                  </div>
-                                );
-                              }
-                              
-                              // Detectar URLs de imagens
-                              const urlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
-                              if (urlRegex.test(part)) {
-                                return part.split(urlRegex).map((segment, segIdx) => {
-                                  if (segment && segment.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                                    return (
-                                      <div key={`${idx}-${segIdx}`} className="my-2">
-                                        <img 
-                                          src={segment}
-                                          alt={`Imagem ${segIdx}`}
-                                          className="max-w-md rounded-lg border border-slate-200 cursor-pointer hover:opacity-90"
-                                          onClick={() => window.open(segment, '_blank')}
-                                          onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                          }}
-                                        />
-                                      </div>
-                                    );
-                                  }
-                                  return <span key={`${idx}-${segIdx}`}>{segment}</span>;
-                                });
-                              }
-                              
-                              return <p key={idx}>{part}</p>;
-                            });
-                          })()}
+                          <p>{interacao.mensagem}</p>
+                          
+                          {/* Renderizar anexos */}
+                          {interacao.anexos && interacao.anexos.length > 0 && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              {interacao.anexos.map((url: string, idx: number) => (
+                                <div key={idx} className="relative">
+                                  <img 
+                                    src={url}
+                                    alt={`Anexo ${idx + 1}`}
+                                    className="w-full rounded-lg border border-slate-200 cursor-pointer hover:opacity-90"
+                                    onClick={() => window.open(url, '_blank')}
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -483,12 +456,8 @@ export default function ChamadoDetalhesPage() {
               <h3 className="text-sm font-semibold text-slate-900 mb-3">Adicionar Comentário</h3>
               <div className="space-y-3">
                 <Textarea
-                  value={newInteracao.replace(/\[IMAGEM: .*?\]/g, '')}
-                  onChange={(e) => {
-                    // Preservar imagens existentes e atualizar apenas o texto
-                    const imagens = newInteracao.match(/\[IMAGEM: .*?\]/g) || [];
-                    setNewInteracao(e.target.value + imagens.join(''));
-                  }}
+                  value={newInteracao}
+                  onChange={(e) => setNewInteracao(e.target.value)}
                   placeholder="Digite seu comentário... (Ctrl+V para colar imagens)"
                   rows={5}
                   className="resize-none"
@@ -498,7 +467,7 @@ export default function ChamadoDetalhesPage() {
                       handleAddInteracao();
                     }
                   }}
-                  onPaste={async (e) => {
+                  onPaste={(e) => {
                     const items = e.clipboardData?.items;
                     if (!items) return;
 
@@ -510,33 +479,30 @@ export default function ChamadoDetalhesPage() {
                         e.preventDefault();
                         const file = item.getAsFile();
                         if (file) {
-                          // Comprimir imagem antes de adicionar
-                          const compressedBase64 = await compressImage(file);
-                          const imageMarker = `[IMAGEM: ${compressedBase64}]`;
-                          setNewInteracao(prev => prev + imageMarker);
+                          setAttachedFiles(prev => [...prev, file]);
                         }
                       }
                     }
                   }}
                 />
                 
-                {/* Preview de imagens no texto */}
-                {newInteracao.includes('[IMAGEM:') && (
+                {/* Preview de arquivos anexados */}
+                {attachedFiles.length > 0 && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700 mb-2 font-medium">📎 Imagens anexadas ({newInteracao.match(/\[IMAGEM: (.*?)\]/g)?.length || 0}):</p>
+                    <p className="text-xs text-blue-700 mb-2 font-medium">📎 Arquivos anexados ({attachedFiles.length}):</p>
                     <div className="grid grid-cols-3 gap-2">
-                      {newInteracao.match(/\[IMAGEM: (.*?)\]/g)?.map((match, idx) => {
-                        const base64 = match.replace('[IMAGEM: ', '').replace(']', '');
+                      {attachedFiles.map((file, idx) => {
+                        const preview = URL.createObjectURL(file);
                         return (
                           <div key={idx} className="relative group">
                             <img 
-                              src={base64} 
-                              alt={`Anexo ${idx + 1}`} 
+                              src={preview} 
+                              alt={file.name} 
                               className="w-full h-20 object-cover rounded border border-blue-300"
                             />
                             <button
                               onClick={() => {
-                                setNewInteracao(prev => prev.replace(match, ''));
+                                setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
                               }}
                               className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                               title="Remover imagem"
@@ -558,15 +524,12 @@ export default function ChamadoDetalhesPage() {
                       accept="image/*"
                       multiple
                       className="hidden"
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const files = e.target.files;
                         if (!files) return;
                         
-                        // Processar cada arquivo
-                        for (const file of Array.from(files)) {
-                          const compressedBase64 = await compressImage(file);
-                          setNewInteracao(prev => prev + `[IMAGEM: ${compressedBase64}]`);
-                        }
+                        // Adicionar arquivos ao estado
+                        setAttachedFiles(prev => [...prev, ...Array.from(files)]);
                         
                         // Limpar input para permitir selecionar o mesmo arquivo novamente
                         e.target.value = '';
