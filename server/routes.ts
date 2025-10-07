@@ -1674,6 +1674,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const chamadoId = parseInt(req.params.id);
       const interacoes = await storage.getChamadoInteracoes(chamadoId);
+      
+      // Adicionar cache de 2 segundos para reduzir carga
+      res.set('Cache-Control', 'private, max-age=2');
       res.json(interacoes);
     } catch (error) {
       console.error("Error fetching interacoes:", error);

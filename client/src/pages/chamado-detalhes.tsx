@@ -89,16 +89,22 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     enabled: !!id,
+    refetchInterval: false,
+    staleTime: 30000,
   });
 
   const { data: interacoes = [], refetch: refetchInteracoes } = useQuery<any[]>({
     queryKey: [`/api/chamados/${id}/interacoes`],
     enabled: !!id,
+    refetchInterval: 3000, // Atualizar a cada 3 segundos
+    staleTime: 2000,
   });
 
   const { data: pendencias = [] } = useQuery<any[]>({
     queryKey: [`/api/chamados/${id}/pendencias`],
     enabled: !!id,
+    refetchInterval: false,
+    staleTime: 30000,
   });
 
   const isInternal = user?.role === 'admin' || user?.role === 'interno';
@@ -196,18 +202,24 @@ export default function ChamadoDetalhesPage() {
 
       return response.json();
     },
-    onSuccess: () => {
-      refetchInteracoes();
+    onSuccess: async () => {
+      // Limpar campos imediatamente
       setNewInteracao('');
       setAttachedFiles([]);
+      
+      // Atualizar interações imediatamente
+      await refetchInteracoes();
+      
+      // Invalidar outras queries em segundo plano
       queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
       queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/notificacoes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notificacoes/unread-count"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chamados/unread-count"] });
+      
       toast({
         title: "Sucesso",
-        description: "Comentário adicionado com sucesso!",
+        description: "Comentário adicionado!",
       });
     },
     onError: (error: Error) => {

@@ -981,9 +981,9 @@ export class DbStorage implements IStorage {
                 }
             })
             .from(chamadoInteracoes)
-            .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
+            .innerJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
-            .orderBy(chamadoInteracoes.createdAt);
+            .orderBy(asc(chamadoInteracoes.createdAt));
 
         return result;
     }
