@@ -1618,7 +1618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload de arquivos para interações - Com validação de segurança
   const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
   const MAX_FILES = 10;
 
   const uploadMultiple = multer({ 

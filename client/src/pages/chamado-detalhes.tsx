@@ -219,6 +219,8 @@ export default function ChamadoDetalhesPage() {
     },
   });
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const handleAddInteracao = async () => {
     if (!newInteracao.trim() && attachedFiles.length === 0) {
       toast({
@@ -233,6 +235,7 @@ export default function ChamadoDetalhesPage() {
 
     // Upload de arquivos primeiro, se houver
     if (attachedFiles.length > 0) {
+      setIsUploading(true);
       try {
         const token = localStorage.getItem("token");
         const formData = new FormData();
@@ -249,7 +252,8 @@ export default function ChamadoDetalhesPage() {
         });
 
         if (!uploadResponse.ok) {
-          throw new Error('Erro ao fazer upload dos arquivos');
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.message || 'Erro ao fazer upload dos arquivos');
         }
 
         const uploadData = await uploadResponse.json();
@@ -257,10 +261,13 @@ export default function ChamadoDetalhesPage() {
       } catch (error) {
         toast({
           title: "Erro no upload",
-          description: "Não foi possível enviar os arquivos",
+          description: error instanceof Error ? error.message : "Não foi possível enviar os arquivos",
           variant: "destructive",
         });
+        setIsUploading(false);
         return;
+      } finally {
+        setIsUploading(false);
       }
     }
 
@@ -492,6 +499,15 @@ export default function ChamadoDetalhesPage() {
                         e.preventDefault();
                         const file = item.getAsFile();
                         if (file) {
+                          // Validar tamanho (50MB)
+                          if (file.size > 50 * 1024 * 1024) {
+                            toast({
+                              title: "Arquivo muito grande",
+                              description: `O arquivo ${file.name} excede 50MB`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
                           setAttachedFiles(prev => [...prev, file]);
                         }
                       }
@@ -538,8 +554,24 @@ export default function ChamadoDetalhesPage() {
                         const files = e.target.files;
                         if (!files) return;
                         
-                        // Adicionar arquivos ao estado
-                        setAttachedFiles(prev => [...prev, ...Array.from(files)]);
+                        // Validar tamanho de cada arquivo
+                        const validFiles: File[] = [];
+                        for (const file of Array.from(files)) {
+                          if (file.size > 50 * 1024 * 1024) {
+                            toast({
+                              title: "Arquivo muito grande",
+                              description: `${file.name} excede 50MB`,
+                              variant: "destructive",
+                            });
+                          } else {
+                            validFiles.push(file);
+                          }
+                        }
+                        
+                        // Adicionar apenas arquivos válidos
+                        if (validFiles.length > 0) {
+                          setAttachedFiles(prev => [...prev, ...validFiles]);
+                        }
                         
                         // Limpar input para permitir selecionar o mesmo arquivo novamente
                         e.target.value = '';
@@ -560,12 +592,17 @@ export default function ChamadoDetalhesPage() {
                   </div>
                   <Button
                     onClick={handleAddInteracao}
-                    disabled={createInteracaoMutation.isPending || !newInteracao.trim()}
+                    disabled={createInteracaoMutation.isPending || isUploading || (!newInteracao.trim() && attachedFiles.length === 0)}
                     size="sm"
                     className="bg-gradient-to-r from-[#0095da] to-[#313d5a] hover:from-[#007ab8] hover:to-[#2a3349]"
                     data-testid="button-adicionar-comentario"
                   >
-                    {createInteracaoMutation.isPending ? (
+                    {isUploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                        Enviando arquivo{attachedFiles.length > 1 ? 's' : ''}...
+                      </>
+                    ) : createInteracaoMutation.isPending ? (
                       <>
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
                         Enviando...

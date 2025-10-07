@@ -852,37 +852,39 @@ export class DbStorage implements IStorage {
         clienteId?: string,
         tipoUsuario?: string
     ): Promise<(Chamado & { totalInteracoes?: number })[]> {
-        console.log('[CHAMADOS FILTER]', {
-            usuarioId,
-            role,
-            representanteId,
-            clienteId,
-            tipoUsuario
-        });
+        // Query otimizada com subquery para contar interações em uma única consulta
+        const interacoesSubquery = db
+            .select({
+                chamadoId: chamadoInteracoes.chamadoId,
+                total: count().as('total')
+            })
+            .from(chamadoInteracoes)
+            .groupBy(chamadoInteracoes.chamadoId)
+            .as('interacoes_count');
 
         // Admin e interno veem todos
         if (role === 'admin' || role === 'interno') {
-            console.log('[CHAMADOS] Admin/Interno - retornando todos os chamados');
-            const chamadosList = await db.select().from(chamados).orderBy(desc(chamados.dataAbertura));
-
-            // Adicionar contagem de interações para cada chamado
-            const chamadosComInteracoes = await Promise.all(
-                chamadosList.map(async (chamado) => {
-                    const interacoes = await db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, chamado.id));
-                    return { ...chamado, totalInteracoes: interacoes.length };
+            const result = await db
+                .select({
+                    ...chamados,
+                    totalInteracoes: sql<number>`COALESCE(${interacoesSubquery.total}, 0)`
                 })
-            );
+                .from(chamados)
+                .leftJoin(interacoesSubquery, eq(chamados.id, interacoesSubquery.chamadoId))
+                .orderBy(desc(chamados.dataAbertura));
 
-            return chamadosComInteracoes;
+            return result;
         }
 
-        // Representante analista vê chamados onde:
-        // - É o solicitante OU
-        // - É vinculado ao representante
+        // Representante analista
         if (role === 'representante' && tipoUsuario === 'analista') {
-            console.log('[CHAMADOS] Representante Analista - filtrando por representanteId:', representanteId, 'e solicitanteId:', usuarioId);
-            const chamadosList = await db.select()
+            const result = await db
+                .select({
+                    ...chamados,
+                    totalInteracoes: sql<number>`COALESCE(${interacoesSubquery.total}, 0)`
+                })
                 .from(chamados)
+                .leftJoin(interacoesSubquery, eq(chamados.id, interacoesSubquery.chamadoId))
                 .where(
                     or(
                         eq(chamados.solicitanteId, usuarioId),
@@ -891,22 +893,18 @@ export class DbStorage implements IStorage {
                 )
                 .orderBy(desc(chamados.dataAbertura));
 
-            // Adicionar contagem de interações
-            const chamadosComInteracoes = await Promise.all(
-                chamadosList.map(async (chamado) => {
-                    const interacoes = await db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, chamado.id));
-                    return { ...chamado, totalInteracoes: interacoes.length };
-                })
-            );
-
-            return chamadosComInteracoes;
+            return result;
         }
 
-        // Cliente final vê apenas seus próprios chamados
+        // Cliente final
         if (role === 'cliente_final' && clienteId) {
-            console.log('[CHAMADOS] Cliente Final - filtrando por clienteId:', clienteId, 'e solicitanteId:', usuarioId);
-            const chamadosList = await db.select()
+            const result = await db
+                .select({
+                    ...chamados,
+                    totalInteracoes: sql<number>`COALESCE(${interacoesSubquery.total}, 0)`
+                })
                 .from(chamados)
+                .leftJoin(interacoesSubquery, eq(chamados.id, interacoesSubquery.chamadoId))
                 .where(
                     and(
                         eq(chamados.clienteId, clienteId),
@@ -915,18 +913,9 @@ export class DbStorage implements IStorage {
                 )
                 .orderBy(desc(chamados.dataAbertura));
 
-            // Adicionar contagem de interações
-            const chamadosComInteracoes = await Promise.all(
-                chamadosList.map(async (chamado) => {
-                    const interacoes = await db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, chamado.id));
-                    return { ...chamado, totalInteracoes: interacoes.length };
-                })
-            );
-
-            return chamadosComInteracoes;
+            return result;
         }
 
-        console.log('[CHAMADOS] Nenhuma condição atendida - retornando vazio');
         return [];
     }
 
