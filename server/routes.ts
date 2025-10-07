@@ -1362,20 +1362,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chamados/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
+      const startTime = Date.now();
       
       // Buscar apenas chamado primeiro
+      const t1 = Date.now();
       const chamado = await storage.getChamado(id);
+      console.log(`[PERF] getChamado took ${Date.now() - t1}ms`);
 
       if (!chamado) {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
 
       // Buscar resto em paralelo
+      const t2 = Date.now();
       const [solicitante, interacoes, pendencias] = await Promise.all([
         chamado.solicitanteId ? storage.getUser(chamado.solicitanteId) : Promise.resolve(null),
         storage.getChamadoInteracoes(id),
         storage.getChamadoPendencias(id)
       ]);
+      console.log(`[PERF] Parallel queries took ${Date.now() - t2}ms`);
+      console.log(`[PERF] Total request took ${Date.now() - startTime}ms`);
 
       // Cache agressivo
       res.set('Cache-Control', 'private, max-age=30');
