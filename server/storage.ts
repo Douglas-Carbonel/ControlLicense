@@ -914,7 +914,7 @@ export class DbStorage implements IStorage {
         return db.select().from(chamadoPendencias)
             .where(eq(chamadoPendencias.chamadoId, chamadoId))
             .orderBy(desc(chamadoPendencias.createdAt))
-            .limit(50); // Limitar pendências
+            .limit(20); // Reduzir limite de pendências
     }
 
     async createChamadoPendencia(data: InsertChamadoPendencia): Promise<ChamadoPendencia> {
@@ -930,32 +930,30 @@ export class DbStorage implements IStorage {
         return result[0];
     }
 
-    // Métodos para Interações
+    // Métodos para Interações - ULTRA OTIMIZADO
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        // Query ultra-otimizada - sem JOIN, buscar usuários depois
-        const interacoes = await db
-            .select()
+        // Query ÚNICA com LEFT JOIN - muito mais rápido
+        const result = await db
+            .select({
+                id: chamadoInteracoes.id,
+                chamadoId: chamadoInteracoes.chamadoId,
+                usuarioId: chamadoInteracoes.usuarioId,
+                mensagem: chamadoInteracoes.mensagem,
+                anexos: chamadoInteracoes.anexos,
+                tipo: chamadoInteracoes.tipo,
+                createdAt: chamadoInteracoes.createdAt,
+                usuario: {
+                    id: users.id,
+                    name: users.name
+                }
+            })
             .from(chamadoInteracoes)
+            .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
-            .orderBy(desc(chamadoInteracoes.createdAt))
-            .limit(100);
+            .orderBy(asc(chamadoInteracoes.createdAt))
+            .limit(50); // Reduzir para 50 interações máximo
 
-        if (interacoes.length === 0) return [];
-
-        // Buscar apenas usuários únicos necessários
-        const userIds = [...new Set(interacoes.map(i => i.usuarioId))];
-        const usuariosData = await db
-            .select({ id: users.id, name: users.name })
-            .from(users)
-            .where(inArray(users.id, userIds));
-
-        const usersMap = new Map(usuariosData.map(u => [u.id, u]));
-
-        // Combinar dados e reverter ordem para cronológica
-        return interacoes.reverse().map(i => ({
-            ...i,
-            usuario: usersMap.get(i.usuarioId) || null
-        }));
+        return result;
     }
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {

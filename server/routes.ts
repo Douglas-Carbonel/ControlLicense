@@ -1363,7 +1363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Buscar TUDO em paralelo - mais rápido
+      // Buscar TUDO em paralelo de uma vez
       const [chamado, interacoes, pendencias] = await Promise.all([
         storage.getChamado(id),
         storage.getChamadoInteracoes(id),
@@ -1374,13 +1374,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
 
-      // Buscar solicitante apenas se necessário
+      // Buscar solicitante DENTRO do Promise.all final
       const solicitante = chamado.solicitanteId 
         ? await storage.getUser(chamado.solicitanteId)
         : null;
 
-      // Cache agressivo
-      res.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
+      // Cache HTTP agressivo
+      res.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
+      res.set('ETag', `chamado-${id}-${Date.now()}`);
+      
       res.json({ 
         ...chamado, 
         solicitante,

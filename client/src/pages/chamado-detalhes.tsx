@@ -82,10 +82,11 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     enabled: !!id,
-    staleTime: 30000, // 30s de cache
-    gcTime: 120000, // 2min de garbage collection
+    staleTime: 60000, // 1min de cache
+    gcTime: 300000, // 5min de garbage collection
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchOnReconnect: false
   });
 
   // Extrair dados do chamado completo
@@ -440,8 +441,8 @@ export default function ChamadoDetalhesPage() {
                   </div>
                 ))}
 
-                {/* Interações - Apenas últimas 30 */}
-                {interacoes.slice(-30).map((interacao: any) => (
+                {/* Interações - Apenas últimas 20 */}
+                {interacoes.slice(-20).map((interacao: any) => (
                   <div
                     key={interacao.id}
                     className={`bg-white rounded-lg p-4 shadow-sm border ${
