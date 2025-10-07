@@ -964,31 +964,43 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        // Query otimizada com índice direto
-        const result = await db
-            .select({
+        // Query super otimizada - buscar apenas IDs primeiro
+        const interacoesIds = await db
+            .select({ 
                 id: chamadoInteracoes.id,
-                chamadoId: chamadoInteracoes.chamadoId,
-                usuarioId: chamadoInteracoes.usuarioId,
-                mensagem: chamadoInteracoes.mensagem,
-                anexos: chamadoInteracoes.anexos,
-                tipo: chamadoInteracoes.tipo,
-                createdAt: chamadoInteracoes.createdAt,
-                usuario: {
-                    id: users.id,
-                    name: users.name,
-                    username: users.username,
-                    email: users.email,
-                    role: users.role
-                }
+                usuarioId: chamadoInteracoes.usuarioId 
             })
             .from(chamadoInteracoes)
-            .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(asc(chamadoInteracoes.createdAt))
-            .limit(200); // Limitar a 200 interações
+            .limit(100); // Reduzir para 100
 
-        return result;
+        if (interacoesIds.length === 0) return [];
+
+        // Buscar detalhes das interações em paralelo
+        const [interacoesData, usuariosMap] = await Promise.all([
+            db.select().from(chamadoInteracoes)
+                .where(eq(chamadoInteracoes.chamadoId, chamadoId))
+                .orderBy(asc(chamadoInteracoes.createdAt))
+                .limit(100),
+            // Buscar apenas usuários únicos necessários
+            db.select({
+                id: users.id,
+                name: users.name,
+                username: users.username,
+                email: users.email,
+                role: users.role
+            }).from(users)
+        ]);
+
+        // Mapear usuários por ID
+        const usersById = new Map(usuariosMap.map(u => [u.id, u]));
+
+        // Combinar dados
+        return interacoesData.map(interacao => ({
+            ...interacao,
+            usuario: usersById.get(interacao.usuarioId) || null
+        }));
     }
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {

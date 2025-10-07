@@ -76,15 +76,20 @@ export default function ChamadoDetalhesPage() {
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/chamados/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'max-age=30'
+        }
       });
       if (!response.ok) throw new Error("Chamado não encontrado");
 
       return response.json();
     },
     enabled: !!id,
-    staleTime: 10000, // Cache de 10 segundos
-    gcTime: 30000, // Garbage collection após 30s
+    staleTime: 30000, // Cache de 30 segundos
+    gcTime: 60000, // Garbage collection após 60s
+    refetchOnWindowFocus: false, // Não refazer ao focar janela
+    refetchOnMount: false, // Não refazer ao montar se tem cache
   });
 
   // Extrair dados do chamado completo
@@ -439,8 +444,8 @@ export default function ChamadoDetalhesPage() {
                   </div>
                 ))}
 
-                {/* Interações */}
-                {interacoes.map((interacao: any, index: number) => (
+                {/* Interações - Renderização otimizada */}
+                {interacoes.slice(0, 50).map((interacao: any, index: number) => (
                   <div
                     key={interacao.id}
                     className={`bg-white rounded-lg p-4 shadow-sm border ${
