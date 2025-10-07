@@ -964,37 +964,31 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        // Buscar interações
-        const interacoesData = await db.select()
+        // Usar LEFT JOIN para buscar interações com usuários em uma única query
+        const result = await db
+            .select({
+                id: chamadoInteracoes.id,
+                chamadoId: chamadoInteracoes.chamadoId,
+                usuarioId: chamadoInteracoes.usuarioId,
+                mensagem: chamadoInteracoes.mensagem,
+                anexos: chamadoInteracoes.anexos,
+                tipo: chamadoInteracoes.tipo,
+                createdAt: chamadoInteracoes.createdAt,
+                usuario: {
+                    id: users.id,
+                    name: users.name,
+                    username: users.username,
+                    email: users.email,
+                    role: users.role
+                }
+            })
             .from(chamadoInteracoes)
+            .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(asc(chamadoInteracoes.createdAt))
             .limit(100);
 
-        if (interacoesData.length === 0) return [];
-
-        // Extrair IDs únicos dos usuários das interações
-        const usuarioIds = Array.from(new Set(interacoesData.map(i => i.usuarioId)));
-
-        // Buscar apenas os usuários que aparecem nas interações
-        const usuariosMap = await db.select({
-            id: users.id,
-            name: users.name,
-            username: users.username,
-            email: users.email,
-            role: users.role
-        })
-        .from(users)
-        .where(inArray(users.id, usuarioIds));
-
-        // Mapear usuários por ID
-        const usersById = new Map(usuariosMap.map(u => [u.id, u]));
-
-        // Combinar dados
-        return interacoesData.map(interacao => ({
-            ...interacao,
-            usuario: usersById.get(interacao.usuarioId) || null
-        }));
+        return result;
     }
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
