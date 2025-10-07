@@ -77,8 +77,7 @@ export default function ChamadoDetalhesPage() {
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/chamados/${id}`, {
         headers: { 
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'max-age=30'
+          Authorization: `Bearer ${token}`
         }
       });
       if (!response.ok) throw new Error("Chamado não encontrado");
@@ -86,10 +85,11 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     enabled: !!id,
-    staleTime: 30000, // Cache de 30 segundos
-    gcTime: 60000, // Garbage collection após 60s
-    refetchOnWindowFocus: false, // Não refazer ao focar janela
-    refetchOnMount: false, // Não refazer ao montar se tem cache
+    staleTime: 60000, // 1 minuto de cache
+    gcTime: 300000, // 5 minutos de garbage collection
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false, // Desabilitar polling
   });
 
   // Extrair dados do chamado completo
@@ -224,19 +224,13 @@ export default function ChamadoDetalhesPage() {
 
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       // Limpar campos imediatamente
       setNewInteracao('');
       setAttachedFiles([]);
       
-      // Refazer fetch do chamado completo (inclui interações)
-      await refetchChamado();
-      
-      // Invalidar outras queries
-      queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/notificacoes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/notificacoes/unread-count"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/chamados/unread-count"] });
+      // Apenas refazer o chamado atual - SEM await
+      queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       
       toast({
         title: "Sucesso",
@@ -444,14 +438,13 @@ export default function ChamadoDetalhesPage() {
                   </div>
                 ))}
 
-                {/* Interações - Renderização otimizada */}
-                {interacoes.slice(0, 50).map((interacao: any, index: number) => (
+                {/* Interações - Apenas últimas 30 */}
+                {interacoes.slice(-30).map((interacao: any) => (
                   <div
                     key={interacao.id}
                     className={`bg-white rounded-lg p-4 shadow-sm border ${
                       interacao.tipo === 'MUDANCA_STATUS' ? 'border-blue-200 bg-blue-50/30' : 'border-slate-200'
                     }`}
-                    data-testid={`card-interacao-${interacao.id}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
@@ -461,42 +454,29 @@ export default function ChamadoDetalhesPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-slate-900 text-sm">
-                              {interacao.usuario?.name || 'Usuário'}
-                            </span>
-                            {interacao.tipo !== 'COMENTARIO' && (
-                              <span className="text-xs text-slate-500">
-                                {interacao.tipo === 'MUDANCA_STATUS' ? 'alterou o status' : 'atribuiu o chamado'}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs text-slate-500" data-testid={`text-data-interacao-${interacao.id}`}>
+                          <span className="font-medium text-slate-900 text-sm">
+                            {interacao.usuario?.name || 'Usuário'}
+                          </span>
+                          <span className="text-xs text-slate-500">
                             {format(new Date(interacao.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
                           </span>
                         </div>
-                        <div className="text-sm text-slate-700 leading-relaxed space-y-2" data-testid={`text-mensagem-interacao-${interacao.id}`}>
-                          <p>{interacao.mensagem}</p>
-                          
-                          {/* Renderizar anexos */}
-                          {interacao.anexos && interacao.anexos.length > 0 && (
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                              {interacao.anexos.map((url: string, idx: number) => (
-                                <div key={idx} className="relative">
-                                  <img 
-                                    src={url}
-                                    alt={`Anexo ${idx + 1}`}
-                                    className="w-full rounded-lg border border-slate-200 cursor-pointer hover:opacity-90"
-                                    onClick={() => window.open(url, '_blank')}
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = '/placeholder-image.png';
-                                    }}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        <p className="text-sm text-slate-700">{interacao.mensagem}</p>
+                        
+                        {interacao.anexos?.length > 0 && (
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            {interacao.anexos.map((url: string, idx: number) => (
+                              <img 
+                                key={idx}
+                                src={url}
+                                alt={`Anexo ${idx + 1}`}
+                                className="w-full rounded border cursor-pointer"
+                                onClick={() => window.open(url, '_blank')}
+                                loading="lazy"
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -964,31 +964,34 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        // Usar LEFT JOIN para buscar interações com usuários em uma única query
+        // Query ultra-otimizada - apenas campos essenciais
         const result = await db
             .select({
                 id: chamadoInteracoes.id,
-                chamadoId: chamadoInteracoes.chamadoId,
                 usuarioId: chamadoInteracoes.usuarioId,
                 mensagem: chamadoInteracoes.mensagem,
                 anexos: chamadoInteracoes.anexos,
                 tipo: chamadoInteracoes.tipo,
                 createdAt: chamadoInteracoes.createdAt,
-                usuario: {
-                    id: users.id,
-                    name: users.name,
-                    username: users.username,
-                    email: users.email,
-                    role: users.role
-                }
+                usuarioNome: users.name
             })
             .from(chamadoInteracoes)
             .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(asc(chamadoInteracoes.createdAt))
-            .limit(100);
+            .limit(50);
 
-        return result;
+        // Transformar para formato esperado
+        return result.map(r => ({
+            id: r.id,
+            chamadoId,
+            usuarioId: r.usuarioId,
+            mensagem: r.mensagem,
+            anexos: r.anexos,
+            tipo: r.tipo,
+            createdAt: r.createdAt,
+            usuario: r.usuarioNome ? { name: r.usuarioNome } : null
+        }));
     }
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
