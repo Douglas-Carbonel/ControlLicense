@@ -1363,26 +1363,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Buscar chamado - sem Promise.all para evitar bloqueios
-      const chamado = await storage.getChamado(id);
+      // Buscar TUDO em paralelo - mais rápido
+      const [chamado, interacoes, pendencias] = await Promise.all([
+        storage.getChamado(id),
+        storage.getChamadoInteracoes(id),
+        storage.getChamadoPendencias(id)
+      ]);
 
       if (!chamado) {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
 
-      // Buscar interações (mais crítico)
-      const interacoes = await storage.getChamadoInteracoes(id);
-      
-      // Buscar solicitante se necessário
+      // Buscar solicitante apenas se necessário
       const solicitante = chamado.solicitanteId 
         ? await storage.getUser(chamado.solicitanteId)
         : null;
-      
-      // Buscar pendências (menos crítico)
-      const pendencias = await storage.getChamadoPendencias(id);
 
-      // Cache HTTP
-      res.set('Cache-Control', 'private, max-age=60');
+      // Cache agressivo
+      res.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
       res.json({ 
         ...chamado, 
         solicitante,

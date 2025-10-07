@@ -852,71 +852,39 @@ export class DbStorage implements IStorage {
         clienteId?: string,
         tipoUsuario?: string
     ): Promise<(Chamado & { totalInteracoes?: number })[]> {
-        // Query otimizada com subquery para contar interações em uma única consulta
-        const interacoesSubquery = db
+        // Query SUPER otimizada - apenas COUNT direto no SELECT
+        let query = db
             .select({
-                chamadoId: chamadoInteracoes.chamadoId,
-                total: count().as('total')
+                ...chamados,
+                totalInteracoes: sql<number>`(SELECT COUNT(*) FROM chamado_interacoes WHERE chamado_id = chamados.id)`
             })
-            .from(chamadoInteracoes)
-            .groupBy(chamadoInteracoes.chamadoId)
-            .as('interacoes_count');
+            .from(chamados);
 
-        // Admin e interno veem todos
+        // Aplicar filtros por role
         if (role === 'admin' || role === 'interno') {
-            const result = await db
-                .select({
-                    ...chamados,
-                    totalInteracoes: sql<number>`COALESCE(${interacoesSubquery.total}, 0)`
-                })
-                .from(chamados)
-                .leftJoin(interacoesSubquery, eq(chamados.id, interacoesSubquery.chamadoId))
-                .orderBy(desc(chamados.dataAbertura));
-
-            return result;
+            // Admin e interno veem todos
+            return await query.orderBy(desc(chamados.dataAbertura)).limit(200);
         }
 
-        // Representante analista
         if (role === 'representante' && tipoUsuario === 'analista') {
-            const result = await db
-                .select({
-                    ...chamados,
-                    totalInteracoes: sql<number>`COALESCE(${interacoesSubquery.total}, 0)`
-                })
-                .from(chamados)
-                .leftJoin(interacoesSubquery, eq(chamados.id, interacoesSubquery.chamadoId))
-                .where(
-                    or(
-                        eq(chamados.solicitanteId, usuarioId),
-                        representanteId ? eq(chamados.representanteId, representanteId) : undefined
-                    )
+            query = query.where(
+                or(
+                    eq(chamados.solicitanteId, usuarioId),
+                    representanteId ? eq(chamados.representanteId, representanteId) : undefined
                 )
-                .orderBy(desc(chamados.dataAbertura));
-
-            return result;
+            );
+        } else if (role === 'cliente_final' && clienteId) {
+            query = query.where(
+                and(
+                    eq(chamados.clienteId, clienteId),
+                    eq(chamados.solicitanteId, usuarioId)
+                )
+            );
+        } else {
+            return [];
         }
 
-        // Cliente final
-        if (role === 'cliente_final' && clienteId) {
-            const result = await db
-                .select({
-                    ...chamados,
-                    totalInteracoes: sql<number>`COALESCE(${interacoesSubquery.total}, 0)`
-                })
-                .from(chamados)
-                .leftJoin(interacoesSubquery, eq(chamados.id, interacoesSubquery.chamadoId))
-                .where(
-                    and(
-                        eq(chamados.clienteId, clienteId),
-                        eq(chamados.solicitanteId, usuarioId)
-                    )
-                )
-                .orderBy(desc(chamados.dataAbertura));
-
-            return result;
-        }
-
-        return [];
+        return await query.orderBy(desc(chamados.dataAbertura)).limit(200);
     }
 
     async getChamado(id: number): Promise<Chamado | undefined> {
@@ -964,33 +932,29 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        // Query ultra-otimizada - apenas campos essenciais
-        const result = await db
-            .select({
-                id: chamadoInteracoes.id,
-                usuarioId: chamadoInteracoes.usuarioId,
-                mensagem: chamadoInteracoes.mensagem,
-                anexos: chamadoInteracoes.anexos,
-                tipo: chamadoInteracoes.tipo,
-                createdAt: chamadoInteracoes.createdAt,
-                usuarioNome: users.name
-            })
+        // Query ultra-otimizada - sem JOIN, buscar usuários depois
+        const interacoes = await db
+            .select()
             .from(chamadoInteracoes)
-            .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
-            .orderBy(asc(chamadoInteracoes.createdAt))
-            .limit(50);
+            .orderBy(desc(chamadoInteracoes.createdAt))
+            .limit(100);
 
-        // Transformar para formato esperado
-        return result.map(r => ({
-            id: r.id,
-            chamadoId,
-            usuarioId: r.usuarioId,
-            mensagem: r.mensagem,
-            anexos: r.anexos,
-            tipo: r.tipo,
-            createdAt: r.createdAt,
-            usuario: r.usuarioNome ? { name: r.usuarioNome } : null
+        if (interacoes.length === 0) return [];
+
+        // Buscar apenas usuários únicos necessários
+        const userIds = [...new Set(interacoes.map(i => i.usuarioId))];
+        const usuariosData = await db
+            .select({ id: users.id, name: users.name })
+            .from(users)
+            .where(inArray(users.id, userIds));
+
+        const usersMap = new Map(usuariosData.map(u => [u.id, u]));
+
+        // Combinar dados e reverter ordem para cronológica
+        return interacoes.reverse().map(i => ({
+            ...i,
+            usuario: usersMap.get(i.usuarioId) || null
         }));
     }
 

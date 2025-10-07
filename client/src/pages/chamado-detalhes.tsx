@@ -71,25 +71,21 @@ export default function ChamadoDetalhesPage() {
     };
   }, [attachedFiles]);
 
-  const { data: chamadoData, isLoading, refetch: refetchChamado } = useQuery({
+  const { data: chamadoData, isLoading } = useQuery({
     queryKey: [`/api/chamados/${id}`],
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/chamados/${id}`, {
-        headers: { 
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error("Chamado não encontrado");
-
       return response.json();
     },
     enabled: !!id,
-    staleTime: 60000, // 1 minuto de cache
-    gcTime: 300000, // 5 minutos de garbage collection
+    staleTime: 30000, // 30s de cache
+    gcTime: 120000, // 2min de garbage collection
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchInterval: false, // Desabilitar polling
   });
 
   // Extrair dados do chamado completo
@@ -224,13 +220,19 @@ export default function ChamadoDetalhesPage() {
 
       return response.json();
     },
-    onSuccess: () => {
-      // Limpar campos imediatamente
+    onSuccess: (newInteracao) => {
+      // Atualizar cache diretamente - MUITO mais rápido que invalidar
+      queryClient.setQueryData([`/api/chamados/${id}`], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          interacoes: [...(old.interacoes || []), newInteracao]
+        };
+      });
+      
+      // Limpar campos
       setNewInteracao('');
       setAttachedFiles([]);
-      
-      // Apenas refazer o chamado atual - SEM await
-      queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       
       toast({
         title: "Sucesso",
