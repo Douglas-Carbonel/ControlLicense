@@ -80,16 +80,11 @@ export default function ChamadoDetalhesPage() {
       });
       if (!response.ok) throw new Error("Chamado não encontrado");
 
-      // Marcar como lido ao visualizar
-      fetch(`/api/chamados/${id}/mark-read`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      }).catch(err => console.error('Erro ao marcar como lido:', err));
-
       return response.json();
     },
     enabled: !!id,
-    staleTime: 5000, // Cache de 5 segundos
+    staleTime: 10000, // Cache de 10 segundos
+    gcTime: 30000, // Garbage collection após 30s
   });
 
   // Extrair dados do chamado completo
@@ -119,6 +114,17 @@ export default function ChamadoDetalhesPage() {
   const pendencias = chamadoData?.pendencias || [];
 
   const isInternal = user?.role === 'admin' || user?.role === 'interno';
+
+  // Marcar como lido quando os dados carregarem
+  useEffect(() => {
+    if (chamadoData && id) {
+      const token = localStorage.getItem("token");
+      fetch(`/api/chamados/${id}/mark-read`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }).catch(err => console.error('Erro ao marcar como lido:', err));
+    }
+  }, [chamadoData, id]);
 
   const { data: usuariosInternos = [] } = useQuery({
     queryKey: ["/api/users/internos"],

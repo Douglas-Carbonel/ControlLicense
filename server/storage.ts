@@ -945,7 +945,8 @@ export class DbStorage implements IStorage {
     async getChamadoPendencias(chamadoId: number): Promise<ChamadoPendencia[]> {
         return db.select().from(chamadoPendencias)
             .where(eq(chamadoPendencias.chamadoId, chamadoId))
-            .orderBy(desc(chamadoPendencias.createdAt));
+            .orderBy(desc(chamadoPendencias.createdAt))
+            .limit(50); // Limitar pendências
     }
 
     async createChamadoPendencia(data: InsertChamadoPendencia): Promise<ChamadoPendencia> {
@@ -963,7 +964,7 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        // Query otimizada com limit para evitar sobrecarga
+        // Query otimizada com índice direto
         const result = await db
             .select({
                 id: chamadoInteracoes.id,
@@ -982,10 +983,10 @@ export class DbStorage implements IStorage {
                 }
             })
             .from(chamadoInteracoes)
-            .innerJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
+            .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(asc(chamadoInteracoes.createdAt))
-            .limit(100); // Limitar a 100 interações mais recentes
+            .limit(200); // Limitar a 200 interações
 
         return result;
     }

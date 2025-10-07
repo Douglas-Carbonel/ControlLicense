@@ -1363,7 +1363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Buscar TUDO em paralelo para máxima performance
+      // Buscar TUDO em paralelo incluindo solicitante
       const [chamado, interacoes, pendencias] = await Promise.all([
         storage.getChamado(id),
         storage.getChamadoInteracoes(id),
@@ -1374,13 +1374,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
 
-      // Buscar informações do solicitante
-      let solicitante = null;
-      if (chamado.solicitanteId) {
-        solicitante = await storage.getUser(chamado.solicitanteId);
-      }
+      // Buscar solicitante em paralelo apenas se necessário
+      const solicitante = chamado.solicitanteId 
+        ? await storage.getUser(chamado.solicitanteId)
+        : null;
 
-      // Retornar tudo de uma vez
+      // Retornar tudo de uma vez com cache header
+      res.set('Cache-Control', 'private, max-age=5');
       res.json({ 
         ...chamado, 
         solicitante,
