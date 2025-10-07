@@ -1362,7 +1362,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chamados/:id", authenticateToken, async (req: AuthRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      const chamado = await storage.getChamado(id);
+      
+      // Buscar TUDO em paralelo para máxima performance
+      const [chamado, interacoes, pendencias] = await Promise.all([
+        storage.getChamado(id),
+        storage.getChamadoInteracoes(id),
+        storage.getChamadoPendencias(id)
+      ]);
 
       if (!chamado) {
         return res.status(404).json({ message: "Chamado não encontrado" });
@@ -1374,7 +1380,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         solicitante = await storage.getUser(chamado.solicitanteId);
       }
 
-      res.json({ ...chamado, solicitante });
+      // Retornar tudo de uma vez
+      res.json({ 
+        ...chamado, 
+        solicitante,
+        interacoes,
+        pendencias
+      });
     } catch (error) {
       console.error("Error fetching chamado:", error);
       res.status(500).json({ message: "Erro ao buscar chamado" });
@@ -1674,9 +1686,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const chamadoId = parseInt(req.params.id);
       const interacoes = await storage.getChamadoInteracoes(chamadoId);
-      
-      // Adicionar cache de 2 segundos para reduzir carga
-      res.set('Cache-Control', 'private, max-age=2');
       res.json(interacoes);
     } catch (error) {
       console.error("Error fetching interacoes:", error);

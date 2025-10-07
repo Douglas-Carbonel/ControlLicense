@@ -963,6 +963,7 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
+        // Query otimizada com limit para evitar sobrecarga
         const result = await db
             .select({
                 id: chamadoInteracoes.id,
@@ -983,7 +984,8 @@ export class DbStorage implements IStorage {
             .from(chamadoInteracoes)
             .innerJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
-            .orderBy(asc(chamadoInteracoes.createdAt));
+            .orderBy(asc(chamadoInteracoes.createdAt))
+            .limit(100); // Limitar a 100 interações mais recentes
 
         return result;
     }

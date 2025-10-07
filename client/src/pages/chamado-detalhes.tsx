@@ -71,7 +71,7 @@ export default function ChamadoDetalhesPage() {
     };
   }, [attachedFiles]);
 
-  const { data: chamado, isLoading } = useQuery({
+  const { data: chamadoData, isLoading, refetch: refetchChamado } = useQuery({
     queryKey: [`/api/chamados/${id}`],
     queryFn: async () => {
       const token = localStorage.getItem("token");
@@ -89,23 +89,34 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     enabled: !!id,
-    refetchInterval: false,
-    staleTime: 30000,
+    staleTime: 5000, // Cache de 5 segundos
   });
 
-  const { data: interacoes = [], refetch: refetchInteracoes } = useQuery<any[]>({
-    queryKey: [`/api/chamados/${id}/interacoes`],
-    enabled: !!id,
-    refetchInterval: 3000, // Atualizar a cada 3 segundos
-    staleTime: 2000,
-  });
+  // Extrair dados do chamado completo
+  const chamado = chamadoData ? {
+    id: chamadoData.id,
+    categoria: chamadoData.categoria,
+    produto: chamadoData.produto,
+    titulo: chamadoData.titulo,
+    descricao: chamadoData.descricao,
+    status: chamadoData.status,
+    prioridade: chamadoData.prioridade,
+    clienteId: chamadoData.clienteId,
+    solicitanteId: chamadoData.solicitanteId,
+    solicitante: chamadoData.solicitante,
+    atendenteId: chamadoData.atendenteId,
+    representanteId: chamadoData.representanteId,
+    observacoes: chamadoData.observacoes,
+    dataAbertura: chamadoData.dataAbertura,
+    dataUltimaInteracao: chamadoData.dataUltimaInteracao,
+    lidoPorSolicitante: chamadoData.lidoPorSolicitante,
+    lidoPorAtendente: chamadoData.lidoPorAtendente,
+    createdAt: chamadoData.createdAt,
+    updatedAt: chamadoData.updatedAt
+  } : null;
 
-  const { data: pendencias = [] } = useQuery<any[]>({
-    queryKey: [`/api/chamados/${id}/pendencias`],
-    enabled: !!id,
-    refetchInterval: false,
-    staleTime: 30000,
-  });
+  const interacoes = chamadoData?.interacoes || [];
+  const pendencias = chamadoData?.pendencias || [];
 
   const isInternal = user?.role === 'admin' || user?.role === 'interno';
 
@@ -207,12 +218,11 @@ export default function ChamadoDetalhesPage() {
       setNewInteracao('');
       setAttachedFiles([]);
       
-      // Atualizar interações imediatamente
-      await refetchInteracoes();
+      // Refazer fetch do chamado completo (inclui interações)
+      await refetchChamado();
       
-      // Invalidar outras queries em segundo plano
+      // Invalidar outras queries
       queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/notificacoes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notificacoes/unread-count"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chamados/unread-count"] });
