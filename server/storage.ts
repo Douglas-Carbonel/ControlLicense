@@ -35,7 +35,7 @@ import {
   type InsertNotificacao,
   type HardwareLicenseQuery
 } from "@shared/schema";
-import { eq, ilike, or, desc, and, sql, asc, count, isNull, not } from "drizzle-orm";
+import { eq, ilike, or, desc, and, sql, asc, count, isNull, not, inArray } from "drizzle-orm";
 
 const connectionString = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 if (!connectionString) {
@@ -964,34 +964,28 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        // Query super otimizada - buscar apenas IDs primeiro
-        const interacoesIds = await db
-            .select({ 
-                id: chamadoInteracoes.id,
-                usuarioId: chamadoInteracoes.usuarioId 
-            })
+        // Buscar interações
+        const interacoesData = await db.select()
             .from(chamadoInteracoes)
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(asc(chamadoInteracoes.createdAt))
-            .limit(100); // Reduzir para 100
+            .limit(100);
 
-        if (interacoesIds.length === 0) return [];
+        if (interacoesData.length === 0) return [];
 
-        // Buscar detalhes das interações em paralelo
-        const [interacoesData, usuariosMap] = await Promise.all([
-            db.select().from(chamadoInteracoes)
-                .where(eq(chamadoInteracoes.chamadoId, chamadoId))
-                .orderBy(asc(chamadoInteracoes.createdAt))
-                .limit(100),
-            // Buscar apenas usuários únicos necessários
-            db.select({
-                id: users.id,
-                name: users.name,
-                username: users.username,
-                email: users.email,
-                role: users.role
-            }).from(users)
-        ]);
+        // Extrair IDs únicos dos usuários das interações
+        const usuarioIds = Array.from(new Set(interacoesData.map(i => i.usuarioId)));
+
+        // Buscar apenas os usuários que aparecem nas interações
+        const usuariosMap = await db.select({
+            id: users.id,
+            name: users.name,
+            username: users.username,
+            email: users.email,
+            role: users.role
+        })
+        .from(users)
+        .where(inArray(users.id, usuarioIds));
 
         // Mapear usuários por ID
         const usersById = new Map(usuariosMap.map(u => [u.id, u]));
