@@ -76,22 +76,16 @@ export default function ChamadoDetalhesPage() {
     queryFn: async () => {
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/chamados/${id}`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'max-age=60'
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error("Chamado não encontrado");
       return response.json();
     },
     enabled: !!id,
-    staleTime: 2 * 60 * 1000, // 2min de cache (aumentado)
-    gcTime: 10 * 60 * 1000, // 10min de garbage collection
+    staleTime: 0, // Sem cache
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    retry: 1, // Reduzir tentativas
-    retryDelay: 1000
+    refetchOnMount: true,
+    retry: 0
   });
 
   // Extrair dados do chamado completo

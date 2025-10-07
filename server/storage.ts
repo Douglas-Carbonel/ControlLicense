@@ -892,54 +892,88 @@ export class DbStorage implements IStorage {
         return result[0];
     }
 
-    // Método ULTRA otimizado - busca TUDO em uma única query com JOINs
+    // Query DEFINITIVA - TUDO em uma única consulta com CTE
     async getChamadoCompleto(id: number): Promise<any> {
-        const result = await db
-            .select({
-                // Dados do chamado
-                id: chamados.id,
-                categoria: chamados.categoria,
-                produto: chamados.produto,
-                titulo: chamados.titulo,
-                descricao: chamados.descricao,
-                status: chamados.status,
-                prioridade: chamados.prioridade,
-                clienteId: chamados.clienteId,
-                solicitanteId: chamados.solicitanteId,
-                atendenteId: chamados.atendenteId,
-                representanteId: chamados.representanteId,
-                observacoes: chamados.observacoes,
-                dataAbertura: chamados.dataAbertura,
-                dataUltimaInteracao: chamados.dataUltimaInteracao,
-                lidoPorSolicitante: chamados.lidoPorSolicitante,
-                lidoPorAtendente: chamados.lidoPorAtendente,
-                createdAt: chamados.createdAt,
-                updatedAt: chamados.updatedAt,
-                // Dados do solicitante
-                solicitante: {
-                    id: users.id,
-                    name: users.name,
-                    email: users.email
-                }
-            })
-            .from(chamados)
-            .leftJoin(users, eq(chamados.solicitanteId, users.id))
-            .where(eq(chamados.id, id))
-            .limit(1);
+        // Query SQL RAW ultra otimizada
+        const result = await db.execute(sql`
+            WITH chamado_data AS (
+                SELECT 
+                    c.*,
+                    row_to_json(u.*) as solicitante_data
+                FROM chamados c
+                LEFT JOIN users u ON c.solicitante_id = u.id
+                WHERE c.id = ${id}
+            ),
+            interacoes_data AS (
+                SELECT 
+                    ci.id,
+                    ci.chamado_id,
+                    ci.usuario_id,
+                    ci.mensagem,
+                    ci.anexos,
+                    ci.tipo,
+                    ci.created_at,
+                    row_to_json(u.*) as usuario_data
+                FROM chamado_interacoes ci
+                LEFT JOIN users u ON ci.usuario_id = u.id
+                WHERE ci.chamado_id = ${id}
+                ORDER BY ci.created_at ASC
+                LIMIT 15
+            ),
+            pendencias_data AS (
+                SELECT *
+                FROM chamado_pendencias
+                WHERE chamado_id = ${id}
+                ORDER BY created_at DESC
+                LIMIT 10
+            )
+            SELECT 
+                json_build_object(
+                    'id', cd.id,
+                    'categoria', cd.categoria,
+                    'produto', cd.produto,
+                    'titulo', cd.titulo,
+                    'descricao', cd.descricao,
+                    'status', cd.status,
+                    'prioridade', cd.prioridade,
+                    'clienteId', cd.cliente_id,
+                    'solicitanteId', cd.solicitante_id,
+                    'atendenteId', cd.atendente_id,
+                    'representanteId', cd.representante_id,
+                    'observacoes', cd.observacoes,
+                    'dataAbertura', cd.data_abertura,
+                    'dataUltimaInteracao', cd.data_ultima_interacao,
+                    'lidoPorSolicitante', cd.lido_por_solicitante,
+                    'lidoPorAtendente', cd.lido_por_atendente,
+                    'createdAt', cd.created_at,
+                    'updatedAt', cd.updated_at,
+                    'solicitante', cd.solicitante_data,
+                    'interacoes', COALESCE(
+                        (SELECT json_agg(
+                            json_build_object(
+                                'id', id,
+                                'chamadoId', chamado_id,
+                                'usuarioId', usuario_id,
+                                'mensagem', mensagem,
+                                'anexos', anexos,
+                                'tipo', tipo,
+                                'createdAt', created_at,
+                                'usuario', usuario_data
+                            )
+                        ) FROM interacoes_data),
+                        '[]'::json
+                    ),
+                    'pendencias', COALESCE(
+                        (SELECT json_agg(row_to_json(p.*)) FROM pendencias_data p),
+                        '[]'::json
+                    )
+                ) as chamado_completo
+            FROM chamado_data cd
+        `);
 
-        if (result.length === 0) return null;
-
-        // Buscar interações e pendências em paralelo
-        const [interacoes, pendencias] = await Promise.all([
-            this.getChamadoInteracoes(id),
-            this.getChamadoPendencias(id)
-        ]);
-
-        return {
-            ...result[0],
-            interacoes,
-            pendencias
-        };
+        if (!result.rows || result.rows.length === 0) return null;
+        
+        return result.rows[0].chamado_completo;
     }
 
     async createChamado(data: InsertChamado): Promise<Chamado> {

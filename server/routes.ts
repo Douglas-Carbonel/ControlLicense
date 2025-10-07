@@ -1363,19 +1363,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // SINGLE query otimizada que busca tudo
+      // Query ÚNICA que retorna TUDO
       const chamadoCompleto = await storage.getChamadoCompleto(id);
 
       if (!chamadoCompleto) {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
 
-      // Cache HTTP agressivo com ETag baseado em dataUltimaInteracao
-      const lastModified = chamadoCompleto.dataUltimaInteracao || chamadoCompleto.updatedAt;
-      res.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
-      res.set('ETag', `"chamado-${id}-${new Date(lastModified).getTime()}"`);
-      res.set('Last-Modified', new Date(lastModified).toUTCString());
-      
+      // SEM cache - sempre dados frescos
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.json(chamadoCompleto);
     } catch (error) {
       console.error("Error fetching chamado:", error);
