@@ -892,6 +892,56 @@ export class DbStorage implements IStorage {
         return result[0];
     }
 
+    // Método ULTRA otimizado - busca TUDO em uma única query com JOINs
+    async getChamadoCompleto(id: number): Promise<any> {
+        const result = await db
+            .select({
+                // Dados do chamado
+                id: chamados.id,
+                categoria: chamados.categoria,
+                produto: chamados.produto,
+                titulo: chamados.titulo,
+                descricao: chamados.descricao,
+                status: chamados.status,
+                prioridade: chamados.prioridade,
+                clienteId: chamados.clienteId,
+                solicitanteId: chamados.solicitanteId,
+                atendenteId: chamados.atendenteId,
+                representanteId: chamados.representanteId,
+                observacoes: chamados.observacoes,
+                dataAbertura: chamados.dataAbertura,
+                dataUltimaInteracao: chamados.dataUltimaInteracao,
+                lidoPorSolicitante: chamados.lidoPorSolicitante,
+                lidoPorAtendente: chamados.lidoPorAtendente,
+                createdAt: chamados.createdAt,
+                updatedAt: chamados.updatedAt,
+                // Dados do solicitante
+                solicitante: {
+                    id: users.id,
+                    name: users.name,
+                    email: users.email
+                }
+            })
+            .from(chamados)
+            .leftJoin(users, eq(chamados.solicitanteId, users.id))
+            .where(eq(chamados.id, id))
+            .limit(1);
+
+        if (result.length === 0) return null;
+
+        // Buscar interações e pendências em paralelo
+        const [interacoes, pendencias] = await Promise.all([
+            this.getChamadoInteracoes(id),
+            this.getChamadoPendencias(id)
+        ]);
+
+        return {
+            ...result[0],
+            interacoes,
+            pendencias
+        };
+    }
+
     async createChamado(data: InsertChamado): Promise<Chamado> {
         const result = await db.insert(chamados).values(data).returning();
         return result[0];
@@ -914,7 +964,7 @@ export class DbStorage implements IStorage {
         return db.select().from(chamadoPendencias)
             .where(eq(chamadoPendencias.chamadoId, chamadoId))
             .orderBy(desc(chamadoPendencias.createdAt))
-            .limit(20); // Reduzir limite de pendências
+            .limit(10); // Apenas 10 pendências mais recentes
     }
 
     async createChamadoPendencia(data: InsertChamadoPendencia): Promise<ChamadoPendencia> {
@@ -951,7 +1001,7 @@ export class DbStorage implements IStorage {
             .leftJoin(users, eq(chamadoInteracoes.usuarioId, users.id))
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(asc(chamadoInteracoes.createdAt))
-            .limit(50); // Reduzir para 50 interações máximo
+            .limit(15); // Apenas 15 interações mais recentes
 
         return result;
     }

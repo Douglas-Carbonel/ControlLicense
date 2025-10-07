@@ -1363,32 +1363,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Buscar TUDO em paralelo de uma vez
-      const [chamado, interacoes, pendencias] = await Promise.all([
-        storage.getChamado(id),
-        storage.getChamadoInteracoes(id),
-        storage.getChamadoPendencias(id)
-      ]);
+      // SINGLE query otimizada que busca tudo
+      const chamadoCompleto = await storage.getChamadoCompleto(id);
 
-      if (!chamado) {
+      if (!chamadoCompleto) {
         return res.status(404).json({ message: "Chamado não encontrado" });
       }
 
-      // Buscar solicitante DENTRO do Promise.all final
-      const solicitante = chamado.solicitanteId 
-        ? await storage.getUser(chamado.solicitanteId)
-        : null;
-
-      // Cache HTTP agressivo
+      // Cache HTTP agressivo com ETag baseado em dataUltimaInteracao
+      const lastModified = chamadoCompleto.dataUltimaInteracao || chamadoCompleto.updatedAt;
       res.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
-      res.set('ETag', `chamado-${id}-${Date.now()}`);
+      res.set('ETag', `"chamado-${id}-${new Date(lastModified).getTime()}"`);
+      res.set('Last-Modified', new Date(lastModified).toUTCString());
       
-      res.json({ 
-        ...chamado, 
-        solicitante,
-        interacoes,
-        pendencias
-      });
+      res.json(chamadoCompleto);
     } catch (error) {
       console.error("Error fetching chamado:", error);
       res.status(500).json({ message: "Erro ao buscar chamado" });
