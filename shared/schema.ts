@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -332,7 +332,9 @@ export const chamadoPendencias = pgTable("chamado_pendencias", {
   dataResolucao: timestamp("data_resolucao"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  chamadoIdIdx: index("chamado_pendencias_chamado_id_idx").on(table.chamadoId),
+}));
 
 // Tabela de Interações/Comentários em Chamados
 export const chamadoInteracoes = pgTable("chamado_interacoes", {
@@ -343,7 +345,10 @@ export const chamadoInteracoes = pgTable("chamado_interacoes", {
   anexos: text("anexos").array(),
   tipo: text("tipo").notNull().default('COMENTARIO'), // 'COMENTARIO', 'MUDANCA_STATUS', 'ATRIBUICAO'
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  chamadoIdIdx: index("chamado_interacoes_chamado_id_idx").on(table.chamadoId),
+  usuarioIdIdx: index("chamado_interacoes_usuario_id_idx").on(table.usuarioId),
+}));
 
 export const insertChamadoSchema = createInsertSchema(chamados).omit({
   id: true,

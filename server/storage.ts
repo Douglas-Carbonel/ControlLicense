@@ -920,9 +920,7 @@ export class DbStorage implements IStorage {
     }
 
     async getChamado(id: number): Promise<Chamado | undefined> {
-        const t1 = Date.now();
         const result = await db.select().from(chamados).where(eq(chamados.id, id));
-        console.log(`[PERF] getChamado query: ${Date.now() - t1}ms`);
         return result[0];
     }
 
@@ -945,13 +943,10 @@ export class DbStorage implements IStorage {
 
     // Métodos para Pendências
     async getChamadoPendencias(chamadoId: number): Promise<ChamadoPendencia[]> {
-        const t1 = Date.now();
-        const result = await db.select().from(chamadoPendencias)
+        return db.select().from(chamadoPendencias)
             .where(eq(chamadoPendencias.chamadoId, chamadoId))
             .orderBy(desc(chamadoPendencias.createdAt))
             .limit(50); // Limitar pendências
-        console.log(`[PERF] getChamadoPendencias: ${Date.now() - t1}ms, found ${result.length} records`);
-        return result;
     }
 
     async createChamadoPendencia(data: InsertChamadoPendencia): Promise<ChamadoPendencia> {
@@ -969,21 +964,18 @@ export class DbStorage implements IStorage {
 
     // Métodos para Interações
     async getChamadoInteracoes(chamadoId: number): Promise<any[]> {
-        const t1 = Date.now();
         // Buscar interações
         const interacoesData = await db.select()
             .from(chamadoInteracoes)
             .where(eq(chamadoInteracoes.chamadoId, chamadoId))
             .orderBy(asc(chamadoInteracoes.createdAt))
             .limit(100);
-        console.log(`[PERF] getChamadoInteracoes - fetch interacoes: ${Date.now() - t1}ms, found ${interacoesData.length} records`);
 
         if (interacoesData.length === 0) return [];
 
         // Extrair IDs únicos dos usuários das interações
         const usuarioIds = Array.from(new Set(interacoesData.map(i => i.usuarioId)));
 
-        const t2 = Date.now();
         // Buscar apenas os usuários que aparecem nas interações
         const usuariosMap = await db.select({
             id: users.id,
@@ -994,7 +986,6 @@ export class DbStorage implements IStorage {
         })
         .from(users)
         .where(inArray(users.id, usuarioIds));
-        console.log(`[PERF] getChamadoInteracoes - fetch users: ${Date.now() - t2}ms, found ${usuariosMap.length} users`);
 
         // Mapear usuários por ID
         const usersById = new Map(usuariosMap.map(u => [u.id, u]));
