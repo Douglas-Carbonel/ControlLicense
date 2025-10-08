@@ -37,8 +37,14 @@ export default function NotificationsBell() {
 
   // Criar elemento de áudio
   useEffect(() => {
-    audioRef.current = new Audio('/attached_assets/message-notification-sound-in-the-help-chat-tech-support_1759956200595.mp3');
-    audioRef.current.volume = 0.5; // Volume a 50%
+    // Caminho correto para arquivos na pasta attached_assets
+    const audio = new Audio('/attached_assets/message-notification-sound-in-the-help-chat-tech-support_1759956200595.mp3');
+    audio.volume = 0.5; // Volume a 50%
+    
+    // Pré-carregar o áudio
+    audio.load();
+    
+    audioRef.current = audio;
   }, []);
 
   // Buscar contagem de não lidas
@@ -57,11 +63,36 @@ export default function NotificationsBell() {
 
   // Tocar som quando houver novas notificações
   useEffect(() => {
-    if (unreadCount > previousUnreadCount.current && previousUnreadCount.current > 0) {
-      audioRef.current?.play().catch(err => {
-        console.log('Erro ao tocar som de notificação:', err);
-      });
+    // Inicializar o contador na primeira vez
+    if (previousUnreadCount.current === 0 && unreadCount > 0) {
+      previousUnreadCount.current = unreadCount;
+      return;
     }
+
+    // Tocar som apenas quando há um aumento real no número de notificações
+    if (unreadCount > previousUnreadCount.current) {
+      console.log(`🔔 Nova notificação detectada! De ${previousUnreadCount.current} para ${unreadCount}`);
+      
+      if (audioRef.current) {
+        // Resetar o áudio para o início caso esteja tocando
+        audioRef.current.currentTime = 0;
+        
+        // Tentar tocar o áudio
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log('✅ Som de notificação tocado com sucesso!');
+            })
+            .catch(err => {
+              console.warn('⚠️ Erro ao tocar som de notificação:', err.message);
+              console.log('💡 Dica: Clique em qualquer lugar da página para habilitar o som.');
+            });
+        }
+      }
+    }
+    
     previousUnreadCount.current = unreadCount;
   }, [unreadCount]);
 
@@ -129,8 +160,18 @@ export default function NotificationsBell() {
     };
   }, [refetchUnreadCount]);
 
+  // Habilitar áudio com interação do usuário (resolve restrição de autoplay)
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    
+    // Ao abrir o dropdown, tentar inicializar o áudio (resolve política de autoplay)
+    if (open && audioRef.current) {
+      audioRef.current.load();
+    }
+  };
+
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />

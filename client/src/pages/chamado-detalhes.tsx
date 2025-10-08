@@ -191,7 +191,7 @@ export default function ChamadoDetalhesPage() {
       // ✅ Invalidar para todos os clientes verem a atualização
       queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
-      
+
       toast({
         title: "Sucesso",
         description: "Chamado atualizado com sucesso!",
