@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Bell, Check, CheckCheck, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,14 @@ interface Notificacao {
 export default function NotificationsBell() {
   const [, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const previousUnreadCount = useRef<number>(0);
+
+  // Criar elemento de áudio
+  useEffect(() => {
+    audioRef.current = new Audio('/attached_assets/message-notification-sound-in-the-help-chat-tech-support_1759956200595.mp3');
+    audioRef.current.volume = 0.5; // Volume a 50%
+  }, []);
 
   // Buscar contagem de não lidas
   const { data: unreadData, refetch: refetchUnreadCount } = useQuery<{ count: number }>({
@@ -46,6 +54,16 @@ export default function NotificationsBell() {
   });
 
   const unreadCount = unreadData?.count || 0;
+
+  // Tocar som quando houver novas notificações
+  useEffect(() => {
+    if (unreadCount > previousUnreadCount.current && previousUnreadCount.current > 0) {
+      audioRef.current?.play().catch(err => {
+        console.log('Erro ao tocar som de notificação:', err);
+      });
+    }
+    previousUnreadCount.current = unreadCount;
+  }, [unreadCount]);
 
   // Marcar notificação como lida
   const markAsReadMutation = useMutation({
