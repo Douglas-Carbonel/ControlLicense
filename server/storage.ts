@@ -42,7 +42,14 @@ if (!connectionString) {
   throw new Error("SUPABASE_DATABASE_URL or DATABASE_URL environment variable is required");
 }
 
-const client = postgres(connectionString);
+// Configuração otimizada para reduzir latência
+const client = postgres(connectionString, {
+  max: 10,                    // Número máximo de conexões no pool
+  idle_timeout: 20,           // Timeout de conexões ociosas (segundos)
+  connect_timeout: 10,        // Timeout de conexão inicial (segundos)
+  prepare: false,             // Desabilitar prepared statements (melhora latência)
+  ssl: 'require'              // Garantir SSL
+});
 const db = drizzle(client);
 
 export { db };
@@ -892,83 +899,67 @@ export class DbStorage implements IStorage {
         return result[0];
     }
 
-    // Query DEFINITIVA - TUDO em uma única consulta com CTE
+    // Query otimizada para reduzir latência - 1 única chamada ao banco
     async getChamadoCompleto(id: number): Promise<any> {
-        // Query SQL RAW ultra otimizada
         const result = await db.execute(sql`
-            WITH chamado_data AS (
-                SELECT 
-                    c.*,
-                    row_to_json(u.*) as solicitante_data
-                FROM chamados c
-                LEFT JOIN users u ON c.solicitante_id = u.id
-                WHERE c.id = ${id}
-            ),
-            interacoes_data AS (
-                SELECT 
-                    ci.id,
-                    ci.chamado_id,
-                    ci.usuario_id,
-                    ci.mensagem,
-                    ci.anexos,
-                    ci.tipo,
-                    ci.created_at,
-                    row_to_json(u.*) as usuario_data
-                FROM chamado_interacoes ci
-                LEFT JOIN users u ON ci.usuario_id = u.id
-                WHERE ci.chamado_id = ${id}
-                ORDER BY ci.created_at ASC
-                LIMIT 15
-            ),
-            pendencias_data AS (
-                SELECT *
-                FROM chamado_pendencias
-                WHERE chamado_id = ${id}
-                ORDER BY created_at DESC
-                LIMIT 10
-            )
             SELECT 
                 json_build_object(
-                    'id', cd.id,
-                    'categoria', cd.categoria,
-                    'produto', cd.produto,
-                    'titulo', cd.titulo,
-                    'descricao', cd.descricao,
-                    'status', cd.status,
-                    'prioridade', cd.prioridade,
-                    'clienteId', cd.cliente_id,
-                    'solicitanteId', cd.solicitante_id,
-                    'atendenteId', cd.atendente_id,
-                    'representanteId', cd.representante_id,
-                    'observacoes', cd.observacoes,
-                    'dataAbertura', cd.data_abertura,
-                    'dataUltimaInteracao', cd.data_ultima_interacao,
-                    'lidoPorSolicitante', cd.lido_por_solicitante,
-                    'lidoPorAtendente', cd.lido_por_atendente,
-                    'createdAt', cd.created_at,
-                    'updatedAt', cd.updated_at,
-                    'solicitante', cd.solicitante_data,
+                    'id', c.id,
+                    'categoria', c.categoria,
+                    'produto', c.produto,
+                    'titulo', c.titulo,
+                    'descricao', c.descricao,
+                    'status', c.status,
+                    'prioridade', c.prioridade,
+                    'clienteId', c.cliente_id,
+                    'solicitanteId', c.solicitante_id,
+                    'atendenteId', c.atendente_id,
+                    'representanteId', c.representante_id,
+                    'observacoes', c.observacoes,
+                    'dataAbertura', c.data_abertura,
+                    'dataUltimaInteracao', c.data_ultima_interacao,
+                    'lidoPorSolicitante', c.lido_por_solicitante,
+                    'lidoPorAtendente', c.lido_por_atendente,
+                    'createdAt', c.created_at,
+                    'updatedAt', c.updated_at,
+                    'solicitante', row_to_json(u.*),
                     'interacoes', COALESCE(
                         (SELECT json_agg(
                             json_build_object(
-                                'id', id,
-                                'chamadoId', chamado_id,
-                                'usuarioId', usuario_id,
-                                'mensagem', mensagem,
-                                'anexos', anexos,
-                                'tipo', tipo,
-                                'createdAt', created_at,
-                                'usuario', usuario_data
-                            )
-                        ) FROM interacoes_data),
+                                'id', ci.id,
+                                'chamadoId', ci.chamado_id,
+                                'usuarioId', ci.usuario_id,
+                                'mensagem', ci.mensagem,
+                                'anexos', ci.anexos,
+                                'tipo', ci.tipo,
+                                'createdAt', ci.created_at,
+                                'usuario', row_to_json(ui.*)
+                            ) ORDER BY ci.created_at ASC
+                        ) 
+                        FROM (
+                            SELECT ci.*, ui.*
+                            FROM chamado_interacoes ci
+                            LEFT JOIN users ui ON ci.usuario_id = ui.id
+                            WHERE ci.chamado_id = c.id
+                            ORDER BY ci.created_at ASC
+                            LIMIT 15
+                        ) ci(ci_id, ci_chamado_id, ci_usuario_id, ci_mensagem, ci_anexos, ci_tipo, ci_created_at, ui_id, ui_username, ui_email, ui_password_hash, ui_role, ui_name, ui_active, ui_tipo_usuario, ui_representante_id, ui_cliente_id, ui_setor, ui_nivel, ui_created_at, ui_updated_at)),
                         '[]'::json
                     ),
                     'pendencias', COALESCE(
-                        (SELECT json_agg(row_to_json(p.*)) FROM pendencias_data p),
+                        (SELECT json_agg(row_to_json(p.*))
+                        FROM (
+                            SELECT * FROM chamado_pendencias
+                            WHERE chamado_id = c.id
+                            ORDER BY created_at DESC
+                            LIMIT 10
+                        ) p),
                         '[]'::json
                     )
                 ) as chamado_completo
-            FROM chamado_data cd
+            FROM chamados c
+            LEFT JOIN users u ON c.solicitante_id = u.id
+            WHERE c.id = ${id}
         `);
 
         if (!result || result.length === 0) return null;
