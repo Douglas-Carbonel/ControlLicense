@@ -40,14 +40,26 @@ export default function NotificationsBell() {
 
   // Criar elemento de áudio
   useEffect(() => {
-    // Caminho correto para arquivos na pasta attached_assets
-    const audio = new Audio('/attached_assets/message-notification-sound-in-the-help-chat-tech-support_1759956200595.mp3');
+    // Caminho correto para arquivos na pasta public do Vite
+    const audio = new Audio('/sounds/notification.mp3');
     audio.volume = 0.5; // Volume a 50%
+    audio.preload = 'auto'; // Pré-carregar o áudio
     
-    // Pré-carregar o áudio
-    audio.load();
+    // Adicionar handlers para debug
+    audio.addEventListener('loadeddata', () => {
+      console.log('✅ Áudio carregado com sucesso!');
+    });
+    
+    audio.addEventListener('error', (e) => {
+      console.error('❌ Erro ao carregar áudio:', e);
+    });
     
     audioRef.current = audio;
+    
+    return () => {
+      audio.removeEventListener('loadeddata', () => {});
+      audio.removeEventListener('error', () => {});
+    };
   }, []);
 
   // Função para habilitar áudio (necessária devido à política de autoplay)
