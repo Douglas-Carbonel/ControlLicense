@@ -71,7 +71,7 @@ export default function ChamadoDetalhesPage() {
     };
   }, [attachedFiles]);
 
-  // Buscar detalhes do chamado com cache de 5 minutos
+  // Buscar detalhes do chamado com cache de 5 minutos e revalidação inteligente
   const { data: chamadoData, isLoading } = useQuery({
     queryKey: [`/api/chamados/${id}`],
     queryFn: async () => {
@@ -83,11 +83,12 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     enabled: !!id,
-    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
-    gcTime: 10 * 60 * 1000, // Manter em cache por 10 minutos
-    refetchOnWindowFocus: false, // Não revalidar ao focar
-    refetchOnMount: true, // Revalidar ao montar (se staleTime expirar)
-    retry: 0
+    staleTime: 30 * 1000, // Dados ficam "frescos" por 30 segundos
+    gcTime: 5 * 60 * 1000, // Manter em cache por 5 minutos
+    refetchOnWindowFocus: true, // ✅ Revalidar quando usuário volta para aba
+    refetchOnMount: true, // ✅ Revalidar ao montar
+    refetchInterval: 30 * 1000, // ✅ Revalidar a cada 30 segundos automaticamente
+    retry: 1
   });
 
   // Extrair dados do chamado completo
@@ -187,8 +188,10 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     onSuccess: () => {
+      // ✅ Invalidar para todos os clientes verem a atualização
       queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
+      
       toast({
         title: "Sucesso",
         description: "Chamado atualizado com sucesso!",
@@ -223,7 +226,7 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     onSuccess: (newInteracao) => {
-      // Atualizar cache diretamente - MUITO mais rápido que invalidar
+      // Atualizar cache diretamente para o usuário atual
       queryClient.setQueryData([`/api/chamados/${id}`], (old: any) => {
         if (!old) return old;
         return {
@@ -231,6 +234,10 @@ export default function ChamadoDetalhesPage() {
           interacoes: [...(old.interacoes || []), newInteracao]
         };
       });
+
+      // ✅ Invalidar para forçar outros clientes a recarregar
+      queryClient.invalidateQueries({ queryKey: [`/api/chamados/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chamados"] });
 
       // Limpar campos
       setNewInteracao('');
