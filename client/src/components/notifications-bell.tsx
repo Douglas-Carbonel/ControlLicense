@@ -35,6 +35,9 @@ export default function NotificationsBell() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const previousUnreadCount = useRef<number>(0);
 
+  // Estado para controlar se o áudio foi inicializado
+  const [audioEnabled, setAudioEnabled] = useState(false);
+
   // Criar elemento de áudio
   useEffect(() => {
     // Caminho correto para arquivos na pasta attached_assets
@@ -46,6 +49,22 @@ export default function NotificationsBell() {
     
     audioRef.current = audio;
   }, []);
+
+  // Função para habilitar áudio (necessária devido à política de autoplay)
+  const enableAudio = async () => {
+    if (audioRef.current && !audioEnabled) {
+      try {
+        // Tentar tocar e pausar imediatamente para "desbloquear" o áudio
+        await audioRef.current.play();
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setAudioEnabled(true);
+        console.log('✅ Áudio habilitado com sucesso!');
+      } catch (err) {
+        console.warn('⚠️ Erro ao habilitar áudio:', err);
+      }
+    }
+  };
 
   // Buscar contagem de não lidas
   const { data: unreadData, refetch: refetchUnreadCount } = useQuery<{ count: number }>({
@@ -69,11 +88,11 @@ export default function NotificationsBell() {
       return;
     }
 
-    // Tocar som apenas quando há um aumento real no número de notificações
+    // Tocar som apenas quando há um aumento real no número de notificações E áudio está habilitado
     if (unreadCount > previousUnreadCount.current) {
       console.log(`🔔 Nova notificação detectada! De ${previousUnreadCount.current} para ${unreadCount}`);
       
-      if (audioRef.current) {
+      if (audioRef.current && audioEnabled) {
         // Resetar o áudio para o início caso esteja tocando
         audioRef.current.currentTime = 0;
         
@@ -87,9 +106,11 @@ export default function NotificationsBell() {
             })
             .catch(err => {
               console.warn('⚠️ Erro ao tocar som de notificação:', err.message);
-              console.log('💡 Dica: Clique em qualquer lugar da página para habilitar o som.');
+              setAudioEnabled(false); // Desabilitar se falhar
             });
         }
+      } else if (!audioEnabled) {
+        console.log('💡 Áudio desabilitado. Abra o menu de notificações para habilitar o som.');
       }
     }
     
@@ -161,19 +182,19 @@ export default function NotificationsBell() {
   }, [refetchUnreadCount]);
 
   // Habilitar áudio com interação do usuário (resolve restrição de autoplay)
-  const handleOpenChange = (open: boolean) => {
+  const handleOpenChange = async (open: boolean) => {
     setIsOpen(open);
     
-    // Ao abrir o dropdown, tentar inicializar o áudio (resolve política de autoplay)
-    if (open && audioRef.current) {
-      audioRef.current.load();
+    // Ao abrir o dropdown pela primeira vez, habilitar o áudio
+    if (open && !audioEnabled) {
+      await enableAudio();
     }
   };
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" title={audioEnabled ? "Som habilitado ✓" : "Clique para habilitar o som"}>
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge 
@@ -182,6 +203,9 @@ export default function NotificationsBell() {
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
+          )}
+          {!audioEnabled && (
+            <div className="absolute -bottom-1 -right-1 h-2 w-2 bg-yellow-500 rounded-full" title="Áudio desabilitado - clique no sino para habilitar" />
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -201,6 +225,22 @@ export default function NotificationsBell() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
+        {!audioEnabled && (
+          <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-200">
+            <p className="text-xs text-yellow-800">
+              🔇 <strong>Som desabilitado.</strong> Abra este menu novamente para habilitar notificações sonoras.
+            </p>
+          </div>
+        )}
+        
+        {audioEnabled && (
+          <div className="px-4 py-2 bg-green-50 border-b border-green-200">
+            <p className="text-xs text-green-800">
+              🔔 <strong>Som habilitado!</strong> Você receberá alertas sonoros para novas notificações.
+            </p>
+          </div>
+        )}
         <ScrollArea className="h-96">
           {notificacoes.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
