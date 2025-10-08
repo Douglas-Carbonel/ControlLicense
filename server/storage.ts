@@ -33,7 +33,9 @@ import {
   type InsertChamadoInteracao,
   type Notificacao,
   type InsertNotificacao,
-  type HardwareLicenseQuery
+  type HardwareLicenseQuery,
+  type InsertLicense,
+  type InsertUser,
 } from "@shared/schema";
 import { eq, ilike, or, desc, and, sql, asc, count, isNull, not, inArray } from "drizzle-orm";
 
@@ -51,6 +53,36 @@ const client = postgres(connectionString, {
   ssl: 'require'              // Garantir SSL
 });
 const db = drizzle(client);
+
+// --- Cache para Chamados ---
+const chamadoCache: Map<number, { data: any; timestamp: number }> = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+function getCachedChamado(id: number) {
+  const cached = chamadoCache.get(id);
+  if (cached && cached.timestamp + CACHE_TTL > Date.now()) {
+    console.log(`[CACHE HIT] Chamado ${id} retornado do cache`);
+    return cached.data;
+  }
+  console.log(`[CACHE MISS] Chamado ${id} não encontrado no cache ou expirado.`);
+  return null;
+}
+
+function setCachedChamado(id: number, data: any) {
+  chamadoCache.set(id, { data, timestamp: Date.now() });
+  console.log(`[CACHE SET] Chamado ${id} adicionado/atualizado no cache.`);
+}
+
+function invalidateChamadoCache(id?: number) {
+  if (id) {
+    chamadoCache.delete(id);
+    console.log(`[CACHE INVALIDATION] Cache para chamado ${id} invalidado.`);
+  } else {
+    chamadoCache.clear();
+    console.log("[CACHE INVALIDATION] Cache de chamados limpo.");
+  }
+}
+// --- Fim do Cache ---
 
 export { db };
 
@@ -118,6 +150,7 @@ export interface IStorage {
   getChamados(): Promise<Chamado[]>;
   getChamadosByUsuario(usuarioId: number, role: string, representanteId?: number, clienteId?: string, tipoUsuario?: string): Promise<Chamado[]>;
   getChamado(id: number): Promise<Chamado | undefined>;
+  getChamadoCompleto(id: number): Promise<any>; // Lazy loading com cache
   createChamado(data: InsertChamado): Promise<Chamado>;
   updateChamado(id: number, data: Partial<InsertChamado>): Promise<Chamado>;
   deleteChamado(id: number): Promise<void>;
@@ -128,7 +161,7 @@ export interface IStorage {
   updateChamadoPendencia(id: number, data: Partial<InsertChamadoPendencia>): Promise<ChamadoPendencia>;
 
   // Chamado Interações operations
-  getChamadoInteracoes(chamadoId: number): Promise<ChamadoInteracao[]>;
+  getChamadoInteracoes(chamadoId: number): Promise<any[]>;
   createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao>;
 
   // Chamado Notificações operations
@@ -899,89 +932,139 @@ export class DbStorage implements IStorage {
         return result[0];
     }
 
-    // Query otimizada para reduzir latência - 1 única chamada ao banco
+    // Lazy loading and cache for getChamadoCompleto
     async getChamadoCompleto(id: number): Promise<any> {
-        const result = await db.execute(sql`
-            SELECT 
-                json_build_object(
-                    'id', c.id,
-                    'categoria', c.categoria,
-                    'produto', c.produto,
-                    'titulo', c.titulo,
-                    'descricao', c.descricao,
-                    'status', c.status,
-                    'prioridade', c.prioridade,
-                    'clienteId', c.cliente_id,
-                    'solicitanteId', c.solicitante_id,
-                    'atendenteId', c.atendente_id,
-                    'representanteId', c.representante_id,
-                    'observacoes', c.observacoes,
-                    'dataAbertura', c.data_abertura,
-                    'dataUltimaInteracao', c.data_ultima_interacao,
-                    'lidoPorSolicitante', c.lido_por_solicitante,
-                    'lidoPorAtendente', c.lido_por_atendente,
-                    'createdAt', c.created_at,
-                    'updatedAt', c.updated_at,
-                    'solicitante', row_to_json(u.*),
-                    'interacoes', COALESCE(
-                        (SELECT json_agg(
-                            json_build_object(
-                                'id', ci.id,
-                                'chamadoId', ci.chamado_id,
-                                'usuarioId', ci.usuario_id,
-                                'mensagem', ci.mensagem,
-                                'anexos', ci.anexos,
-                                'tipo', ci.tipo,
-                                'createdAt', ci.created_at,
-                                'usuario', row_to_json(ui.*)
-                            ) ORDER BY ci.created_at ASC
-                        ) 
-                        FROM (
-                            SELECT ci.*, ui.*
-                            FROM chamado_interacoes ci
-                            LEFT JOIN users ui ON ci.usuario_id = ui.id
-                            WHERE ci.chamado_id = c.id
-                            ORDER BY ci.created_at ASC
-                            LIMIT 15
-                        ) ci(ci_id, ci_chamado_id, ci_usuario_id, ci_mensagem, ci_anexos, ci_tipo, ci_created_at, ui_id, ui_username, ui_email, ui_password_hash, ui_role, ui_name, ui_active, ui_tipo_usuario, ui_representante_id, ui_cliente_id, ui_setor, ui_nivel, ui_created_at, ui_updated_at)),
-                        '[]'::json
-                    ),
-                    'pendencias', COALESCE(
-                        (SELECT json_agg(row_to_json(p.*))
-                        FROM (
-                            SELECT * FROM chamado_pendencias
-                            WHERE chamado_id = c.id
-                            ORDER BY created_at DESC
-                            LIMIT 10
-                        ) p),
-                        '[]'::json
-                    )
-                ) as chamado_completo
-            FROM chamados c
-            LEFT JOIN users u ON c.solicitante_id = u.id
-            WHERE c.id = ${id}
-        `);
+        try {
+          // Verificar cache primeiro
+          const cached = getCachedChamado(id);
+          if (cached) {
+            return cached;
+          }
 
-        if (!result || result.length === 0) return null;
-        
-        return result[0].chamado_completo;
-    }
+          console.log(`[CACHE MISS] Buscando chamado ${id} do banco`);
+
+          // Query única otimizada com JOINs para reduzir round-trips
+          const result = await db
+            .select({
+              // Dados do chamado
+              id: chamados.id,
+              categoria: chamados.categoria,
+              produto: chamados.produto,
+              titulo: chamados.titulo,
+              descricao: chamados.descricao,
+              status: chamados.status,
+              prioridade: chamados.prioridade,
+              solicitanteId: chamados.solicitanteId,
+              usuarioAberturaId: chamados.usuarioAberturaId,
+              clienteId: chamados.clienteId,
+              representanteId: chamados.representanteId,
+              atendenteId: chamados.atendenteId,
+              dataAbertura: chamados.dataAbertura,
+              dataPrevisao: chamados.dataPrevisao,
+              dataFechamento: chamados.dataFechamento,
+              observacoes: chamados.observacoes,
+              createdAt: chamados.createdAt,
+              updatedAt: chamados.updatedAt,
+              lidoPorSolicitante: chamados.lidoPorSolicitante,
+              lidoPorAtendente: chamados.lidoPorAtendente,
+              dataUltimaInteracao: chamados.dataUltimaInteracao,
+              totalInteracoes: chamados.totalInteracoes,
+              // Dados do solicitante
+              solicitanteNome: users.name,
+              solicitanteEmail: users.email,
+              // Dados do atendente
+              atendenteNome: sql<string>`atendente.name`,
+              atendenteEmail: sql<string>`atendente.email`,
+            })
+            .from(chamados)
+            .leftJoin(users, eq(chamados.solicitanteId, users.id))
+            .leftJoin(
+              sql`users as atendente`,
+              sql`${chamados.atendenteId} = atendente.id`
+            )
+            .where(eq(chamados.id, id))
+            .limit(1);
+
+          if (!result || result.length === 0) {
+            console.log(`Chamado ${id} não encontrado no banco.`);
+            return null;
+          }
+
+          const chamadoData = result[0];
+
+          // Buscar interações e pendências em paralelo (lazy loading)
+          const [interacoes, pendencias] = await Promise.all([
+            db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, id)).orderBy(asc(chamadoInteracoes.createdAt)),
+            db.select().from(chamadoPendencias).where(eq(chamadoPendencias.chamadoId, id)).orderBy(desc(chamadoPendencias.createdAt))
+          ]);
+
+          // Montar objeto final
+          const chamadoCompleto = {
+            id: chamadoData.id,
+            categoria: chamadoData.categoria,
+            produto: chamadoData.produto,
+            titulo: chamadoData.titulo,
+            descricao: chamadoData.descricao,
+            status: chamadoData.status,
+            prioridade: chamadoData.prioridade,
+            solicitanteId: chamadoData.solicitanteId,
+            usuarioAberturaId: chamadoData.usuarioAberturaId,
+            clienteId: chamadoData.clienteId,
+            representanteId: chamadoData.representanteId,
+            atendenteId: chamadoData.atendenteId,
+            dataAbertura: chamadoData.dataAbertura,
+            dataPrevisao: chamadoData.dataPrevisao,
+            dataFechamento: chamadoData.dataFechamento,
+            observacoes: chamadoData.observacoes,
+            createdAt: chamadoData.createdAt,
+            updatedAt: chamadoData.updatedAt,
+            lidoPorSolicitante: chamadoData.lidoPorSolicitante,
+            lidoPorAtendente: chamadoData.lidoPorAtendente,
+            dataUltimaInteracao: chamadoData.dataUltimaInteracao,
+            totalInteracoes: chamadoData.totalInteracoes,
+            solicitante: chamadoData.solicitanteNome ? {
+              id: chamadoData.solicitanteId,
+              name: chamadoData.solicitanteNome,
+              email: chamadoData.solicitanteEmail
+            } : null,
+            atendente: chamadoData.atendenteNome ? {
+              id: chamadoData.atendenteId,
+              name: chamadoData.atendenteNome,
+              email: chamadoData.atendenteEmail
+            } : null,
+            interacoes,
+            pendencias
+          };
+
+          // Salvar no cache
+          setCachedChamado(id, chamadoCompleto);
+
+          return chamadoCompleto;
+        } catch (error) {
+          console.error("Erro ao buscar chamado completo:", error);
+          throw error;
+        }
+      }
 
     async createChamado(data: InsertChamado): Promise<Chamado> {
-        const result = await db.insert(chamados).values(data).returning();
-        return result[0];
+        const [chamado] = await db.insert(chamados).values(data).returning();
+        invalidateChamadoCache(); // Invalidar cache ao criar
+        return chamado;
     }
 
     async updateChamado(id: number, data: Partial<InsertChamado>): Promise<Chamado> {
-        const result = await db.update(chamados)
+        const [chamado] = await db
+            .update(chamados)
             .set({ ...data, updatedAt: new Date() })
             .where(eq(chamados.id, id))
             .returning();
-        return result[0];
+        invalidateChamadoCache(id); // Invalidar cache específico
+        return chamado;
     }
 
     async deleteChamado(id: number): Promise<void> {
         await db.delete(chamados).where(eq(chamados.id, id));
+        invalidateChamadoCache(id); // Invalidar cache ao deletar
     }
 
     // Métodos para Pendências
@@ -993,16 +1076,21 @@ export class DbStorage implements IStorage {
     }
 
     async createChamadoPendencia(data: InsertChamadoPendencia): Promise<ChamadoPendencia> {
-        const result = await db.insert(chamadoPendencias).values(data).returning();
-        return result[0];
+        const [pendencia] = await db.insert(chamadoPendencias).values(data).returning();
+        invalidateChamadoCache(data.chamadoId); // Invalidar cache do chamado associado
+        return pendencia;
     }
 
     async updateChamadoPendencia(id: number, data: Partial<InsertChamadoPendencia>): Promise<ChamadoPendencia> {
-        const result = await db.update(chamadoPendencias)
+        const [pendencia] = await db.update(chamadoPendencias)
             .set({ ...data, updatedAt: new Date() })
             .where(eq(chamadoPendencias.id, id))
             .returning();
-        return result[0];
+        // Se o chamadoId estiver disponível nos dados, invalidar o cache
+        if (data.chamadoId) {
+            invalidateChamadoCache(data.chamadoId);
+        }
+        return pendencia;
     }
 
     // Métodos para Interações - ULTRA OTIMIZADO
@@ -1032,31 +1120,21 @@ export class DbStorage implements IStorage {
     }
 
     async createChamadoInteracao(data: InsertChamadoInteracao): Promise<ChamadoInteracao> {
-        const result = await db.insert(chamadoInteracoes).values(data).returning();
+        const [interacao] = await db.insert(chamadoInteracoes).values(data).returning();
 
-        // Buscar informações do chamado e do usuário que está interagindo
-        const chamado = await this.getChamado(data.chamadoId);
-        const usuario = await this.getUser(data.usuarioId);
-
-        if (!chamado || !usuario) {
-            return result[0];
-        }
-
-        // Determinar quem deve marcar como não lido
-        const isInterno = usuario.role === 'admin' || usuario.role === 'interno';
-        const isSolicitante = chamado.solicitanteId === data.usuarioId;
-
-        await db.update(chamados)
+        // Atualizar contador e data da última interação
+        await db
+            .update(chamados)
             .set({
                 dataUltimaInteracao: new Date(),
-                // Se quem interagiu é o solicitante, marca como lido para ele; senão marca como não lido
-                lidoPorSolicitante: isSolicitante ? true : false,
-                // Se quem interagiu é interno/atendente, marca como lido para atendente; senão marca como não lido
-                lidoPorAtendente: isInterno ? true : false
+                totalInteracoes: sql`COALESCE(${chamados.totalInteracoes}, 0) + 1`,
+                updatedAt: new Date()
             })
             .where(eq(chamados.id, data.chamadoId));
 
-        return result[0];
+        invalidateChamadoCache(data.chamadoId); // Invalidar cache ao criar interação
+
+        return interacao;
     }
 
     async getChamadosUnreadCount(usuarioId: number, role: string, representanteId?: number, clienteId?: string): Promise<number> {
@@ -1120,6 +1198,8 @@ export class DbStorage implements IStorage {
                     .set({ lidoPorSolicitante: true })
                     .where(eq(chamados.id, chamadoId));
             }
+
+            invalidateChamadoCache(chamadoId); // Invalidar cache após marcar como lido
         } catch (error) {
             console.error("Erro ao marcar chamado como lido:", error);
         }

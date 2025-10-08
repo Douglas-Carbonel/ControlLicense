@@ -98,9 +98,12 @@ export default function ChamadosPage() {
     observacoes: ''
   });
 
-  // Buscar chamados
+  // Buscar chamados com cache agressivo
   const { data: chamados = [], isLoading } = useQuery<Chamado[]>({
     queryKey: ["/api/chamados"],
+    staleTime: 2 * 60 * 1000, // Cache por 2 minutos
+    gcTime: 5 * 60 * 1000, // Manter em cache por 5 minutos
+    refetchInterval: 60 * 1000, // Atualizar a cada 1 minuto em background
   });
 
   // Buscar clientes para seleção (para internos e representantes)

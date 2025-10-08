@@ -71,6 +71,7 @@ export default function ChamadoDetalhesPage() {
     };
   }, [attachedFiles]);
 
+  // Buscar detalhes do chamado com cache de 5 minutos
   const { data: chamadoData, isLoading } = useQuery({
     queryKey: [`/api/chamados/${id}`],
     queryFn: async () => {
@@ -82,9 +83,10 @@ export default function ChamadoDetalhesPage() {
       return response.json();
     },
     enabled: !!id,
-    staleTime: 0, // Sem cache
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    gcTime: 10 * 60 * 1000, // Manter em cache por 10 minutos
+    refetchOnWindowFocus: false, // Não revalidar ao focar
+    refetchOnMount: true, // Revalidar ao montar (se staleTime expirar)
     retry: 0
   });
 
@@ -229,11 +231,11 @@ export default function ChamadoDetalhesPage() {
           interacoes: [...(old.interacoes || []), newInteracao]
         };
       });
-      
+
       // Limpar campos
       setNewInteracao('');
       setAttachedFiles([]);
-      
+
       toast({
         title: "Sucesso",
         description: "Comentário adicionado!",
@@ -464,7 +466,7 @@ export default function ChamadoDetalhesPage() {
                           </span>
                         </div>
                         <p className="text-sm text-slate-700">{interacao.mensagem}</p>
-                        
+
                         {interacao.anexos?.length > 0 && (
                           <div className="grid grid-cols-2 gap-2 mt-2">
                             {interacao.anexos.map((url: string, idx: number) => (
@@ -508,7 +510,7 @@ export default function ChamadoDetalhesPage() {
 
                     for (let i = 0; i < items.length; i++) {
                       const item = items[i];
-                      
+
                       // Detectar imagem colada
                       if (item.type.indexOf('image') !== -1) {
                         e.preventDefault();
@@ -529,7 +531,7 @@ export default function ChamadoDetalhesPage() {
                     }
                   }}
                 />
-                
+
                 {/* Preview de arquivos anexados */}
                 {attachedFiles.length > 0 && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -568,7 +570,7 @@ export default function ChamadoDetalhesPage() {
                       onChange={(e) => {
                         const files = e.target.files;
                         if (!files) return;
-                        
+
                         // Validar tamanho de cada arquivo
                         const validFiles: File[] = [];
                         for (const file of Array.from(files)) {
@@ -582,12 +584,12 @@ export default function ChamadoDetalhesPage() {
                             validFiles.push(file);
                           }
                         }
-                        
+
                         // Adicionar apenas arquivos válidos
                         if (validFiles.length > 0) {
                           setAttachedFiles(prev => [...prev, ...validFiles]);
                         }
-                        
+
                         // Limpar input para permitir selecionar o mesmo arquivo novamente
                         e.target.value = '';
                       }}
