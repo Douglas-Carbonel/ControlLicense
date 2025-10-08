@@ -971,9 +971,9 @@ export class DbStorage implements IStorage {
             FROM chamado_data cd
         `);
 
-        if (!result.rows || result.rows.length === 0) return null;
+        if (!result || result.length === 0) return null;
         
-        return result.rows[0].chamado_completo;
+        return result[0].chamado_completo;
     }
 
     async createChamado(data: InsertChamado): Promise<Chamado> {
