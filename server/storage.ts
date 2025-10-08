@@ -943,94 +943,42 @@ export class DbStorage implements IStorage {
 
           console.log(`[CACHE MISS] Buscando chamado ${id} do banco`);
 
-          // Query única otimizada com JOINs para reduzir round-trips
-          const result = await db
-            .select({
-              // Dados do chamado
-              id: chamados.id,
-              categoria: chamados.categoria,
-              produto: chamados.produto,
-              titulo: chamados.titulo,
-              descricao: chamados.descricao,
-              status: chamados.status,
-              prioridade: chamados.prioridade,
-              solicitanteId: chamados.solicitanteId,
-              usuarioAberturaId: chamados.usuarioAberturaId,
-              clienteId: chamados.clienteId,
-              representanteId: chamados.representanteId,
-              atendenteId: chamados.atendenteId,
-              dataAbertura: chamados.dataAbertura,
-              dataPrevisao: chamados.dataPrevisao,
-              dataFechamento: chamados.dataFechamento,
-              observacoes: chamados.observacoes,
-              createdAt: chamados.createdAt,
-              updatedAt: chamados.updatedAt,
-              lidoPorSolicitante: chamados.lidoPorSolicitante,
-              lidoPorAtendente: chamados.lidoPorAtendente,
-              dataUltimaInteracao: chamados.dataUltimaInteracao,
-              totalInteracoes: chamados.totalInteracoes,
-              // Dados do solicitante
-              solicitanteNome: users.name,
-              solicitanteEmail: users.email,
-              // Dados do atendente
-              atendenteNome: sql<string>`atendente.name`,
-              atendenteEmail: sql<string>`atendente.email`,
-            })
+          // Buscar chamado básico
+          const [chamadoData] = await db
+            .select()
             .from(chamados)
-            .leftJoin(users, eq(chamados.solicitanteId, users.id))
-            .leftJoin(
-              sql`users as atendente`,
-              sql`${chamados.atendenteId} = atendente.id`
-            )
             .where(eq(chamados.id, id))
             .limit(1);
 
-          if (!result || result.length === 0) {
+          if (!chamadoData) {
             console.log(`Chamado ${id} não encontrado no banco.`);
             return null;
           }
 
-          const chamadoData = result[0];
-
-          // Buscar interações e pendências em paralelo (lazy loading)
-          const [interacoes, pendencias] = await Promise.all([
+          // Buscar solicitante, atendente, interações e pendências em paralelo
+          const [solicitante, atendente, interacoes, pendencias] = await Promise.all([
+            chamadoData.solicitanteId 
+              ? db.select().from(users).where(eq(users.id, chamadoData.solicitanteId)).limit(1).then(r => r[0])
+              : Promise.resolve(null),
+            chamadoData.atendenteId 
+              ? db.select().from(users).where(eq(users.id, chamadoData.atendenteId)).limit(1).then(r => r[0])
+              : Promise.resolve(null),
             db.select().from(chamadoInteracoes).where(eq(chamadoInteracoes.chamadoId, id)).orderBy(asc(chamadoInteracoes.createdAt)),
             db.select().from(chamadoPendencias).where(eq(chamadoPendencias.chamadoId, id)).orderBy(desc(chamadoPendencias.createdAt))
           ]);
 
           // Montar objeto final
           const chamadoCompleto = {
-            id: chamadoData.id,
-            categoria: chamadoData.categoria,
-            produto: chamadoData.produto,
-            titulo: chamadoData.titulo,
-            descricao: chamadoData.descricao,
-            status: chamadoData.status,
-            prioridade: chamadoData.prioridade,
-            solicitanteId: chamadoData.solicitanteId,
-            usuarioAberturaId: chamadoData.usuarioAberturaId,
-            clienteId: chamadoData.clienteId,
-            representanteId: chamadoData.representanteId,
-            atendenteId: chamadoData.atendenteId,
-            dataAbertura: chamadoData.dataAbertura,
-            dataPrevisao: chamadoData.dataPrevisao,
-            dataFechamento: chamadoData.dataFechamento,
-            observacoes: chamadoData.observacoes,
-            createdAt: chamadoData.createdAt,
-            updatedAt: chamadoData.updatedAt,
-            lidoPorSolicitante: chamadoData.lidoPorSolicitante,
-            lidoPorAtendente: chamadoData.lidoPorAtendente,
-            dataUltimaInteracao: chamadoData.dataUltimaInteracao,
-            totalInteracoes: chamadoData.totalInteracoes,
-            solicitante: chamadoData.solicitanteNome ? {
-              id: chamadoData.solicitanteId,
-              name: chamadoData.solicitanteNome,
-              email: chamadoData.solicitanteEmail
+            ...chamadoData,
+            solicitante: solicitante ? {
+              id: solicitante.id,
+              name: solicitante.name,
+              email: solicitante.email
             } : null,
-            atendente: chamadoData.atendenteNome ? {
-              id: chamadoData.atendenteId,
-              name: chamadoData.atendenteNome,
-              email: chamadoData.atendenteEmail
+            atendente: atendente ? {
+              id: atendente.id,
+              name: atendente.name,
+              email: atendente.email
             } : null,
             interacoes,
             pendencias
