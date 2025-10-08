@@ -54,16 +54,26 @@ export default function NotificationsBell() {
   const enableAudio = async () => {
     if (audioRef.current && !audioEnabled) {
       try {
-        // Tentar tocar e pausar imediatamente para "desbloquear" o áudio
-        await audioRef.current.play();
-        audioRef.current.pause();
+        // Resetar o áudio
         audioRef.current.currentTime = 0;
+        
+        // Tentar tocar o som completo como teste
+        await audioRef.current.play();
+        
+        // Aguardar um pouco antes de considerar habilitado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         setAudioEnabled(true);
         console.log('✅ Áudio habilitado com sucesso!');
+        
+        // Mostrar feedback visual
+        return true;
       } catch (err) {
         console.warn('⚠️ Erro ao habilitar áudio:', err);
+        return false;
       }
     }
+    return false;
   };
 
   // Buscar contagem de não lidas
@@ -181,20 +191,30 @@ export default function NotificationsBell() {
     };
   }, [refetchUnreadCount]);
 
-  // Habilitar áudio com interação do usuário (resolve restrição de autoplay)
-  const handleOpenChange = async (open: boolean) => {
+  // Handler para mudança de estado do dropdown
+  const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
+  };
+
+  // Handler para clicar no botão de habilitar som
+  const handleEnableSound = async () => {
+    const success = await enableAudio();
     
-    // Ao abrir o dropdown pela primeira vez, habilitar o áudio
-    if (open && !audioEnabled) {
-      await enableAudio();
+    if (success) {
+      // Tocar o som como confirmação
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(err => {
+          console.warn('Erro ao tocar som de confirmação:', err);
+        });
+      }
     }
   };
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" title={audioEnabled ? "Som habilitado ✓" : "Clique para habilitar o som"}>
+        <Button variant="ghost" size="icon" className="relative" title={audioEnabled ? "Notificações (Som habilitado ✓)" : "Notificações (Som desabilitado)"}>
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge 
@@ -226,18 +246,31 @@ export default function NotificationsBell() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {!audioEnabled && (
-          <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-200">
-            <p className="text-xs text-yellow-800">
-              🔇 <strong>Som desabilitado.</strong> Abra este menu novamente para habilitar notificações sonoras.
-            </p>
+        {!audioEnabled ? (
+          <div className="px-4 py-3 bg-yellow-50 border-b border-yellow-200">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-yellow-900 mb-1">
+                  🔇 Som de notificações desabilitado
+                </p>
+                <p className="text-xs text-yellow-700">
+                  Clique no botão para habilitar alertas sonoros
+                </p>
+              </div>
+              <Button
+                onClick={handleEnableSound}
+                size="sm"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white flex-shrink-0"
+              >
+                Habilitar Som
+              </Button>
+            </div>
           </div>
-        )}
-        
-        {audioEnabled && (
+        ) : (
           <div className="px-4 py-2 bg-green-50 border-b border-green-200">
-            <p className="text-xs text-green-800">
-              🔔 <strong>Som habilitado!</strong> Você receberá alertas sonoros para novas notificações.
+            <p className="text-xs text-green-800 flex items-center gap-2">
+              <span className="text-base">🔔</span>
+              <strong>Som habilitado!</strong> Você receberá alertas sonoros para novas notificações.
             </p>
           </div>
         )}
