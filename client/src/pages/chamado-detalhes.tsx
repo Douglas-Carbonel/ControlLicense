@@ -399,8 +399,8 @@ export default function ChamadoDetalhesPage() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Conteúdo Principal */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="max-w-4xl mx-auto p-6 space-y-4 break-words">
 
             {/* Descrição Original */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200" data-testid="card-descricao">
@@ -415,7 +415,7 @@ export default function ChamadoDetalhesPage() {
                   </p>
                 </div>
               </div>
-              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap pl-11" data-testid="text-descricao">
+              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap break-words pl-11" data-testid="text-descricao">
                 {chamado.descricao}
               </p>
             </div>
@@ -450,48 +450,69 @@ export default function ChamadoDetalhesPage() {
                 ))}
 
                 {/* Interações - Apenas últimas 15 */}
-                {interacoes.slice(-15).map((interacao: any) => (
-                  <div
-                    key={interacao.id}
-                    className={`bg-white rounded-lg p-4 shadow-sm border ${
-                      interacao.tipo === 'MUDANCA_STATUS' ? 'border-blue-200 bg-blue-50/30' : 'border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
-                        interacao.tipo === 'MUDANCA_STATUS' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'
-                      }`}>
-                        {interacao.usuario?.name?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-slate-900 text-sm">
-                            {interacao.usuario?.name || 'Usuário'}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {format(new Date(interacao.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-700">{interacao.mensagem}</p>
+                {interacoes.slice(-15).map((interacao: any) => {
+                  // Determinar se o usuário é interno (admin ou interno)
+                  const isInterno = interacao.usuario?.role === 'admin' || interacao.usuario?.role === 'interno';
+                  
+                  // Obter iniciais do nome
+                  const getInitials = (name: string) => {
+                    if (!name) return 'U';
+                    const parts = name.trim().split(' ');
+                    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                  };
 
-                        {interacao.anexos?.length > 0 && (
-                          <div className="grid grid-cols-2 gap-2 mt-2">
-                            {interacao.anexos.map((url: string, idx: number) => (
-                              <img 
-                                key={idx}
-                                src={url}
-                                alt={`Anexo ${idx + 1}`}
-                                className="w-full rounded border cursor-pointer"
-                                onClick={() => window.open(url, '_blank')}
-                                loading="lazy"
-                              />
-                            ))}
+                  return (
+                    <div
+                      key={interacao.id}
+                      className={`rounded-lg p-4 shadow-sm border ${
+                        interacao.tipo === 'MUDANCA_STATUS' 
+                          ? 'border-blue-200 bg-blue-50/30' 
+                          : isInterno
+                            ? 'bg-blue-50/50 border-blue-200'
+                            : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                          interacao.tipo === 'MUDANCA_STATUS' 
+                            ? 'bg-blue-500 text-white' 
+                            : isInterno
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-slate-400 text-white'
+                        }`}>
+                          {getInitials(interacao.usuario?.name || '')}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1 gap-2">
+                            <span className={`font-medium text-sm ${isInterno ? 'text-blue-900' : 'text-slate-900'}`}>
+                              {interacao.usuario?.name || 'Usuário'}
+                            </span>
+                            <span className="text-xs text-slate-500 flex-shrink-0">
+                              {format(new Date(interacao.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                            </span>
                           </div>
-                        )}
+                          <p className="text-sm text-slate-700 break-words whitespace-pre-wrap">{interacao.mensagem}</p>
+
+                          {interacao.anexos?.length > 0 && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              {interacao.anexos.map((url: string, idx: number) => (
+                                <img 
+                                  key={idx}
+                                  src={url}
+                                  alt={`Anexo ${idx + 1}`}
+                                  className="w-full rounded border cursor-pointer"
+                                  onClick={() => window.open(url, '_blank')}
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
