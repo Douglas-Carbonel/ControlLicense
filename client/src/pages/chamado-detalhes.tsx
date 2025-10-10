@@ -405,13 +405,18 @@ export default function ChamadoDetalhesPage() {
             {/* Descrição Original */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200" data-testid="card-descricao">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Info className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 rounded-full bg-slate-400 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                  {(() => {
+                    const name = chamado.solicitante?.name || chamado.clienteId || 'U';
+                    const parts = name.trim().split(' ');
+                    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                  })()}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-slate-900 mb-1">Descrição do Problema</h3>
                   <p className="text-sm text-slate-500">
-                    Aberto por {chamado.clienteId} • {format(new Date(chamado.dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    Aberto por {chamado.solicitante?.name || chamado.clienteId} • {format(new Date(chamado.dataAbertura), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
               </div>
@@ -428,26 +433,35 @@ export default function ChamadoDetalhesPage() {
                 </h3>
 
                 {/* Pendências */}
-                {pendencias.map((pendencia: any) => (
-                  <div key={pendencia.id} className="bg-yellow-50 rounded-lg p-4 border border-yellow-200" data-testid={`card-pendencia-${pendencia.id}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-4 h-4 text-yellow-700" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-yellow-900 text-sm">
-                            {MOTIVOS_PENDENCIA.find(m => m.value === pendencia.motivo)?.label}
-                          </span>
-                          <span className="text-xs text-yellow-600" data-testid={`text-data-pendencia-${pendencia.id}`}>
-                            {format(new Date(pendencia.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                          </span>
+                {pendencias.map((pendencia: any) => {
+                  const getInitials = (name: string) => {
+                    if (!name) return '⏰';
+                    const parts = name.trim().split(' ');
+                    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                  };
+
+                  return (
+                    <div key={pendencia.id} className="bg-yellow-50 rounded-lg p-4 border border-yellow-200" data-testid={`card-pendencia-${pendencia.id}`}>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                          {getInitials(pendencia.usuario?.name || '')}
                         </div>
-                        <p className="text-sm text-yellow-800">{pendencia.descricao}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-yellow-900 text-sm">
+                              {MOTIVOS_PENDENCIA.find(m => m.value === pendencia.motivo)?.label}
+                            </span>
+                            <span className="text-xs text-yellow-600" data-testid={`text-data-pendencia-${pendencia.id}`}>
+                              {format(new Date(pendencia.createdAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-yellow-800">{pendencia.descricao}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Interações - Apenas últimas 15 */}
                 {interacoes.slice(-15).map((interacao: any) => {
